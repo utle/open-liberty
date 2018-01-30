@@ -110,7 +110,7 @@
 
     </OCD>
 
-    <Designate pid="com.ibm.ws.webcontainer.security.WebAppSecurityCollaboratorImpl">
+    <Designate pid="com.ibm.ws.webcontainer.security.internal.WebAppSecurityConfig">
         <Object ocdref="com.ibm.ws.webcontainer.security.metatype"/>
     </Designate>
 

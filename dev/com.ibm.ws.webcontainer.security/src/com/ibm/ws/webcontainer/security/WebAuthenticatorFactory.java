@@ -10,12 +10,9 @@
  *******************************************************************************/
 package com.ibm.ws.webcontainer.security;
 
-import java.util.Map;
-
 import com.ibm.ws.security.SecurityService;
 import com.ibm.ws.security.authentication.tai.TAIService;
 import com.ibm.ws.security.collaborator.CollaboratorUtils;
-import com.ibm.wsspi.kernel.service.location.WsLocationAdmin;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.kernel.service.utils.ConcurrentServiceReferenceMap;
 import com.ibm.wsspi.security.tai.TrustAssociationInterceptor;
@@ -28,9 +25,9 @@ public interface WebAuthenticatorFactory {
      * @param securityServiceRef
      * @return
      */
-    WebAppSecurityConfig createWebAppSecurityConfigImpl(Map<String, Object> props,
-                                                        AtomicServiceReference<WsLocationAdmin> locationAdminRef,
-                                                        AtomicServiceReference<SecurityService> securityServiceRef);
+//    WebAppSecurityConfig createWebAppSecurityConfigImpl(Map<String, Object> props,
+//                                                        AtomicServiceReference<WsLocationAdmin> locationAdminRef,
+//                                                        AtomicServiceReference<SecurityService> securityServiceRef);
 
     /**
      * @param ssoCookieHelper
@@ -44,30 +41,31 @@ public interface WebAuthenticatorFactory {
                                           AtomicServiceReference<SecurityService> securityServiceRef,
                                           CollaboratorUtils collabUtils,
                                           ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef,
-                                          ConcurrentServiceReferenceMap<String, UnprotectedResourceService> unprotectedResourceServiceRef);
+                                          ConcurrentServiceReferenceMap<String, UnprotectedResourceService> unprotectedResourceServiceRef,
+                                          AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef);
 
     /**
      * @param securityServiceRef
      * @param taiServiceRef
      * @param interceptorServiceRef
-     * @param webAppSecConfig
+     * @param webAppSecurityConfigRef
      * @param webAuthenticatorRef
      * @return
      */
     WebProviderAuthenticatorProxy createWebProviderAuthenticatorProxy(AtomicServiceReference<SecurityService> securityServiceRef,
                                                                       AtomicServiceReference<TAIService> taiServiceRef,
                                                                       ConcurrentServiceReferenceMap<String, TrustAssociationInterceptor> interceptorServiceRef,
-                                                                      WebAppSecurityConfig webAppSecConfig,
+                                                                      AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef,
                                                                       ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef);
 
     /**
-     * @param webAppSecConfig
+     * @param webAppSecurityConfigRef
      * @param postParameterHelper
      * @param securityServiceRef
      * @param providerAuthenticatorProxy
      * @return
      */
-    WebAuthenticatorProxy createWebAuthenticatorProxy(WebAppSecurityConfig webAppSecConfig,
+    WebAuthenticatorProxy createWebAuthenticatorProxy(AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef,
                                                       PostParameterHelper postParameterHelper,
                                                       AtomicServiceReference<SecurityService> securityServiceRef,
                                                       WebProviderAuthenticatorProxy providerAuthenticatorProxy);

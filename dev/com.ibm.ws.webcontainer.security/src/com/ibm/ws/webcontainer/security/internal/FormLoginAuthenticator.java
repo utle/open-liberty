@@ -29,6 +29,7 @@ import com.ibm.ws.webcontainer.security.WebAuthenticator;
 import com.ibm.ws.webcontainer.security.WebProviderAuthenticatorProxy;
 import com.ibm.ws.webcontainer.security.WebRequest;
 import com.ibm.ws.webcontainer.security.metadata.FormLoginConfiguration;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 
 /**
  * This class perform authentication for web request using form
@@ -37,7 +38,8 @@ import com.ibm.ws.webcontainer.security.metadata.FormLoginConfiguration;
 public class FormLoginAuthenticator implements WebAuthenticator {
     private static final TraceComponent tc = Tr.register(FormLoginAuthenticator.class);
     private final WebAuthenticator ssoAuthenticator;
-    private final WebAppSecurityConfig webAppSecurityConfig;
+    private WebAppSecurityConfig webAppSecurityConfig = null;
+    private final AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef = null;
     private final PostParameterHelper postParameterHelper;
     private final WebProviderAuthenticatorProxy providerAuthenticatorProxy;
 
@@ -47,12 +49,13 @@ public class FormLoginAuthenticator implements WebAuthenticator {
      * @param securityMetadata
      */
     public FormLoginAuthenticator(WebAuthenticator ssoAuthn,
-                                  WebAppSecurityConfig webAppSecConfig,
+                                  AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef,
                                   WebProviderAuthenticatorProxy providerAuthenticatorProxy) {
-        webAppSecurityConfig = webAppSecConfig;
+        webAppSecurityConfigRef = webAppSecurityConfigRef;
         ssoAuthenticator = ssoAuthn;
         this.providerAuthenticatorProxy = providerAuthenticatorProxy;
-        postParameterHelper = new PostParameterHelper(webAppSecConfig);
+        postParameterHelper = new PostParameterHelper(webAppSecurityConfigRef);
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
     }
 
     /** {@inheritDoc} */
@@ -137,7 +140,7 @@ public class FormLoginAuthenticator implements WebAuthenticator {
 
         if (allowToAddCookieToResponse(webAppSecurityConfig, req)) {
             postParameterHelper.save(req, res, authResult);
-            ReferrerURLCookieHandler referrerURLHandler = webAppSecurityConfig.createReferrerURLCookieHandler();
+            ReferrerURLCookieHandler referrerURLHandler = new ReferrerURLCookieHandler(webAppSecurityConfigRef);
 //            referrerURLHandler.setReferrerURLCookie(authResult, getReqURL(req));
             Cookie c = referrerURLHandler.createReferrerURLCookie(ReferrerURLCookieHandler.REFERRER_URL_COOKIENAME, getReqURL(req), req);
             authResult.setCookie(c);

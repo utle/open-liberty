@@ -22,12 +22,11 @@ import com.ibm.ws.security.authorization.RoleSet;
 import com.ibm.ws.webcontainer.osgi.webapp.WebAppConfiguration;
 import com.ibm.ws.webcontainer.security.PostParameterHelper;
 import com.ibm.ws.webcontainer.security.WebAppSecurityCollaboratorImpl;
-import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
 import com.ibm.wsspi.webcontainer.webapp.WebAppConfig;
 
 public class FeatureWebSecurityCollaboratorImpl extends WebAppSecurityCollaboratorImpl implements FeatureAuthorizationTableService {
 
-    protected volatile WebAppSecurityConfig featureSecConfig = new FeatureWebSecurityConfigImpl(null);
+    //protected volatile WebAppSecurityConfig featureSecConfig = new FeatureWebSecurityConfigImpl(null);
 
     //private static final TraceComponent tc = Tr.register(FeatureWebSecurityCollaboratorImpl.class);
 
@@ -47,10 +46,10 @@ public class FeatureWebSecurityCollaboratorImpl extends WebAppSecurityCollaborat
 
     @Override
     protected void activateComponents() {
-        webAppSecConfig = featureSecConfig;
-        postParameterHelper = new PostParameterHelper(webAppSecConfig);
-        providerAuthenticatorProxy = authenticatorFactory.createWebProviderAuthenticatorProxy(securityServiceRef, taiServiceRef, interceptorServiceRef, webAppSecConfig, webAuthenticatorRef);
-        authenticatorProxy = authenticatorFactory.createWebAuthenticatorProxy(webAppSecConfig, postParameterHelper, securityServiceRef, providerAuthenticatorProxy);
+        postParameterHelper = new PostParameterHelper(webAppSecurityConfigRef);
+        providerAuthenticatorProxy = authenticatorFactory.createWebProviderAuthenticatorProxy(securityServiceRef, taiServiceRef, interceptorServiceRef, webAppSecurityConfigRef,
+                                                                                              webAuthenticatorRef);
+        authenticatorProxy = authenticatorFactory.createWebAuthenticatorProxy(webAppSecurityConfigRef, postParameterHelper, securityServiceRef, providerAuthenticatorProxy);
     }
 
     @Override

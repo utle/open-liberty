@@ -35,6 +35,7 @@ import com.ibm.ws.webcontainer.security.AuthenticationResult;
 import com.ibm.ws.webcontainer.security.CookieHelper;
 import com.ibm.ws.webcontainer.security.ReferrerURLCookieHandler;
 import com.ibm.ws.webcontainer.security.SSOCookieHelper;
+import com.ibm.ws.webcontainer.security.SSOCookieHelperImpl;
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
 import com.ibm.ws.webcontainer.security.WebAuthenticator;
 import com.ibm.ws.webcontainer.security.WebProviderAuthenticatorProxy;
@@ -44,6 +45,7 @@ import com.ibm.ws.webcontainer.security.metadata.FormLoginConfiguration;
 import com.ibm.ws.webcontainer.security.metadata.LoginConfiguration;
 import com.ibm.ws.webcontainer.security.metadata.SecurityMetadata;
 import com.ibm.ws.webcontainer.webapp.WebAppConfigExtended;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.kernel.service.utils.ConcurrentServiceReferenceMap;
 import com.ibm.wsspi.webcontainer.metadata.WebModuleMetaData;
 import com.ibm.wsspi.webcontainer.osgi.extension.WebExtensionProcessor;
@@ -71,14 +73,14 @@ public class FormLoginExtensionProcessor extends WebExtensionProcessor {
      * login page for user id and password.
      * If anything wrong in the process, it redirects to an error page.
      *
-     * @param webAppSecConfig
+     * @param webAppSecurityConfigRef
      * @param authenticationService
      * @param userRegistry
      * @param webapp
      * @param rpServiceRef
      * @param providerAuthenticatorProxy
      */
-    public FormLoginExtensionProcessor(WebAppSecurityConfig webAppSecConfig,
+    public FormLoginExtensionProcessor(AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef,
                                        AuthenticationService authenticationService,
                                        UserRegistry userRegistry,
                                        IServletContext webapp,
@@ -88,11 +90,11 @@ public class FormLoginExtensionProcessor extends WebExtensionProcessor {
         this.subjectManager = new SubjectManager();
         this.authenticationService = authenticationService;
         this.userRegistry = userRegistry;
-        this.webAppSecConfig = webAppSecConfig;
+        this.webAppSecConfig = webAppSecurityConfigRef.getService();
         this.providerAuthenticatorProxy = providerAuthenticatorProxy;
         this.webAuthenticatorRef = webAuthenticatorRef;
-        ssoCookieHelper = webAppSecConfig.createSSOCookieHelper();
-        referrerURLHandler = webAppSecConfig.createReferrerURLCookieHandler();
+        ssoCookieHelper = new SSOCookieHelperImpl(webAppSecurityConfigRef);
+        referrerURLHandler = new ReferrerURLCookieHandler(webAppSecurityConfigRef);
 
         this.wac = webapp.getWebAppConfig();
 

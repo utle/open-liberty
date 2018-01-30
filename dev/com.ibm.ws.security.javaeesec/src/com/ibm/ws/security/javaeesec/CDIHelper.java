@@ -18,11 +18,17 @@ import javax.el.ELProcessor;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 
+import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 import com.ibm.ws.cdi.CDIService;
+import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 
 @Component(service = { CDIHelper.class },
            configurationPolicy = ConfigurationPolicy.IGNORE,
@@ -31,6 +37,9 @@ import com.ibm.ws.cdi.CDIService;
 public class CDIHelper {
 
     private static CDIService cdiService;
+    private static final String KEY_WEB_APP_SECURITY_CONFIG = "webAppSecurityConfig";
+    protected final AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef = new AtomicServiceReference<WebAppSecurityConfig>(KEY_WEB_APP_SECURITY_CONFIG);
+    protected volatile static WebAppSecurityConfig webAppSecurityConfig = null;
 
     @SuppressWarnings("static-access")
     @Reference
@@ -48,6 +57,21 @@ public class CDIHelper {
         Set<Bean<?>> beans = beanManager.getBeans(beanClass);
         Bean<?> bean = beanManager.resolve(beans);
         return beanManager.getReference(bean, beanClass, beanManager.createCreationalContext(bean));
+    }
+
+    @Reference(name = KEY_WEB_APP_SECURITY_CONFIG,
+               service = WebAppSecurityConfig.class,
+               cardinality = ReferenceCardinality.MANDATORY,
+               policy = ReferencePolicy.DYNAMIC,
+               policyOption = ReferencePolicyOption.GREEDY)
+    protected void setWebAppSecurityConfig(ServiceReference<WebAppSecurityConfig> ref) {
+
+        webAppSecurityConfigRef.setReference(ref);
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
+    }
+
+    protected void unsetWebAppSecurityConfig(ServiceReference<WebAppSecurityConfig> ref) {
+        webAppSecurityConfigRef.unsetReference(ref);
     }
 
     @SuppressWarnings("unchecked")
@@ -78,6 +102,10 @@ public class CDIHelper {
             elProcessor.getELManager().addELResolver(getBeanManager().getELResolver());
         }
         return elProcessor;
+    }
+
+    public static WebAppSecurityConfig getWebAppSecurityConfig() {
+        return webAppSecurityConfig;
     }
 
 }

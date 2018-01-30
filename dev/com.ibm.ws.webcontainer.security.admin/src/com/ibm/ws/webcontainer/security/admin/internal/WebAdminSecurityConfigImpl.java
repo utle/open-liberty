@@ -14,15 +14,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.ibm.ws.webcontainer.security.ReferrerURLCookieHandler;
-import com.ibm.ws.webcontainer.security.SSOCookieHelper;
-import com.ibm.ws.webcontainer.security.SSOCookieHelperImpl;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Deactivate;
+
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
-import com.ibm.ws.webcontainer.security.WebAuthenticatorProxy;
 
 /**
  * Represents security configurable options for web admin applications.
  */
+@Component(service = { WebAppSecurityConfig.class },
+           name = "com.ibm.ws.webcontainer.security.admin.webAdminAppSecurityConfig",
+           configurationPolicy = ConfigurationPolicy.IGNORE,
+           immediate = true,
+           property = { "service.vendor=IBM",
+                        "com.ibm.ws.webcontainer.security.webAppSecurityConfig.type=Admin" })
 class WebAdminSecurityConfigImpl implements WebAppSecurityConfig {
 
     private final Boolean logoutOnHttpSessionExpire = false;
@@ -218,22 +226,11 @@ class WebAdminSecurityConfigImpl implements WebAppSecurityConfig {
         return useOnlyCustomCookieName;
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public SSOCookieHelper createSSOCookieHelper() {
-        return new SSOCookieHelperImpl(this);
+    @Activate
+    protected void activate(ComponentContext cc) {
+
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public ReferrerURLCookieHandler createReferrerURLCookieHandler() {
-        return new ReferrerURLCookieHandler(this);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public WebAuthenticatorProxy createWebAuthenticatorProxy() {
-        return null;
-    }
-
+    @Deactivate
+    protected void deactivate(ComponentContext cc) {}
 }

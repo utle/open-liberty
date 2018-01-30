@@ -65,18 +65,21 @@ public class AuthenticateApi {
     private ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRefs = null;
     private ConcurrentServiceReferenceMap<String, UnprotectedResourceService> unprotectedResourceServiceRef = null;
     protected static final WebReply DENY_AUTHN_FAILED = new DenyReply("AuthenticationFailed");
+    AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef;
     private Subject logoutSubject = null;
 
     public AuthenticateApi(SSOCookieHelper ssoCookieHelper,
                            AtomicServiceReference<SecurityService> securityServiceRef,
                            CollaboratorUtils collabUtils,
                            ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef,
-                           ConcurrentServiceReferenceMap<String, UnprotectedResourceService> unprotectedResourceServiceRef) {
+                           ConcurrentServiceReferenceMap<String, UnprotectedResourceService> unprotectedResourceServiceRef,
+                           AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef) {
         this.ssoCookieHelper = ssoCookieHelper;
         this.securityServiceRef = securityServiceRef;
         this.collabUtils = collabUtils;
         this.webAuthenticatorRefs = webAuthenticatorRef;
         this.unprotectedResourceServiceRef = unprotectedResourceServiceRef;
+        this.webAppSecurityConfigRef = webAppSecurityConfigRef;
 
         // securityService may or may not be available at this point. so if it is available, do the the initialization work,
         // otherwise defer getting authService and authCacheService when it is ready.
@@ -178,7 +181,7 @@ public class AuthenticateApi {
         ssoCookieHelper.removeSSOCookieFromResponse(res);
         ssoCookieHelper.createLogoutCookies(req, res);
         //If authenticated with form login, we need to clear the RefrrerURLCookie
-        ReferrerURLCookieHandler referrerURLHandler = config.createReferrerURLCookieHandler();
+        ReferrerURLCookieHandler referrerURLHandler = new ReferrerURLCookieHandler(webAppSecurityConfigRef);
         referrerURLHandler.clearReferrerURLCookie(req, res, ReferrerURLCookieHandler.REFERRER_URL_COOKIENAME);
         SRTServletRequestUtils.removePrivateAttribute(req, "AUTH_TYPE");
         subjectManager.clearSubjects();

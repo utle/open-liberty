@@ -43,21 +43,23 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
     protected final AtomicServiceReference<SecurityService> securityServiceRef;
     protected final AtomicServiceReference<TAIService> taiServiceRef;
     protected final ConcurrentServiceReferenceMap<String, TrustAssociationInterceptor> interceptorServiceRef;
-    protected volatile WebAppSecurityConfig webAppSecurityConfig;
 
     protected final ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef;
+    protected final AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef;
+    protected volatile WebAppSecurityConfig webAppSecurityConfig = null;
 
     public WebProviderAuthenticatorProxy(AtomicServiceReference<SecurityService> securityServiceRef,
                                          AtomicServiceReference<TAIService> taiServiceRef,
                                          ConcurrentServiceReferenceMap<String, TrustAssociationInterceptor> interceptorServiceRef,
-                                         WebAppSecurityConfig webAppSecurityConfig,
-                                         ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef) {
+                                         ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef,
+                                         AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef) {
 
         this.securityServiceRef = securityServiceRef;
         this.taiServiceRef = taiServiceRef;
         this.interceptorServiceRef = interceptorServiceRef;
         this.webAppSecurityConfig = webAppSecurityConfig;
         this.webAuthenticatorRef = webAuthenticatorRef;
+        this.webAppSecurityConfigRef = webAppSecurityConfigRef;
     }
 
     /*
@@ -148,12 +150,12 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
                                                       webRequest.getHttpServletRequest(),
                                                       webRequest.getHttpServletResponse());
                     }
-                    SSOCookieHelper ssoCh = webAppSecurityConfig.createSSOCookieHelper();
+                    SSOCookieHelper ssoCh = new SSOCookieHelperImpl(webAppSecurityConfigRef);
 
                     // restore post params if it exists.
                     HttpServletResponse res = webRequest.getHttpServletResponse();
                     if (!res.isCommitted()) {
-                        PostParameterHelper postParameterHelper = new PostParameterHelper(webAppSecurityConfig);
+                        PostParameterHelper postParameterHelper = new PostParameterHelper(webAppSecurityConfigRef);
                         postParameterHelper.restore(webRequest.getHttpServletRequest(), res);
                     }
                     if (props != null &&
@@ -242,7 +244,7 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
         Iterator<TrustAssociationInterceptor> interceptorServices = interceptorServiceRef.getServices();
         if (taiService != null || (interceptorServices != null && interceptorServices.hasNext())) {
             SecurityService securityService = securityServiceRef.getService();
-            taiAuthenticator = new TAIAuthenticator(taiService, interceptorServiceRef, securityService.getAuthenticationService(), webAppSecurityConfig.createSSOCookieHelper());
+            taiAuthenticator = new TAIAuthenticator(taiService, interceptorServiceRef, securityService.getAuthenticationService(), new SSOCookieHelperImpl(webAppSecurityConfigRef));
         }
 
         return taiAuthenticator;
@@ -261,7 +263,7 @@ public class WebProviderAuthenticatorProxy implements WebAuthenticator {
         if (ssoCookieName != null) {
             cookieHelper = new SSOCookieHelperImpl(webAppSecurityConfig, ssoCookieName);
         } else {
-            cookieHelper = webAppSecurityConfig.createSSOCookieHelper();
+            cookieHelper = new SSOCookieHelperImpl(webAppSecurityConfigRef);
         }
         return new SSOAuthenticator(securityService.getAuthenticationService(), securityMetadata, webAppSecurityConfig, cookieHelper);
     }

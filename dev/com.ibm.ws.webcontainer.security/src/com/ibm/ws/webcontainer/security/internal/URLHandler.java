@@ -19,29 +19,30 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.ws.util.WSUtil;
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 
 /**
  * Generic URL handler. Provides various support for URL operations.
  * Unless a method is explicitly needed by a class outside of this package,
  * methods should be left as default scope.
- * 
+ *
  */
 public class URLHandler {
     private static final TraceComponent tc = Tr.register(URLHandler.class);
     protected final WebAppSecurityConfig webAppSecConfig;
 
-    public URLHandler(WebAppSecurityConfig webAppSecConfig) {
-        this.webAppSecConfig = webAppSecConfig;
+    public URLHandler(AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef) {
+        this.webAppSecConfig = webAppSecurityConfigRef.getService();
     }
 
     /**
      * Encode the specified URL String with percent encoding.
-     * 
+     *
      * Order of encoding:
      * 1. Encode percent signs to "%25". Not doing this first will clobber subsequent encodings.
      * 2. Encode semi-colons to "%3B" since they are invalid in cookie values.
      * 3. Encode commas to "%2C".
-     * 
+     *
      * @param url a non-null String
      * @return encoded version of url
      */
@@ -56,15 +57,15 @@ public class URLHandler {
 
     /**
      * Decode the specified URL String from percent encoding.
-     * 
+     *
      * Order of decoding:
      * 1. Decode "%2C" to commas.
      * 2. Decode "%3B" to semi-colons.
      * 3. Decode "%25" to percent signs.
-     * 
+     *
      * Technically decoding order is not that important, but its best to undo
      * the encoding in the same order.
-     * 
+     *
      * @param url a non-null String
      * @return decoded version of url
      */
@@ -80,7 +81,7 @@ public class URLHandler {
 
     /**
      * Remove only the host name from the specified URL String.
-     * 
+     *
      * @param url A valid URL string
      * @return
      */
@@ -113,11 +114,11 @@ public class URLHandler {
      * use the host for the current request and append the referrerURL.
      * Otherwise, inject into the referrer URL String the host for the
      * current request.
-     * 
+     *
      * Note, this method does not handle the following scenarios:
      * - either storeReq or URLString is null (could they ever be?)
      * - URLString being incomplete, e.g. http://myhost.com (missing first /)
-     * 
+     *
      * @param referrerURL A valid URL string, potentially without host name, from the referrer URL cookie
      * @param url A valid, fully qualified URL representing the current request
      * @return
@@ -151,11 +152,11 @@ public class URLHandler {
 
     /**
      * Return the full servlet path, including any additional path info.
-     * 
+     *
      * getRequestURI includes the ContextPath of the URL. As per Servlet 2.2
      * specifications, URL mapping does not include the ContextPath. Thus,
      * we should use ServletPath + PathInfo.
-     * 
+     *
      * @param req HttpServletRequest
      */
     public String getServletURI(HttpServletRequest req) {

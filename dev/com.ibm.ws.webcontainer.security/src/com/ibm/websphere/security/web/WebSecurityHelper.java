@@ -47,11 +47,11 @@ public class WebSecurityHelper {
      * @return a String.
      */
 
-    public static String getSSOCookieName() throws Exception {
-        WebAppSecurityConfig config = WebSecurityHelperImpl.getWebAppSecurityConfig();
-        if (config != null) {
-            return config.getSSOCookieName();
-        }
-        return null;
-    }
+//    public static String getSSOCookieName() throws Exception {
+//        WebAppSecurityConfig config = WebSecurityHelperImpl.getWebAppSecurityConfig();
+//        if (config != null) {
+//            return config.getSSOCookieName();
+//        }
+//        return null;
+//    }
 }

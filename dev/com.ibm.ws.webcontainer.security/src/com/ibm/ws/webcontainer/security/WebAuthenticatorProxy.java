@@ -45,12 +45,14 @@ public class WebAuthenticatorProxy implements WebAuthenticator {
     private volatile PostParameterHelper postParameterHelper;
     private final WebProviderAuthenticatorProxy providerAuthenticatorProxy;
     public HashMap<String, Object> extraAuditData = new HashMap<String, Object>();
+    AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef;
 
-    public WebAuthenticatorProxy(WebAppSecurityConfig webAppSecurityConfig,
+    public WebAuthenticatorProxy(AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef,
                                  PostParameterHelper postParameterHelper,
                                  AtomicServiceReference<SecurityService> securityServiceRef,
                                  WebProviderAuthenticatorProxy providerAuthenticatorProxy) {
-        this.webAppSecurityConfig = webAppSecurityConfig;
+        this.webAppSecurityConfigRef = webAppSecurityConfigRef;
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
         this.postParameterHelper = postParameterHelper;
         this.securityServiceRef = securityServiceRef;
         this.providerAuthenticatorProxy = providerAuthenticatorProxy;
@@ -137,9 +139,9 @@ public class WebAuthenticatorProxy implements WebAuthenticator {
      * @return {@code true} if the global FORM login page is set
      */
     private boolean globalWebAppSecurityConfigHasFormLogin() {
-        WebAppSecurityConfig globalConfig = WebAppSecurityCollaboratorImpl.getGlobalWebAppSecurityConfig();
-        return globalConfig != null &&
-               globalConfig.getLoginFormURL() != null;
+//        WebAppSecurityConfig globalConfig = WebAppSecurityCollaboratorImpl.getGlobalWebAppSecurityConfig();
+        return webAppSecurityConfig != null &&
+               webAppSecurityConfig.getLoginFormURL() != null;
     }
 
     /**
@@ -221,7 +223,7 @@ public class WebAuthenticatorProxy implements WebAuthenticator {
         UserRegistry userRegistry = null;
         if (userRegistryService.isUserRegistryConfigured())
             userRegistry = userRegistryService.getUserRegistry();
-        SSOCookieHelper sSOCookieHelper = webAppSecurityConfig.createSSOCookieHelper();
+        SSOCookieHelper sSOCookieHelper = new SSOCookieHelperImpl(webAppSecurityConfigRef);
         return new BasicAuthAuthenticator(securityService.getAuthenticationService(), userRegistry, sSOCookieHelper, webAppSecurityConfig);
     }
 
@@ -232,7 +234,7 @@ public class WebAuthenticatorProxy implements WebAuthenticator {
      */
     protected FormLoginAuthenticator createFormLoginAuthenticator(WebRequest webRequest) {
         WebAuthenticator ssoAuthenticator = providerAuthenticatorProxy.getSSOAuthenticator(webRequest, null);
-        return new FormLoginAuthenticator(ssoAuthenticator, webAppSecurityConfig, providerAuthenticatorProxy);
+        return new FormLoginAuthenticator(ssoAuthenticator, webAppSecurityConfigRef, providerAuthenticatorProxy);
     }
 
     /**
@@ -242,7 +244,7 @@ public class WebAuthenticatorProxy implements WebAuthenticator {
      */
     public CertificateLoginAuthenticator createCertificateLoginAuthenticator() {
         SecurityService securityService = securityServiceRef.getService();
-        return new CertificateLoginAuthenticator(securityService.getAuthenticationService(), webAppSecurityConfig.createSSOCookieHelper());
+        return new CertificateLoginAuthenticator(securityService.getAuthenticationService(), new SSOCookieHelperImpl(webAppSecurityConfigRef));
     }
 
     @Override

@@ -28,6 +28,8 @@ import javax.security.enterprise.authentication.mechanism.http.HttpMessageContex
 import javax.security.enterprise.authentication.mechanism.http.LoginToContinue;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
@@ -49,11 +51,8 @@ import com.ibm.ws.webcontainer.security.metadata.FormLoginConfigurationImpl;
 import com.ibm.ws.webcontainer.security.metadata.LoginConfiguration;
 import com.ibm.ws.webcontainer.security.metadata.LoginConfigurationImpl;
 import com.ibm.ws.webcontainer.security.metadata.SecurityMetadata;
-import com.ibm.ws.webcontainer.security.util.WebConfigUtils;
 import com.ibm.wsspi.webcontainer.metadata.WebModuleMetaData;
 import com.ibm.wsspi.webcontainer.servlet.IExtendedRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  *
@@ -65,7 +64,7 @@ public class LoginToContinueInterceptor {
     private static final String METHOD_TO_INTERCEPT = "validateRequest";
     private static final TraceComponent tc = Tr.register(LoginToContinueInterceptor.class);
     ModulePropertiesProvider mpp = null;
-    private boolean resolved = false;
+    private final boolean resolved = false;
 
     Properties props = null;
     // the following vaules are set if they are not EL expression, ro resolved immediately.
@@ -400,7 +399,7 @@ public class LoginToContinueInterceptor {
     }
 
     protected WebAppSecurityConfig getWebAppSeurityConfig() {
-        return WebConfigUtils.getWebAppSecurityConfig();
+        return CDIHelper.getWebAppSecurityConfig();
     }
 
     protected ELProcessor getELProcessorWithAppModuleBeanManagerELResolver() {
@@ -410,9 +409,11 @@ public class LoginToContinueInterceptor {
     protected String getErrorPage() {
         return _errorPage;
     }
+
     protected String getLoginPage() {
         return _loginPage;
     }
+
     protected Boolean getIsForward() {
         return _isForward;
     }

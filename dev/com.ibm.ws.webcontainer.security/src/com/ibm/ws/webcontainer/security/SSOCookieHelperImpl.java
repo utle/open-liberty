@@ -33,6 +33,7 @@ import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.ws.security.util.ByteArray;
 import com.ibm.ws.webcontainer.security.internal.SSOAuthenticator;
 import com.ibm.ws.webcontainer.security.internal.StringUtil;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.security.token.SingleSignonToken;
 
 /**
@@ -45,17 +46,20 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
     private static int MAX_COOKIE_STRING_ENTRIES = 100;
     private String cookieName = null;
 
-    private final WebAppSecurityConfig config;
+    private final WebAppSecurityConfig webAppSecurityConfig;
+    protected AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef;
 
-    public SSOCookieHelperImpl(WebAppSecurityConfig config) {
-        this(config, (String) null);
+    public SSOCookieHelperImpl(AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef) {
+        this.webAppSecurityConfigRef = webAppSecurityConfigRef;
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
+        //SSOCookieHelperImpl(webAppSecurityConfig, (String)null);
     }
 
     /**
      * Only have a custom cookie name for JASPI session as of now.
      */
-    public SSOCookieHelperImpl(WebAppSecurityConfig config, String ssoCookieName) {
-        this.config = config;
+    public SSOCookieHelperImpl(WebAppSecurityConfig webAppSecurityConfig, String ssoCookieName) {
+        this.webAppSecurityConfig = webAppSecurityConfig;
         cookieName = ssoCookieName;
     }
 
@@ -105,10 +109,10 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
         ssoCookie.setMaxAge(-1);
         //The path has to be "/" so we will not have multiple cookies in the same domain
         ssoCookie.setPath("/");
-        ssoCookie.setSecure(config.getSSORequiresSSL());
-        ssoCookie.setHttpOnly(config.getHttpOnlyCookies());
+        ssoCookie.setSecure(webAppSecurityConfig.getSSORequiresSSL());
+        ssoCookie.setHttpOnly(webAppSecurityConfig.getHttpOnlyCookies());
 
-        String domainName = getSSODomainName(req, config.getSSODomainList(), config.getSSOUseDomainFromURL());
+        String domainName = getSSODomainName(req, webAppSecurityConfig.getSSODomainList(), webAppSecurityConfig.getSSOUseDomainFromURL());
         if (domainName != null) {
             ssoCookie.setDomain(domainName);
         }
@@ -126,14 +130,14 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
      */
     @Override
     public boolean allowToAddCookieToResponse(HttpServletRequest req) {
-        if (!config.isSingleSignonEnabled()) {
+        if (!webAppSecurityConfig.isSingleSignonEnabled()) {
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "SSO is not enabled. Not setting the SSO Cookie");
             }
             return false;
         }
         boolean secureRequest = req.isSecure();
-        if (config.getSSORequiresSSL() && !secureRequest) {
+        if (webAppSecurityConfig.getSSORequiresSSL() && !secureRequest) {
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "SSO requires SSL. The cookie will not be sent back because the request is not over https.");
             }
@@ -150,9 +154,9 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
      */
     @Override
     public void removeSSOCookieFromResponse(HttpServletResponse resp) {
-	if (resp instanceof com.ibm.wsspi.webcontainer.servlet.IExtendedResponse) {
-	    ((com.ibm.wsspi.webcontainer.servlet.IExtendedResponse) resp).removeCookie(getSSOCookiename());
-	}
+        if (resp instanceof com.ibm.wsspi.webcontainer.servlet.IExtendedResponse) {
+            ((com.ibm.wsspi.webcontainer.servlet.IExtendedResponse) resp).removeCookie(getSSOCookiename());
+        }
     }
 
     /**
@@ -208,7 +212,7 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
                 }
             }
         }
-        if (!foundCookie && !config.isUseOnlyCustomCookieName())
+        if (!foundCookie && !webAppSecurityConfig.isUseOnlyCustomCookieName())
             return SSOAuthenticator.DEFAULT_SSO_COOKIE_NAME;
         else
             return ssoCookieName;
@@ -221,10 +225,10 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
         c.setMaxAge(0);
         c.setPath("/");
         c.setSecure(req.isSecure());
-        if (config.getHttpOnlyCookies()) {
+        if (webAppSecurityConfig.getHttpOnlyCookies()) {
             c.setHttpOnly(true);
         }
-        String domainName = getSSODomainName(req, config.getSSODomainList(), config.getSSOUseDomainFromURL());
+        String domainName = getSSODomainName(req, webAppSecurityConfig.getSSODomainList(), webAppSecurityConfig.getSSOUseDomainFromURL());
         if (domainName != null) {
             c.setDomain(domainName);
         }
@@ -266,7 +270,7 @@ public class SSOCookieHelperImpl implements SSOCookieHelper {
         if (cookieName != null)
             return cookieName;
         else
-            return config.getSSOCookieName();
+            return webAppSecurityConfig.getSSOCookieName();
     }
 
     /**

@@ -67,7 +67,6 @@ import com.ibm.ws.webcontainer.security.WebSecurityContext;
 import com.ibm.ws.webcontainer.security.metadata.FormLoginConfiguration;
 import com.ibm.ws.webcontainer.security.metadata.LoginConfiguration;
 import com.ibm.ws.webcontainer.security.metadata.SecurityMetadata;
-import com.ibm.ws.webcontainer.security.util.WebConfigUtils;
 import com.ibm.wsspi.kernel.service.location.WsLocationAdmin;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.security.jaspi.ProviderService;
@@ -97,6 +96,30 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
     private WebProviderAuthenticatorHelper authHelper = null;
     private SubjectManager subjectManager = null;
     public HashMap<String, Object> extraAuditData = new HashMap<String, Object>();
+
+    private static final String KEY_WEB_APP_SECURITY_CONFIG = "webAppSecurityConfig";
+    protected final AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef = new AtomicServiceReference<WebAppSecurityConfig>(KEY_WEB_APP_SECURITY_CONFIG);
+    protected volatile WebAppSecurityConfig webAppSecurityConfig = null;
+
+    @Reference(name = KEY_WEB_APP_SECURITY_CONFIG,
+               service = WebAppSecurityConfig.class,
+               cardinality = ReferenceCardinality.MANDATORY,
+               policy = ReferencePolicy.DYNAMIC,
+               policyOption = ReferencePolicyOption.GREEDY)
+    protected void setWebAppSecurityConfig(ServiceReference<WebAppSecurityConfig> ref) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "enabling WebAppSecurityConfig service");
+        }
+        webAppSecurityConfigRef.setReference(ref);
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
+    }
+
+    protected void unsetWebAppSecurityConfig(ServiceReference<WebAppSecurityConfig> ref) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "disabling WebAppSecurityConfig service");
+        }
+        webAppSecurityConfigRef.unsetReference(ref);
+    }
 
     @Reference(name = KEY_UNAUTHENTICATED_SUBJECT_SERVICE,
                service = UnauthenticatedSubjectService.class,
@@ -655,7 +678,7 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
                     String originalURL = req.getRequestURL().append(query != null ? "?" + query : "").toString();
                     authResult = new AuthenticationResult(AuthResult.REDIRECT, loginURL);
                     pretty = "REDIRECT";
-                    ReferrerURLCookieHandler referrerURLHandler = WebConfigUtils.getWebAppSecurityConfig().createReferrerURLCookieHandler();
+                    ReferrerURLCookieHandler referrerURLHandler = new ReferrerURLCookieHandler(webAppSecurityConfigRef);
                     referrerURLHandler.setReferrerURLCookie(req, authResult, originalURL);
                     break;
 

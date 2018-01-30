@@ -23,6 +23,7 @@ import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.ws.webcontainer.security.internal.URLHandler;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 
 /**
  * Contains all WASReqURL Cookie related functions required by WAS.security.
@@ -34,8 +35,8 @@ public class ReferrerURLCookieHandler extends URLHandler {
     public static final String REFERRER_URL_COOKIENAME = "WASReqURL";
     public static final String CUSTOM_RELOGIN_URL_COOKIENAME = "WASReLoginURL";
 
-    public ReferrerURLCookieHandler(WebAppSecurityConfig webAppSecConfig) {
-        super(webAppSecConfig);
+    public ReferrerURLCookieHandler(AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef) {
+        super(webAppSecurityConfigRef);
     }
 
     /**
@@ -90,8 +91,7 @@ public class ReferrerURLCookieHandler extends URLHandler {
         Cookie c = new Cookie(cookieName, value);
         if (cookieName.equals("WASReqURL")) {
             c.setPath(getPathName(req));
-        }
-        else {
+        } else {
             c.setPath("/");
         }
         c.setMaxAge(-1);

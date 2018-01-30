@@ -31,9 +31,9 @@ public class WebSecurityHelperImpl {
     private static final TraceComponent tc = Tr.register(WebSecurityHelperImpl.class);
     private static WebAppSecurityConfig webAppSecConfig = null;
 
-    public static void setWebAppSecurityConfig(WebAppSecurityConfig webAppSecConfig) {
-        WebSecurityHelperImpl.webAppSecConfig = webAppSecConfig;
-    }
+//    public static void setWebAppSecurityConfig(WebAppSecurityConfig webAppSecConfig) {
+//        WebSecurityHelperImpl.webAppSecConfig = webAppSecConfig;
+//    }
 
     /**
      * builds an LTPACookie object
@@ -47,7 +47,7 @@ public class WebSecurityHelperImpl {
 
     /**
      * Gets the LTPA cookie from the given subject
-     * 
+     *
      * @param subject
      * @return
      * @throws Exception
@@ -78,7 +78,7 @@ public class WebSecurityHelperImpl {
      * and builds a ltpa cookie out of it for use on downstream web invocations.
      * The caller must check for null return value only when not null
      * that getName and getValue can be invoked on the returned Cookie object
-     * 
+     *
      * @return an object of type javax.servlet.http.Cookie. When the returned value is not
      *         null use Cookie methods getName() and getValue() to set the Cookie header
      *         on an http request with header value of Cookie.getName()=Cookie.getValue()
@@ -114,8 +114,8 @@ public class WebSecurityHelperImpl {
     /**
      * @return
      */
-    public static WebAppSecurityConfig getWebAppSecurityConfig() {
-        return webAppSecConfig;
-    }
+//    public static WebAppSecurityConfig ˇ() {
+//        return webAppSecConfig;
+//    }
 
 }

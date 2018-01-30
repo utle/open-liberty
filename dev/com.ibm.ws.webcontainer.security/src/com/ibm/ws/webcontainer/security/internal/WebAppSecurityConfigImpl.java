@@ -14,15 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
+
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.security.SecurityService;
-import com.ibm.ws.webcontainer.security.ReferrerURLCookieHandler;
-import com.ibm.ws.webcontainer.security.SSOCookieHelper;
-import com.ibm.ws.webcontainer.security.SSOCookieHelperImpl;
-import com.ibm.ws.webcontainer.security.WebAppSecurityCollaboratorImpl;
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
-import com.ibm.ws.webcontainer.security.WebAuthenticatorProxy;
 import com.ibm.ws.webcontainer.security.metadata.LoginConfiguration;
 import com.ibm.wsspi.kernel.service.location.WsLocationAdmin;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
@@ -30,6 +37,12 @@ import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 /**
  * Represents security configurable options for web applications.
  */
+@Component(service = { WebAppSecurityConfig.class },
+           name = "com.ibm.ws.webcontainer.security.webAppSecurityConfig",
+           configurationPolicy = ConfigurationPolicy.REQUIRE,
+           immediate = true,
+           property = { "service.vendor=IBM",
+                        "com.ibm.ws.webcontainer.security.webAppSecurityConfig.type=App" })
 public class WebAppSecurityConfigImpl implements WebAppSecurityConfig {
     private static final TraceComponent tc = Tr.register(WebAppSecurityConfigImpl.class);
 
@@ -86,7 +99,62 @@ public class WebAppSecurityConfigImpl implements WebAppSecurityConfig {
     private final Boolean useOnlyCustomCookieName;
 
     protected final AtomicServiceReference<WsLocationAdmin> locationAdminRef;
-    protected final AtomicServiceReference<SecurityService> securityServiceRef;
+    public static final String KEY_SECURITY_SERVICE = "securityService";
+    protected AtomicServiceReference<SecurityService> securityServiceRef = new AtomicServiceReference<SecurityService>(KEY_SECURITY_SERVICE);
+
+    @Reference(name = KEY_SECURITY_SERVICE,
+               service = SecurityService.class,
+               cardinality = ReferenceCardinality.MANDATORY,
+               policy = ReferencePolicy.DYNAMIC,
+               policyOption = ReferencePolicyOption.GREEDY)
+    protected void setSecurityService(ServiceReference<SecurityService> reference) {
+        securityServiceRef.setReference(reference);
+    }
+
+    protected void unsetSecurityService(ServiceReference<SecurityService> reference) {
+        securityServiceRef.unsetReference(reference);
+    }
+
+    static final String KEY_LOCATION_SERVICE = "locationService";
+    private final static AtomicServiceReference<WsLocationAdmin> locationService = new AtomicServiceReference<WsLocationAdmin>(KEY_LOCATION_SERVICE);
+
+    @Reference(service = WsLocationAdmin.class, name = KEY_LOCATION_SERVICE,
+               policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+    protected void setLocationService(ServiceReference<WsLocationAdmin> reference) {
+        locationService.setReference(reference);
+    }
+
+    protected void unsetLocationService(ServiceReference<WsLocationAdmin> reference) {
+        locationService.unsetReference(reference);
+    }
+
+    @Activate
+    protected void activate(ComponentContext cc) {
+        locationService.activate(cc);
+        securityServiceRef.activate(cc);
+    }
+
+    @Deactivate
+    protected void deactivate(ComponentContext cc) {
+        locationService.deactivate(cc);
+        securityServiceRef.deactivate(cc);
+    }
+
+    @Modified
+    protected void modified(Map<String, Object> newProperties) {
+        //TODO:
+        /*
+         * WebAppSecurityConfig newWebAppSecConfig = authenticatorFactory.createWebAppSecurityConfigImpl(newProperties, locationAdminRef, securityServiceRef);
+         * String deltaString = newWebAppSecConfig.getChangedProperties(webAppSecConfig);
+         * currentProps.clear();
+         * if (newProperties != null) {
+         * currentProps.putAll(newProperties);
+         * }
+         * webAppSecConfig = newWebAppSecConfig;
+         * updateComponents();
+         */
+//        Tr.audit(tc, "WEB_APP_SECURITY_CONFIGURATION_UPDATED", deltaString);
+    }
 
     public WebAppSecurityConfigImpl(Map<String, Object> newProperties,
                                     AtomicServiceReference<WsLocationAdmin> locationAdminRef,
@@ -116,7 +184,7 @@ public class WebAppSecurityConfigImpl implements WebAppSecurityConfig {
         includePathInWASReqURL = (Boolean) newProperties.get(CFG_KEY_INCLUDE_PATH_IN_WAS_REQ_URL);
         trackLoggedOutSSOCookies = (Boolean) newProperties.get(CFG_KEY_TRACK_LOGGED_OUT_SSO_COOKIES);
         useOnlyCustomCookieName = (Boolean) newProperties.get(CFG_KEY_USE_ONLY_CUSTOM_COOKIE_NAME);
-        WebAppSecurityCollaboratorImpl.setGlobalWebAppSecurityConfig(this);
+//        WebAppSecurityCollaboratorImpl.setGlobalWebAppSecurityConfig(this);
     }
 
     /**
@@ -408,22 +476,22 @@ public class WebAppSecurityConfigImpl implements WebAppSecurityConfig {
         return buf.toString();
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public SSOCookieHelper createSSOCookieHelper() {
-        return new SSOCookieHelperImpl(this);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public ReferrerURLCookieHandler createReferrerURLCookieHandler() {
-        return new ReferrerURLCookieHandler(this);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public WebAuthenticatorProxy createWebAuthenticatorProxy() {
-        return new WebAuthenticatorProxy(this, null, securityServiceRef, null);
-    }
+//    /** {@inheritDoc} */
+//    @Override
+//    public SSOCookieHelper createSSOCookieHelper() {
+//        return new SSOCookieHelperImpl(this);
+//    }
+//
+//    /** {@inheritDoc} */
+//    @Override
+//    public ReferrerURLCookieHandler createReferrerURLCookieHandler() {
+//        return new ReferrerURLCookieHandler(this);
+//    }
+//
+//    /** {@inheritDoc} */
+//    @Override
+//    public WebAuthenticatorProxy createWebAuthenticatorProxy() {
+//        return new WebAuthenticatorProxy(this, null, securityServiceRef, null);
+//    }
 
 }

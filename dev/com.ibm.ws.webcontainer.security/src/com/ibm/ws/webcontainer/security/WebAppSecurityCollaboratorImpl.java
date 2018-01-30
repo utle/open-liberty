@@ -70,7 +70,6 @@ import com.ibm.ws.webcontainer.security.internal.SRTServletRequestUtils;
 import com.ibm.ws.webcontainer.security.internal.URLHandler;
 import com.ibm.ws.webcontainer.security.internal.WebReply;
 import com.ibm.ws.webcontainer.security.internal.WebSecurityCollaboratorException;
-import com.ibm.ws.webcontainer.security.internal.WebSecurityHelperImpl;
 import com.ibm.ws.webcontainer.security.jacc.WebAppJaccAuthorizationHelper;
 import com.ibm.ws.webcontainer.security.metadata.FormLoginConfiguration;
 import com.ibm.ws.webcontainer.security.metadata.LoginConfiguration;
@@ -108,6 +107,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
     public static final String KEY_WEB_AUTHENTICATOR = "webAuthenticator";
     public static final String KEY_UNPROTECTED_RESOURCE_SERVICE = "unprotectedResourceService";
     static final String DELEGATION_USERS_LIST = "DELEGATION_USERS_LIST";
+
     protected final ConcurrentServiceReferenceMap<String, WebAuthenticator> webAuthenticatorRef = new ConcurrentServiceReferenceMap<String, WebAuthenticator>(KEY_WEB_AUTHENTICATOR);
     protected final ConcurrentServiceReferenceMap<String, UnprotectedResourceService> unprotectedResourceServiceRef = new ConcurrentServiceReferenceMap<String, UnprotectedResourceService>(KEY_UNPROTECTED_RESOURCE_SERVICE);
 
@@ -115,6 +115,10 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
     protected final ConcurrentServiceReferenceMap<String, TrustAssociationInterceptor> interceptorServiceRef = new ConcurrentServiceReferenceMap<String, TrustAssociationInterceptor>(KEY_INTERCEPTOR_SERVICE);
     protected final AtomicServiceReference<SecurityService> securityServiceRef = new AtomicServiceReference<SecurityService>(KEY_SECURITY_SERVICE);
     protected final AtomicServiceReference<JaccService> jaccServiceRef = new AtomicServiceReference<JaccService>(KEY_JACC_SERVICE);
+
+    private static final String KEY_WEB_APP_SECURITY_CONFIG = "webAppSecurityConfig";
+    protected final AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef = new AtomicServiceReference<WebAppSecurityConfig>(KEY_WEB_APP_SECURITY_CONFIG);
+    protected volatile WebAppSecurityConfig webAppSecurityConfig = null;
 
     private static final String KEY_LOCATION_ADMIN = "locationAdmin";
     protected final AtomicServiceReference<WsLocationAdmin> locationAdminRef = new AtomicServiceReference<WsLocationAdmin>(KEY_LOCATION_ADMIN);
@@ -128,10 +132,9 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
     // '_starstar_' will represent if ** was specified as a defined role
     private static final String STARSTAR_ROLE = "_starstar_";
 
-    private static WebAppSecurityConfig globalConfig = null;
+//    private static WebAppSecurityConfig globalConfig = null;
     protected final Map<String, Object> currentProps = new HashMap<String, Object>();
     protected volatile WebAuthenticatorFactory authenticatorFactory = null;
-    protected volatile WebAppSecurityConfig webAppSecConfig = null;
     protected volatile AuthenticateApi authenticateApi = null;
     protected volatile PostParameterHelper postParameterHelper = null;
     protected CollaboratorUtils collabUtils;
@@ -190,8 +193,8 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         this.subjectHelper = subjectHelper;
         this.subjectManager = subjectManager;
         this.httpsRedirectHandler = httpsRedirectHandler;
-        this.webAppSecConfig = webAppSecConfig;
-        WebSecurityHelperImpl.setWebAppSecurityConfig(webAppSecConfig);
+        //this.webAppSecConfig = webAppSecConfig;
+        //WebSecurityHelperImpl.setWebAppSecurityConfig(webAppSecConfig);
     }
 
     public void setSecurityService(ServiceReference<SecurityService> reference) {
@@ -269,7 +272,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
 
     public void setAuthenticatorFactory(WebAuthenticatorFactory authenticatorFactory) {
         this.authenticatorFactory = authenticatorFactory;
-        if (!FrameworkState.isStopping() && isActive && webAppSecConfig != null) {
+        if (!FrameworkState.isStopping() && isActive && webAppSecurityConfigRef.getService() != null) {
             activateComponents();
         }
     }
@@ -296,6 +299,21 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         wasch = this;
     }
 
+    protected void setWebAppSecurityConfig(ServiceReference<WebAppSecurityConfig> ref) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "enabling WebAppSecurityConfig service");
+        }
+        webAppSecurityConfigRef.setReference(ref);
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
+    }
+
+    protected void unsetWebAppSecurityConfig(ServiceReference<WebAppSecurityConfig> ref) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, "disabling WebAppSecurityConfig service");
+        }
+        webAppSecurityConfigRef.unsetReference(ref);
+    }
+
     protected void activate(ComponentContext cc, Map<String, Object> props) {
         isActive = true;
         locationAdminRef.activate(cc);
@@ -309,35 +327,37 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         if (props != null) {
             currentProps.putAll(props);
         }
+        webAppSecurityConfigRef.activate(cc);
         activateComponents();
     }
 
     protected void activateComponents() {
-        webAppSecConfig = authenticatorFactory.createWebAppSecurityConfigImpl(currentProps, locationAdminRef, securityServiceRef);
+        // webAppSecConfig = authenticatorFactory.createWebAppSecurityConfigImpl(currentProps, locationAdminRef, securityServiceRef);
         updateComponents();
     }
 
     protected void updateComponents() {
-        WebSecurityHelperImpl.setWebAppSecurityConfig(webAppSecConfig);
-        SSOCookieHelper ssoCookieHelper = webAppSecConfig.createSSOCookieHelper();
-        authenticateApi = authenticatorFactory.createAuthenticateApi(ssoCookieHelper, securityServiceRef, collabUtils, webAuthenticatorRef, unprotectedResourceServiceRef);
-        postParameterHelper = new PostParameterHelper(webAppSecConfig);
-        providerAuthenticatorProxy = authenticatorFactory.createWebProviderAuthenticatorProxy(securityServiceRef, taiServiceRef, interceptorServiceRef, webAppSecConfig,
+        //WebSecurityHelperImpl.setWebAppSecurityConfig(webAppSecConfig);
+        SSOCookieHelper ssoCookieHelper = new SSOCookieHelperImpl(webAppSecurityConfigRef);
+        authenticateApi = authenticatorFactory.createAuthenticateApi(ssoCookieHelper, securityServiceRef, collabUtils, webAuthenticatorRef, unprotectedResourceServiceRef,
+                                                                     webAppSecurityConfigRef);
+        postParameterHelper = new PostParameterHelper(webAppSecurityConfigRef);
+        providerAuthenticatorProxy = authenticatorFactory.createWebProviderAuthenticatorProxy(securityServiceRef, taiServiceRef, interceptorServiceRef, webAppSecurityConfigRef,
                                                                                               webAuthenticatorRef);
-        authenticatorProxy = authenticatorFactory.createWebAuthenticatorProxy(webAppSecConfig, postParameterHelper, securityServiceRef, providerAuthenticatorProxy);
+        authenticatorProxy = authenticatorFactory.createWebAuthenticatorProxy(webAppSecurityConfigRef, postParameterHelper, securityServiceRef, providerAuthenticatorProxy);
     }
 
     protected void modified(Map<String, Object> newProperties) {
-        WebAppSecurityConfig newWebAppSecConfig = authenticatorFactory.createWebAppSecurityConfigImpl(newProperties, locationAdminRef, securityServiceRef);
-        // Capture the properties that were changed for our audit record
-        String deltaString = newWebAppSecConfig.getChangedProperties(webAppSecConfig);
-        currentProps.clear();
-        if (newProperties != null) {
-            currentProps.putAll(newProperties);
-        }
-        webAppSecConfig = newWebAppSecConfig;
-        updateComponents();
-        Tr.audit(tc, "WEB_APP_SECURITY_CONFIGURATION_UPDATED", deltaString);
+//        WebAppSecurityConfig newWebAppSecConfig = authenticatorFactory.createWebAppSecurityConfigImpl(newProperties, locationAdminRef, securityServiceRef);
+//        // Capture the properties that were changed for our audit record
+//        String deltaString = newWebAppSecConfig.getChangedProperties(webAppSecConfig);
+//        currentProps.clear();
+//        if (newProperties != null) {
+//            currentProps.putAll(newProperties);
+//        }
+//        webAppSecConfig = newWebAppSecConfig;
+//        updateComponents();
+//        Tr.audit(tc, "WEB_APP_SECURITY_CONFIGURATION_UPDATED", deltaString);
     }
 
     protected void deactivate(ComponentContext cc) {
@@ -349,7 +369,8 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         jaccServiceRef.deactivate(cc);
         webAuthenticatorRef.deactivate(cc);
         unprotectedResourceServiceRef.deactivate(cc);
-        WebSecurityHelperImpl.setWebAppSecurityConfig(null);
+//        WebSecurityHelperImpl.setWebAppSecurityConfig(null);
+        webAppSecurityConfigRef.deactivate(cc);
     }
 
     @Override
@@ -362,7 +383,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
             if (userRegistryService.isUserRegistryConfigured())
                 userRegistry = userRegistryService.getUserRegistry();
 
-            return new FormLoginExtensionProcessor(webAppSecConfig, securityService.getAuthenticationService(), userRegistry, webapp, providerAuthenticatorProxy, webAuthenticatorRef);
+            return new FormLoginExtensionProcessor(webAppSecurityConfigRef, securityService.getAuthenticationService(), userRegistry, webapp, providerAuthenticatorProxy, webAuthenticatorRef);
         } catch (RegistryException e) {
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "RegistryException while trying to create FormLoginExtensionProcessor", e);
@@ -373,7 +394,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
 
     @Override
     public ExtensionProcessor getFormLogoutExtensionProcessor(IServletContext webapp) {
-        return new FormLogoutExtensionProcessor(webapp, webAppSecConfig, getAuthenticateApi());
+        return new FormLogoutExtensionProcessor(webapp, webAppSecurityConfigRef, getAuthenticateApi());
     }
 
     /**
@@ -551,13 +572,13 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
 
     private void performSecurityChecks(HttpServletRequest req, HttpServletResponse resp, Subject receivedSubject,
                                        WebSecurityContext webSecurityContext) throws SecurityViolationException, IOException {
-        String uriName = new URLHandler(webAppSecConfig).getServletURI(req);
+        String uriName = new URLHandler(webAppSecurityConfigRef).getServletURI(req);
         SecurityMetadata securityMetadata = getSecurityMetadata();
 
         savedSubject = receivedSubject;
 
         MatchResponse matchResponse = getMatchResponse(req);
-        WebRequest webRequest = new WebRequestImpl(req, resp, getApplicationName(), webSecurityContext, securityMetadata, matchResponse, webAppSecConfig);
+        WebRequest webRequest = new WebRequestImpl(req, resp, getApplicationName(), webSecurityContext, securityMetadata, matchResponse, webAppSecurityConfig);
         if (webRequest.getRequiredRoles() != null) {
             ArrayList<String> rolesList = new ArrayList<String>();
             for (String role : webRequest.getRequiredRoles()) {
@@ -682,7 +703,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
      * @param webRequest
      */
     public void optionallyAuthenticateUnprotectedResource(WebRequest webRequest) {
-        if (webAppSecConfig.isUseAuthenticationDataForUnprotectedResourceEnabled() &&
+        if (webAppSecurityConfig.isUseAuthenticationDataForUnprotectedResourceEnabled() &&
             (unprotectedResource(webRequest) == PERMIT_REPLY) &&
             needToAuthenticateSubject(webRequest)) {
             webRequest.disableFormLoginRedirect();
@@ -966,7 +987,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
 
         WebReply webReply = PERMIT_REPLY;
         boolean result = true;
-        WebRequest webRequest = new WebRequestImpl(req, resp, getSecurityMetadata(), webAppSecConfig);
+        WebRequest webRequest = new WebRequestImpl(req, resp, getSecurityMetadata(), webAppSecurityConfig);
         webRequest.setRequestAuthenticate(true);
         AuthenticationResult authResult = null;
 
@@ -1035,14 +1056,14 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
                                                                     "CWWKS9116E: Login to the URL {0} failed for user {1} due to an internal error. Review the server logs for more information."));
 
         }
-        getAuthenticateApi().login(req, resp, username, password, webAppSecConfig, basicAuthAuthenticator);
+        getAuthenticateApi().login(req, resp, username, password, webAppSecurityConfig, basicAuthAuthenticator);
         String authType = getSecurityMetadata().getLoginConfiguration().getAuthenticationMethod();
         SRTServletRequestUtils.setPrivateAttribute(req, AUTH_TYPE, authType);
     }
 
     @Override
     public void logout(HttpServletRequest res, HttpServletResponse resp) throws ServletException {
-        getAuthenticateApi().logoutServlet30(res, resp, webAppSecConfig);
+        getAuthenticateApi().logoutServlet30(res, resp, webAppSecurityConfig);
     }
 
     private SecurityViolationException convertWebSecurityException(WebSecurityCollaboratorException e) {
@@ -1244,7 +1265,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         MatchResponse matchResponse = MatchResponse.NO_MATCH_RESPONSE;
         if (req != null) {
             String method = req.getMethod();
-            String uriName = new URLHandler(webAppSecConfig).getServletURI(req);
+            String uriName = new URLHandler(webAppSecurityConfigRef).getServletURI(req);
 
             SecurityMetadata securityMetadata = getSecurityMetadata();
             SecurityConstraintCollection collection = securityMetadata.getSecurityConstraintCollection();
@@ -1300,7 +1321,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
      */
     private boolean isValidAuthMethodForFormLogin(String authenticationMethod) {
         return LoginConfiguration.FORM.equals(authenticationMethod) ||
-               (LoginConfiguration.CLIENT_CERT.equals(authenticationMethod) && webAppSecConfig.getAllowFailOverToFormLogin());
+               (LoginConfiguration.CLIENT_CERT.equals(authenticationMethod) && webAppSecurityConfig.getAllowFailOverToFormLogin());
     }
 
     /**
@@ -1366,18 +1387,19 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         return url;
     }
 
-    public static void setGlobalWebAppSecurityConfig(WebAppSecurityConfig config) {
-        globalConfig = config;
-    }
-
-    public static WebAppSecurityConfig getGlobalWebAppSecurityConfig() {
-        return globalConfig;
-    }
+//    public static void setGlobalWebAppSecurityConfig(WebAppSecurityConfig config) {
+//        globalConfig = config;
+//    }
+//
+//    public static WebAppSecurityConfig getGlobalWebAppSecurityConfig() {
+//        return globalConfig;
+//    }
 
     protected AuthenticateApi getAuthenticateApi() {
         if (authenticateApi == null) {
-            SSOCookieHelper ssoCookieHelper = webAppSecConfig.createSSOCookieHelper();
-            authenticateApi = authenticatorFactory.createAuthenticateApi(ssoCookieHelper, securityServiceRef, collabUtils, webAuthenticatorRef, unprotectedResourceServiceRef);
+            SSOCookieHelper ssoCookieHelper = new SSOCookieHelperImpl(webAppSecurityConfigRef);
+            authenticateApi = authenticatorFactory.createAuthenticateApi(ssoCookieHelper, securityServiceRef, collabUtils, webAuthenticatorRef, unprotectedResourceServiceRef,
+                                                                         webAppSecurityConfigRef);
         }
         return authenticateApi;
     }

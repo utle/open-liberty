@@ -40,6 +40,7 @@ import com.ibm.ws.webcontainer.security.AuthenticateApi;
 import com.ibm.ws.webcontainer.security.AuthenticationResult;
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
 import com.ibm.ws.webcontainer.util.WebContainerSystemProps;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.webcontainer.osgi.extension.WebExtensionProcessor;
 import com.ibm.wsspi.webcontainer.servlet.IServletContext;
 
@@ -50,15 +51,17 @@ public class FormLogoutExtensionProcessor extends WebExtensionProcessor {
                                                        "<BODY><H2>Successful Logout</H2></BODY></HTML>";
     private static String ABSOLUTE_URI = "com.ibm.websphere.security.web.absoluteUri";
     private boolean absoluteUri = false;
-    private final WebAppSecurityConfig webAppSecurityConfig;
+    private final AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef;
+    private WebAppSecurityConfig webAppSecurityConfig = null;
     AuthenticateApi authenticateApi = null;
 
     public FormLogoutExtensionProcessor(IServletContext webapp,
-                                        WebAppSecurityConfig webAppSecConfig,
+                                        AtomicServiceReference<WebAppSecurityConfig> webAppSecurityConfigRef,
                                         AuthenticateApi authenticateApi) {
         super(webapp);
         this.authenticateApi = authenticateApi;
-        webAppSecurityConfig = webAppSecConfig;
+        this.webAppSecurityConfigRef = webAppSecurityConfigRef;
+        webAppSecurityConfig = webAppSecurityConfigRef.getService();
         String absUri = System.getProperty(ABSOLUTE_URI);
         if (absUri != null && absUri.equalsIgnoreCase("true"))
             absoluteUri = true;

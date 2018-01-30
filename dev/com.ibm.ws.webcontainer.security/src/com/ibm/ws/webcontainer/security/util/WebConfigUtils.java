@@ -12,8 +12,6 @@ package com.ibm.ws.webcontainer.security.util;
 
 import com.ibm.ws.runtime.metadata.ComponentMetaData;
 import com.ibm.ws.threadContext.ComponentMetaDataAccessorImpl;
-import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
-import com.ibm.ws.webcontainer.security.internal.WebSecurityHelperImpl;
 import com.ibm.ws.webcontainer.security.metadata.SecurityMetadata;
 import com.ibm.wsspi.webcontainer.metadata.WebComponentMetaData;
 import com.ibm.wsspi.webcontainer.metadata.WebModuleMetaData;
@@ -26,7 +24,7 @@ public class WebConfigUtils {
 
     /**
      * Get the web application config
-     * 
+     *
      * @return the web application config
      */
     public static WebAppConfig getWebAppConfig() {
@@ -44,16 +42,16 @@ public class WebConfigUtils {
 
     /**
      * Get the web app security config
-     * 
+     *
      * @return the web app security config
      */
-    public static WebAppSecurityConfig getWebAppSecurityConfig() {
-        return WebSecurityHelperImpl.getWebAppSecurityConfig();
-    }
+//    public static WebAppSecurityConfig getWebAppSecurityConfig() {
+//        return WebSecurityHelperImpl.getWebAppSecurityConfig();
+//    }
 
     /**
      * Get the security metadata
-     * 
+     *
      * @return the security metadata
      */
     public static SecurityMetadata getSecurityMetadata() {
