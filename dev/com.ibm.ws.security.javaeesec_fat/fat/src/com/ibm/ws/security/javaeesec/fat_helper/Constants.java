@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -35,9 +35,9 @@ public class Constants {
     public final static String NO_NAME_VALIDATION = "NONE";
     public final static String DEFAULT_BASIC_REGISTRATION = "/JASPIBasic";
     public final static String DEFAULT_FORM_REGISTRATION = "/JASPIForm";
-    public final static String DEFAULT_FORM_LOGIN_PAGE = "/JavaEEsecFormAuth/JavaEEsecFormAuthServlet";
+    public final static String DEFAULT_FORM_LOGIN_PAGE = "/JavaEEsecFormAuth/FormServlet";
     public final static String DEFAULT_CUSTOM_FORM_LOGIN_PAGE = "/JavaEESecCustomFormLoginServlet/JavaEESecAnnotatedFormLoginServlet";
-    public final static String DEFAULT_REDIRECT_FORM_LOGIN_PAGE = "/JavaEEsecFormAuthRedirect/JavaEEsecFormAuthRedirectServlet";
+    public final static String DEFAULT_REDIRECT_FORM_LOGIN_PAGE = "/JavaEEsecFormAuthRedirect/FormServlet";
 
     public final static String AUTH_TYPE_BASIC = "BASIC";
     public final static String AUTH_TYPE_FORM = "FORM";
@@ -93,6 +93,8 @@ public class Constants {
     // Jaspi test users
     public final static String javaeesec_basicRoleGroup = "group1";
     public final static String javaeesec_basicRoleUser = "jaspiuser1";
+    public final static String javaeesec_basicRoleUser_requestscoped = "jaspiuser1_requestscoped";
+    public final static String javaeesec_basicRoleUser_sessionscoped = "jaspiuser1_sessionscoped";
     public final static String javaeesec_basicRoleLDAPUser = "jaspildapuser1";
     public final static String javaeesec_basicRolePwd = "s3cur1ty";
     public final static String javaeesec_basicRoleGroupUser = "jaspiuser2";
@@ -124,7 +126,7 @@ public class Constants {
 
     // Values to be verified in servlet response
 
-    public final static String RESPONSE_AUTHENTICATION_FAILED = "AuthenticationFailed";
+    public final static String RESPONSE_AUTHENTICATION_FAILED = "JASPIC Authenticated with status: SEND_FAILURE";
     public final static String RESPONSE_AUTHORIZATION_FAILED = "AuthorizationFailed";
 
     public final static String jaspiValidateRequest = "JASPI validateRequest called with auth provider=";
@@ -168,13 +170,22 @@ public class Constants {
     public final static String SERVLET_SECURITY_JASPI_SERVER_XML = "dynamicSecurityFeature/servlet31_appSecurity20_withJaspi.xml";
 
     public final static String DB_USER1 = "blue1";
-    public final static String DB_USER1_PWD = "pwd";
+    public final static String DB_USER1_PWD = "thisismypwd";
+    // hashed with Pbkdf2PasswordHashImpl
+    public final static String DB_USER1_PWD_HASH = "PBKDF2WithHmacSHA256:2048:vHups5wO1Zws+IDirtdHjd0S6UIOnTiHrRUMKlheYzQ=:6PtLstQacpH68NbBn1F0UlzeA92LYp44Z3pCQaSBv2Q=";
     public final static String DB_USER2 = "blue2";
-    public final static String DB_USER2_PWD = "pwd2";
+    public final static String DB_USER2_PWD = "thisismypwd2";
+    // hashed with Pbkdf2PasswordHashImpl
+    public final static String DB_USER2_PWD_HASH = "PBKDF2WithHmacSHA256:2048:1aPPQurxfie2FLiaC2HqjvUYe1IX57jJrB5bbW9sJgs=:OjT8ialvm7BB3pdfCYzEO83LypU+O/D7AQegy6JqT0Q=";
     public final static String DB_USER3 = "blue3";
-    public final static String DB_USER3_PWD = "pwd3";
+    public final static String DB_USER3_PWD = "thisismypwd3";
+    // hashed with Pbkdf2PasswordHashImpl
+    public final static String DB_USER3_PWD_HASH = "PBKDF2WithHmacSHA256:2048:fM4/a3w9V/YEkClSXhY3LScnAZzT8MbOw/eaj7noVK8=:tKUr6l9oez55Zh5AM6PBKcGHdv2IqHuIJe0HZZ/e6Qg=";
     public final static String DB_USER_DUPE = "dupUser";
     public final static String DB_GROUP2 = "group2";
     public final static String DB_GROUP3 = "group3";
     public final static String DB_USER_NOPWD = "userNoPwd";
+    public final static String DB_CUSTOM_PWD1 = "blue1";
+    public final static String DB_CUSTOM_HASH = "_CUSTOM";
+    public final static String DB_CUSTOM_PWD1_HASH = "blue1" + DB_CUSTOM_HASH;
 }

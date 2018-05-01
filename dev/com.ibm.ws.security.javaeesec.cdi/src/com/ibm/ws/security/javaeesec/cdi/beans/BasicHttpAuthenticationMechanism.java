@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,8 @@
  *******************************************************************************/
 package com.ibm.ws.security.javaeesec.cdi.beans;
 
+import java.util.Hashtable;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -19,9 +21,11 @@ import javax.enterprise.inject.spi.CDI;
 import javax.security.auth.Subject;
 import javax.security.enterprise.AuthenticationException;
 import javax.security.enterprise.AuthenticationStatus;
+import javax.security.enterprise.authentication.mechanism.http.AuthenticationParameters;
 import javax.security.enterprise.authentication.mechanism.http.HttpAuthenticationMechanism;
 import javax.security.enterprise.authentication.mechanism.http.HttpMessageContext;
 import javax.security.enterprise.credential.BasicAuthenticationCredential;
+import javax.security.enterprise.credential.Credential;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,8 +33,9 @@ import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.ws.common.internal.encoder.Base64Coder;
-import com.ibm.ws.security.javaeesec.properties.ModulePropertiesProvider;
 import com.ibm.ws.security.javaeesec.JavaEESecConstants;
+import com.ibm.ws.security.javaeesec.properties.ModulePropertiesProvider;
+import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
 import com.ibm.wsspi.security.token.AttributeNameConstants;
 
 @Default
@@ -40,8 +45,18 @@ public class BasicHttpAuthenticationMechanism implements HttpAuthenticationMecha
 
     private static final TraceComponent tc = Tr.register(BasicHttpAuthenticationMechanism.class);
 
-    private String realmName = null;
-    private final String DEFAULT_REALM = "defaultRealm";
+    private String realmName = "";
+
+    private final Utils utils;
+
+    public BasicHttpAuthenticationMechanism() {
+        utils = new Utils();
+    }
+
+    // this is for unit test.
+    protected BasicHttpAuthenticationMechanism(Utils utils) {
+        this.utils = utils;
+    }
 
     @Override
     public AuthenticationStatus validateRequest(HttpServletRequest request,
@@ -49,16 +64,36 @@ public class BasicHttpAuthenticationMechanism implements HttpAuthenticationMecha
                                                 HttpMessageContext httpMessageContext) throws AuthenticationException {
         AuthenticationStatus status = AuthenticationStatus.SEND_FAILURE;
 
-        setRealmName();
-        Subject clientSubject = httpMessageContext.getClientSubject();
-        String authHeader = httpMessageContext.getRequest().getHeader("Authorization");
-
-        if (authHeader == null) {
-            status = handleNoAuthorizationHeader(httpMessageContext);
-        } else {
-            status = handleAuthorizationHeader(authHeader, clientSubject, httpMessageContext);
+        if (isJaspicSessionForMechanismsEnabled(httpMessageContext) && httpMessageContext.getRequest().getUserPrincipal() != null) {
+            httpMessageContext.getResponse().setStatus(HttpServletResponse.SC_OK);
+            return AuthenticationStatus.SUCCESS;
         }
 
+        setRealmName();
+        Subject clientSubject = httpMessageContext.getClientSubject();
+
+        AuthenticationParameters authParams = httpMessageContext.getAuthParameters();
+        Credential cred = null;
+        if (tc.isDebugEnabled()) {
+            Tr.debug(tc, "AuthenticationParameters : " + authParams);
+        }
+        if (authParams != null) {
+            cred = authParams.getCredential();
+        }
+        if (cred != null) {
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, "Credential is found.");
+            }
+            status = utils.handleAuthenticate(getCDI(), realmName, cred, clientSubject, httpMessageContext);
+        } else {
+            String authHeader = httpMessageContext.getRequest().getHeader("Authorization");
+
+            if (authHeader == null) {
+                status = handleNoAuthorizationHeader(httpMessageContext);
+            } else {
+                status = handleAuthorizationHeader(authHeader, clientSubject, httpMessageContext);
+            }
+        }
         return status;
     }
 
@@ -67,12 +102,8 @@ public class BasicHttpAuthenticationMechanism implements HttpAuthenticationMecha
         if (mpp != null) {
             Properties props = mpp.getAuthMechProperties(BasicHttpAuthenticationMechanism.class);
             if (props != null) {
-                realmName = (String)props.get(JavaEESecConstants.REALM_NAME);
+                realmName = (String) props.get(JavaEESecConstants.REALM_NAME);
             }
-        }
-        if (realmName == null || realmName.trim().isEmpty()) {
-            Tr.warning(tc, "JAVAEESEC_WARNING_NO_REALM_NAME");
-            realmName = DEFAULT_REALM;
         }
     }
 
@@ -99,26 +130,47 @@ public class BasicHttpAuthenticationMechanism implements HttpAuthenticationMecha
         return AuthenticationStatus.SEND_CONTINUE;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private AuthenticationStatus handleAuthorizationHeader(@Sensitive String authorizationHeader, Subject clientSubject,
                                                            HttpMessageContext httpMessageContext) throws AuthenticationException {
         AuthenticationStatus status = AuthenticationStatus.SEND_FAILURE;
-        int rspStatus = HttpServletResponse.SC_FORBIDDEN;
+        int rspStatus = HttpServletResponse.SC_UNAUTHORIZED;
         if (authorizationHeader.startsWith("Basic ")) {
             String encodedHeader = authorizationHeader.substring(6);
             String basicAuthHeader = decodeCookieString(encodedHeader);
 
             if (isAuthorizationHeaderValid(basicAuthHeader)) { // BasicAuthenticationCredential.isValid does not work
                 BasicAuthenticationCredential basicAuthCredential = new BasicAuthenticationCredential(encodedHeader);
-                status = Utils.getInstance().validateUserAndPassword(getCDI(), realmName, clientSubject, basicAuthCredential, httpMessageContext);
+                status = utils.validateUserAndPassword(getCDI(), realmName, clientSubject, basicAuthCredential, httpMessageContext);
                 if (status == AuthenticationStatus.SUCCESS) {
-                    httpMessageContext.getMessageInfo().getMap().put("javax.servlet.http.authType", "JASPI_AUTH");
+                    Map messageInfoMap = httpMessageContext.getMessageInfo().getMap();
+                    messageInfoMap.put("javax.servlet.http.authType", "JASPI_AUTH");
+                    if (isJaspicSessionForMechanismsEnabled(httpMessageContext)) {
+                        messageInfoMap.put("javax.servlet.http.registerSession", Boolean.TRUE.toString());
+                        setCacheKey(clientSubject);
+                    }
+                    rspStatus = HttpServletResponse.SC_OK;
+                } else if (status == AuthenticationStatus.NOT_DONE) {
+                    // set SC_OK, since if the target is not protected, it'll be processed.
                     rspStatus = HttpServletResponse.SC_OK;
                 }
             }
         }
         httpMessageContext.getResponse().setStatus(rspStatus);
         return status;
+    }
+
+    private void setCacheKey(Subject clientSubject) {
+        Hashtable<String, Object> subjectHashtable = utils.getSubjectExistingHashtable(clientSubject);
+        String uniqueId = (String) subjectHashtable.get(AttributeNameConstants.WSCREDENTIAL_UNIQUEID);
+        if (uniqueId != null && uniqueId.trim().isEmpty() == false) {
+            subjectHashtable.put(AttributeNameConstants.WSCREDENTIAL_CACHE_KEY, subjectHashtable.get(AttributeNameConstants.WSCREDENTIAL_UNIQUEID));
+        }
+    }
+
+    private boolean isJaspicSessionForMechanismsEnabled(HttpMessageContext httpMessageContext) {
+        WebAppSecurityConfig webAppSecurityConfig = (WebAppSecurityConfig) httpMessageContext.getRequest().getAttribute("com.ibm.ws.webcontainer.security.WebAppSecurityConfig");
+        return webAppSecurityConfig.isJaspicSessionForMechanismsEnabled();
     }
 
     @Sensitive
@@ -141,6 +193,7 @@ public class BasicHttpAuthenticationMechanism implements HttpAuthenticationMecha
         return CDI.current();
     }
 
+    @SuppressWarnings("unchecked")
     protected ModulePropertiesProvider getModulePropertiesProvider() {
         Instance<ModulePropertiesProvider> modulePropertiesProivderInstance = getCDI().select(ModulePropertiesProvider.class);
         if (modulePropertiesProivderInstance != null) {

@@ -18,5 +18,8 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
                 ConverterPriorityTest.class,
                 TypeConverterTest.class,
+                ImplicitConverterTest.class,
 })
-public class FATSuite {}
+public class FATSuite {
+
+}

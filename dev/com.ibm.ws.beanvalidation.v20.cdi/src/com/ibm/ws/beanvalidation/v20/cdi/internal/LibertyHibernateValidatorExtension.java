@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -41,6 +41,7 @@ import com.ibm.ejs.util.dopriv.SetContextClassLoaderPrivileged;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.beanvalidation.service.Validation20ClassLoader;
+import com.ibm.ws.cdi.CDIService;
 import com.ibm.ws.cdi.extension.WebSphereCDIExtension;
 import com.ibm.ws.util.ThreadContextAccessor;
 import com.ibm.wsspi.classloading.ClassLoadingService;
@@ -63,6 +64,7 @@ import com.ibm.wsspi.classloading.ClassLoadingService;
                         "service.vendor=IBM"
            })
 public class LibertyHibernateValidatorExtension implements Extension, WebSphereCDIExtension {
+
     private static final TraceComponent tc = Tr.register(LibertyHibernateValidatorExtension.class);
 
     @Reference
@@ -72,18 +74,7 @@ public class LibertyHibernateValidatorExtension implements Extension, WebSphereC
     private ValidatorBean vBean;
     private ValidationExtension extDelegate;
     private String currentClassloaderHint = "";
-
-    public void afterBeanDiscovery(@Observes AfterBeanDiscovery afterBeanDiscoveryEvent, BeanManager beanManager) {
-        if (vfBean == null) {
-            vfBean = new LibertyValidatorFactoryBean();
-            afterBeanDiscoveryEvent.addBean(vfBean);
-        }
-
-        if (vBean == null) {
-            vBean = new LibertyValidatorBean();
-            afterBeanDiscoveryEvent.addBean(vBean);
-        }
-    }
+    private boolean delegateFailed;
 
     private ValidationExtension delegate(String newClassloaderHint) {
         if (extDelegate == null || newClassloaderHint != null && !newClassloaderHint.equals(currentClassloaderHint)) {
@@ -126,12 +117,37 @@ public class LibertyHibernateValidatorExtension implements Extension, WebSphereC
         return extDelegate;
     }
 
-    public void beforeBeanDiscovery(@Observes BeforeBeanDiscovery beforeBeanDiscoveryEvent,
-                                    final BeanManager beanManager) {
-        delegate(null).beforeBeanDiscovery(beforeBeanDiscoveryEvent, beanManager);
+    public void beforeBeanDiscovery(@Observes BeforeBeanDiscovery beforeBeanDiscoveryEvent, final BeanManager beanManager) {
+        if (!delegateFailed)
+            try {
+                delegate(null).beforeBeanDiscovery(beforeBeanDiscoveryEvent, beanManager);
+            } catch (Exception e) {
+                delegateFailed = true;
+                String appName = getAppName();
+                if (tc.isWarningEnabled())
+                    Tr.warning(tc, "UNABLE_TO_REGISTER_WITH_CDI", appName == null ? beanManager.toString() : appName, e);
+            }
+    }
+
+    public void afterBeanDiscovery(@Observes AfterBeanDiscovery afterBeanDiscoveryEvent, BeanManager beanManager) {
+        if (delegateFailed)
+            return;
+
+        if (vfBean == null) {
+            vfBean = new LibertyValidatorFactoryBean();
+            afterBeanDiscoveryEvent.addBean(vfBean);
+        }
+
+        if (vBean == null) {
+            vBean = new LibertyValidatorBean();
+            afterBeanDiscoveryEvent.addBean(vBean);
+        }
     }
 
     public void processBean(@Observes ProcessBean<?> processBeanEvent) {
+        if (delegateFailed)
+            return;
+
         delegate(null).processBean(processBeanEvent);
     }
 
@@ -140,6 +156,9 @@ public class LibertyHibernateValidatorExtension implements Extension, WebSphereC
                                                                       Valid.class,
                                                                       ValidateOnExecution.class
     }) ProcessAnnotatedType<T> processAnnotatedTypeEvent) {
+        if (delegateFailed)
+            return;
+
         Class<?> javaClass = processAnnotatedTypeEvent.getAnnotatedType().getJavaClass();
         String moduleName = getModuleName(javaClass);
         delegate(moduleName).processAnnotatedType(processAnnotatedTypeEvent);
@@ -173,6 +192,20 @@ public class LibertyHibernateValidatorExtension implements Extension, WebSphereC
             throw new IllegalStateException("Failed to get the ClassLoadingService.");
         }
         return classLoadingService;
+    }
+
+    private String getAppName() {
+        // Get the CDIService
+        Bundle bundle = FrameworkUtil.getBundle(CDIService.class);
+        CDIService cdiService = AccessController.doPrivileged((PrivilegedAction<CDIService>) () -> {
+            BundleContext bCtx = bundle.getBundleContext();
+            ServiceReference<CDIService> svcRef = bCtx.getServiceReference(CDIService.class);
+            return svcRef == null ? null : bCtx.getService(svcRef);
+        });
+        if (cdiService == null) {
+            return null;
+        }
+        return cdiService.getCurrentApplicationContextID();
     }
 
     private void releaseLoader(ClassLoader tccl) {

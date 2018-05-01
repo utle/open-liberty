@@ -184,6 +184,7 @@ public class AuthenticateApi {
         ReferrerURLCookieHandler referrerURLHandler = new ReferrerURLCookieHandler(webAppSecurityConfigRef);
         referrerURLHandler.clearReferrerURLCookie(req, res, ReferrerURLCookieHandler.REFERRER_URL_COOKIENAME);
         SRTServletRequestUtils.removePrivateAttribute(req, "AUTH_TYPE");
+        postLogout(req, res);
         subjectManager.clearSubjects();
 
     }
@@ -205,6 +206,16 @@ public class AuthenticateApi {
             boolean bLogout = service.logout(req, res, userName);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
                 Tr.debug(tc, "logout return " + bLogout + " on service " + service);
+        }
+    }
+
+    void postLogout(HttpServletRequest req, HttpServletResponse res) {
+        Set<String> serviceIds = unprotectedResourceServiceRef.keySet();
+        for (String serviceId : serviceIds) {
+            UnprotectedResourceService service = unprotectedResourceServiceRef.getService(serviceId);
+            boolean bLogout = service.postLogout(req, res);
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "postLogout returns " + bLogout + " on service " + service);
         }
     }
 
@@ -425,12 +436,37 @@ public class AuthenticateApi {
      * @param authResult
      */
     public void postProgrammaticAuthenticate(HttpServletRequest req, HttpServletResponse resp, AuthenticationResult authResult) {
+        postProgrammaticAuthenticate(req, resp, authResult, false, true);
+    }
+
+    /**
+     * This method set the caller and invocation subject and call the addSsoCookiesToResponse
+     *
+     * @param req
+     * @param resp
+     * @param authResult
+     */
+    public void postProgrammaticAuthenticate(HttpServletRequest req, HttpServletResponse resp, AuthenticationResult authResult, boolean alwaysSetCallerSubject) {
+        postProgrammaticAuthenticate(req, resp, authResult, alwaysSetCallerSubject, true);
+    }
+
+    /**
+     * This method set the caller and invocation subject and call the addSsoCookiesToResponse
+     *
+     * @param req
+     * @param resp
+     * @param authResult
+     */
+    public void postProgrammaticAuthenticate(HttpServletRequest req, HttpServletResponse resp, AuthenticationResult authResult, boolean alwaysSetCallerSubject,
+                                             boolean addSSOCookie) {
         Subject subject = authResult.getSubject();
-        if (new SubjectHelper().isUnauthenticated(subjectManager.getCallerSubject())) {
+        if (alwaysSetCallerSubject || new SubjectHelper().isUnauthenticated(subjectManager.getCallerSubject())) {
             subjectManager.setCallerSubject(subject);
         }
         subjectManager.setInvocationSubject(subject);
-        ssoCookieHelper.addSSOCookiesToResponse(subject, req, resp);
+        if (addSSOCookie) {
+            ssoCookieHelper.addSSOCookiesToResponse(subject, req, resp);
+        }
     }
 
     /**

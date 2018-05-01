@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -38,9 +38,6 @@ public class SecurityParser {
         }
         List<SecurityRequirement> securityRequirements = new ArrayList<>();
         for (org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement securityRequirementApi : securityRequirementsApi) {
-            if (StringUtils.isBlank(securityRequirementApi.name())) {
-                continue;
-            }
             SecurityRequirement securityRequirement = new SecurityRequirementImpl();
             if (securityRequirementApi.scopes().length > 0) {
                 securityRequirement.addScheme(securityRequirementApi.name(), Arrays.asList(securityRequirementApi.scopes()));
@@ -55,12 +52,33 @@ public class SecurityParser {
         return Optional.of(securityRequirements);
     }
 
+    public static Optional<SecurityRequirement> getSecurityRequirementFromSet(org.eclipse.microprofile.openapi.annotations.security.SecurityRequirementsSet securityRequirementsApi) {
+        if (securityRequirementsApi == null) {
+            return Optional.empty();
+        }
+        SecurityRequirement securityRequirement = new SecurityRequirementImpl();
+        for (org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement securityRequirementApi : securityRequirementsApi.value()) {
+            if (securityRequirementApi.scopes().length > 0) {
+                securityRequirement.addScheme(securityRequirementApi.name(), Arrays.asList(securityRequirementApi.scopes()));
+            } else {
+                securityRequirement.addScheme(securityRequirementApi.name());
+            }
+        }
+        if (securityRequirement.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(securityRequirement);
+    }
+
     public static Optional<SecurityScheme> getSecurityScheme(org.eclipse.microprofile.openapi.annotations.security.SecurityScheme securityScheme) {
         if (securityScheme == null) {
             return Optional.empty();
         }
         SecurityScheme securitySchemeObject = new SecuritySchemeImpl();
 
+        if (StringUtils.isNotBlank(securityScheme.ref())) {
+            securitySchemeObject.setRef(securityScheme.ref());
+        }
         if (StringUtils.isNotBlank(securityScheme.in().toString())) {
             securitySchemeObject.setIn(getIn(securityScheme.in().toString()));
         }

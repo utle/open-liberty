@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,6 +23,8 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.runtime.metadata.ComponentMetaData;
 import com.ibm.ws.security.javaeesec.CDIHelper;
 import com.ibm.ws.threadContext.ComponentMetaDataAccessorImpl;
+import com.ibm.ws.webcontainer.security.util.WebConfigUtils;
+import com.ibm.wsspi.webcontainer.metadata.WebModuleMetaData;
 
 public class ModulePropertiesUtils {
     private static final TraceComponent tc = Tr.register(ModulePropertiesUtils.class);
@@ -36,21 +38,31 @@ public class ModulePropertiesUtils {
     }
 
     public String getJ2EEModuleName() {
-        ComponentMetaData cmd = getComponentMetaData();
-        if (cmd != null) {
-            return cmd.getModuleMetaData().getJ2EEName().getModule();
+        WebModuleMetaData wmmd = getWebModuleMetaData();
+        if (wmmd != null) {
+            return wmmd.getJ2EEName().getModule();
         } else {
-            return null;
+            // this condition happens during processing postinvoke, fallback.
+            ComponentMetaData cmd = getComponentMetaData();
+            if (cmd != null) {
+                return cmd.getModuleMetaData().getJ2EEName().getModule();
+            }
         }
+        return null;
     }
 
     public String getJ2EEApplicationName() {
-        ComponentMetaData cmd = getComponentMetaData();
-        if (cmd != null) {
-            return cmd.getJ2EEName().getApplication();
+        WebModuleMetaData wmmd = getWebModuleMetaData();
+        if (wmmd != null) {
+            return wmmd.getJ2EEName().getApplication();
         } else {
-            return null;
+            // this condition happens during processing postinvoke, fallback.
+            ComponentMetaData cmd = getComponentMetaData();
+            if (cmd != null) {
+                return cmd.getJ2EEName().getApplication();
+            }
         }
+        return null;
     }
 
     public boolean isHttpAuthenticationMechanism() {
@@ -69,7 +81,7 @@ public class ModulePropertiesUtils {
     private HttpAuthenticationMechanism getHttpAuthenticationMechanism(boolean logError) {
         HttpAuthenticationMechanism ham = null;
         CDI cdi = getCDI();
-        if (cdi != null) {
+        if (cdi != null && cdi.getBeanManager() != null) {
             Instance<ModulePropertiesProvider> mppi = cdi.select(ModulePropertiesProvider.class);
             if (mppi != null && !mppi.isUnsatisfied() && !mppi.isAmbiguous()) {
                 List<Class> implClassList = mppi.get().getAuthMechClassList();
@@ -88,21 +100,27 @@ public class ModulePropertiesUtils {
                             if (tc.isDebugEnabled()) {
                                 Tr.debug(tc, "HAM from the module BeanManager : " + ham);
                             }
-                        } else if (hams.size() > 1) {
-                            Tr.error(tc, "JAVAEESEC_ERROR_MULTIPLE_HTTPAUTHMECHS", getJ2EEModuleName(), getJ2EEApplicationName(), new ArrayList<HttpAuthenticationMechanism>(hams));
-                        } else {
+                        } else if (hams.size() == 0) {
                             Tr.error(tc, "JAVAEESEC_ERROR_NO_HAM", getJ2EEModuleName(), getJ2EEApplicationName());
+                        } else {
+                            if (tc.isDebugEnabled()) {
+                                Tr.debug(tc, "Number of HAMs is more than one : " + hams.size());
+                            }
                         }
                     } else {
                         Tr.error(tc, "JAVAEESEC_ERROR_NO_HAM", getJ2EEModuleName(), getJ2EEApplicationName());
                     }
-                } else if (implClassList.size() > 1) {
-                    Tr.error(tc, "JAVAEESEC_ERROR_MULTIPLE_HTTPAUTHMECHS", getJ2EEModuleName(), getJ2EEApplicationName(), implClassList);
+                } else if (implClassList.size() == 0) {
+                    if (tc.isDebugEnabled()) {
+                        Tr.debug(tc, "No HAM implementation class. Module Name : " + getJ2EEModuleName() + ", Application Name : " + getJ2EEApplicationName());
+                    }
                 } else {
-                    Tr.error(tc, "JAVAEESEC_ERROR_NO_HAM", getJ2EEModuleName(), getJ2EEApplicationName());
+                    if (tc.isDebugEnabled()) {
+                        Tr.debug(tc, "Number of HAM implementation class is more than one : " + implClassList.size() + ", Module Name : " + getJ2EEModuleName() + ", Application Name : " + getJ2EEApplicationName());
+                    }
                 }
             } else if (logError) {
-                Tr.error(tc, "JAVAEESEC_ERROR_NO_MODULE_PROPS", getJ2EEApplicationName());
+                throw new RuntimeException("ModulePropertiesProvider object cannot be identified.");
             }
         }
         return ham;
@@ -132,6 +150,10 @@ public class ModulePropertiesUtils {
     @SuppressWarnings("rawtypes")
     protected CDI getCDI() {
         return CDI.current();
+    }
+
+    protected WebModuleMetaData getWebModuleMetaData() {
+        return WebConfigUtils.getWebModuleMetaData();
     }
 
     protected ComponentMetaData getComponentMetaData() {

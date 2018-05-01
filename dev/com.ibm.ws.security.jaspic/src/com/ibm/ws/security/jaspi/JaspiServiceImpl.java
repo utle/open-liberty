@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2017 IBM Corporation and others.
+ * Copyright (c) 2014, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -363,7 +363,7 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
                 if (tc.isDebugEnabled())
                     Tr.debug(tc, "Internal error during JASPI authentication", e);
                 if (result == null)
-                    result = new AuthenticationResult(AuthResult.FAILURE, new Subject());
+                    result = new AuthenticationResult(AuthResult.FAILURE, e.getMessage());
             }
         } else {
             result = new AuthenticationResult(AuthResult.CONTINUE, "No JASPIC provider found for request: " + webRequest.getHttpServletRequest().getRequestURI());
@@ -481,17 +481,14 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
                 authResult = mapToAuthenticationResult(status, jaspiRequest, null);
             }
         } catch (AuthException e) {
-            AuthenticationException ex = new AuthenticationException("JASPI authentication failure: " + e);
+            AuthenticationException ex = new AuthenticationException("JASPIC Authenticated with status: SEND_FAILURE, exception: " + e);
             ex.initCause(e);
             if (webSecurityContext != null) {
                 setRunSecureResponse(false, (JaspiAuthContext) webSecurityContext.getJaspiAuthContext());
             }
-//            if (jac != null) {
-//                setRunSecureResponse(false, jac);
-//            }
             throw ex;
         } catch (WSLoginFailedException e) {
-            AuthenticationException ex = new AuthenticationException("Custom login failure after JASPI authentication completed successfully, exception: " + e);
+            AuthenticationException ex = new AuthenticationException("Custom login failure after JASPIC authentication completed successfully, exception: " + e);
             ex.initCause(e);
             throw ex;
         }
@@ -505,7 +502,7 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
      */
     private AuthConfigProvider getAuthConfigProvider(String appContext) {
         AuthConfigProvider provider = null;
-        AuthConfigFactory providerFactory = AuthConfigFactoryWrapper.getFactory();
+        AuthConfigFactory providerFactory = getAuthConfigFactory();
         if (providerFactory != null) {
             if (providerConfigModified &&
                 providerFactory instanceof ProviderRegistry) {
@@ -683,24 +680,28 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
                     break;
 
                 default:
-                    authResult = new AuthenticationResult(AuthResult.RETURN, "Returning response from JASPIC provider with status: " + responseStatus);
+                    authResult = new AuthenticationResult(AuthResult.RETURN, "Returning response from JASPIC Authenticated with status: " + responseStatus);
                     break;
             }
 
         } else if (AuthStatus.SEND_FAILURE == status) {
-            String detail = "Authentication failed, JASPI AuthStatus: " + status + ", AuthResult.FAILURE";
-            authResult = new AuthenticationResult(AuthResult.FAILURE, detail);
+            pretty = "SEND_FAILURE";
+            String detail = "Returning response from JASPIC Authenticated with status: " + pretty + ", map to AuthResult.RETURN";
+            authResult = new AuthenticationResult(AuthResult.RETURN, detail);
             if (tc.isDebugEnabled())
                 Tr.debug(tc, detail);
         } else {
-            authResult = new AuthenticationResult(AuthResult.FAILURE, "Authentication failed, unexpected JASPI AuthStatus: " + status);
+            authResult = new AuthenticationResult(AuthResult.RETURN, "Returning response from JASPIC Authentication failed, unexpected JASPIC AuthStatus: " + status
+                                                                     + ", map to AuthResult.RETURN");
+            pretty = status.toString();
         }
-        if (authResult.getStatus().equals(AuthResult.FAILURE)) {
+
+        if (authResult.getStatus().equals(AuthResult.RETURN)) {
             Tr.info(tc, "JASPI_PROVIDER_FAILED_AUTHENTICATE", new Object[] { status, jaspiRequest.getHttpServletRequest().getRequestURI(),
                                                                              jaspiProviderServiceRef.getService() != null ? jaspiProviderServiceRef.getService().getClass() : null });
         }
         if (tc.isEntryEnabled())
-            Tr.exit(tc, "mapToAuthenticationResult", "AuthenticationResult=" + pretty);
+            Tr.exit(tc, "mapToAuthenticationResult", "Jaspi AuthenticationResult=" + pretty);
         return authResult;
     }
 
@@ -771,11 +772,19 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
                 });
                 loginSubject = clone;
             }
-            HttpServletRequest req = jaspiRequest.getHttpServletRequest();
-            HttpServletResponse res = (HttpServletResponse) jaspiRequest.getMessageInfo().getResponseMessage();
+            final HttpServletRequest req = jaspiRequest.getHttpServletRequest();
+            final HttpServletResponse res = (HttpServletResponse) jaspiRequest.getMessageInfo().getResponseMessage();
+            final Subject finalLoginSubject = loginSubject;
             if (tc.isDebugEnabled())
                 Tr.debug(tc, "JASPI login with HashTable: " + hashTable);
-            AuthenticationResult result = getWebProviderAuthenticatorHelper().loginWithHashtable(req, res, loginSubject);
+            AuthenticationResult result = AccessController.doPrivileged(new PrivilegedAction<AuthenticationResult>() {
+
+                @Override
+                public AuthenticationResult run() {
+                    return getWebProviderAuthenticatorHelper().loginWithHashtable(req, res, finalLoginSubject);
+                }
+            });
+
             authenticatedSubject = result.getSubject();
             // Remove the custom credential hashtable from the session subject
             if (sessionSubject != null) {
@@ -1022,7 +1031,7 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
         // we will assume that some provider is registered so we will call jaspi to
         // process the request.
         boolean result = true;
-        AuthConfigFactory providerFactory = AuthConfigFactoryWrapper.getFactory();
+        AuthConfigFactory providerFactory = getAuthConfigFactory();
         BridgeBuilderService bridgeBuilderService = bridgeBuilderServiceRef.getService();
         if (bridgeBuilderService != null) {
             JaspiRequest jaspiRequest = new JaspiRequest(webRequest, null); //TODO: Some paths have a WebAppConfig that should be taken into accounnt when getting the appContext
@@ -1040,4 +1049,33 @@ public class JaspiServiceImpl implements JaspiService, WebAuthenticator {
         }
         return result;
     }
+
+    private AuthConfigFactory getAuthConfigFactory() {
+        return AccessController.doPrivileged(new PrivilegedAction<AuthConfigFactory>() {
+
+            @Override
+            public AuthConfigFactory run() {
+                return AuthConfigFactoryWrapper.getFactory();
+            }
+        });
+    }
+
+    @Override
+    public boolean isProcessingNewAuthentication(HttpServletRequest req) {
+        BridgeBuilderService bridgeBuilderService = bridgeBuilderServiceRef.getService();
+        if (bridgeBuilderService != null) {
+            return bridgeBuilderService.isProcessingNewAuthentication(req);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isCredentialPresent(HttpServletRequest req) {
+        BridgeBuilderService bridgeBuilderService = bridgeBuilderServiceRef.getService();
+        if (bridgeBuilderService != null) {
+            return bridgeBuilderService.isCredentialPresent(req);
+        }
+        return false;
+    }
+
 }

@@ -10,19 +10,12 @@
  *******************************************************************************/
 package com.ibm.ws.opentracing;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.framework.ServiceReference;
-import org.osgi.service.cm.Configuration;
-import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -32,6 +25,9 @@ import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.opentracing.filters.SpanFilter;
 import com.ibm.ws.opentracing.filters.SpanFilterType;
+
+import io.opentracing.BaseSpan;
+import io.opentracing.tag.Tags;
 
 /**
  * Opentracing configuration and static utilities such as running filters on a URI.
@@ -64,11 +60,6 @@ public class OpentracingService {
     @Modified
     protected void modified(Map<String, Object> map) {
 
-        // https://www.ibm.com/support/knowledgecenter/SSAW57_8.5.5/com.ibm.websphere.wlp.nd.multiplatform.doc/ae/twlp_nest_config_elem.html
-        BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
-        ServiceReference<?> configurationAdminReference = bundleContext.getServiceReference(ConfigurationAdmin.class.getName());
-        ConfigurationAdmin configAdmin = (ConfigurationAdmin) bundleContext.getService(configurationAdminReference);
-
         // Build up the list of filters in a local list, then convert that to an array
         // and assign to the static reference. This is done to avoid creating an iterator
         // in the main path in `process`.
@@ -95,7 +86,7 @@ public class OpentracingService {
      * @param configAdmin Service to get child configurations.
      * @param childNames The name of the configuration element to check for.
      * @param impl The filter class to instantiate if an element is found.
-     */
+     * /
     private void processFilters(List<SpanFilter> filters, Map<String, Object> map, ConfigurationAdmin configAdmin, String childNames, Class<? extends SpanFilter> impl) {
 
         final String methodName = "processFilters";
@@ -128,6 +119,7 @@ public class OpentracingService {
             }
         }
     }
+*/
 
     /**
      * Return true if a span for the specified URI and type should be included.
@@ -154,5 +146,39 @@ public class OpentracingService {
         }
 
         return result;
+    }
+
+    /**
+     * "An Tags.ERROR tag SHOULD be added to a Span on failed operations.
+     * It means for any server error (5xx) codes. If there is an exception
+     * object available the implementation SHOULD also add logs event=error
+     * and error.object=<error object instance> to the active span."
+     * https://github.com/eclipse/microprofile-opentracing/blob/master/spec/src/main/asciidoc/microprofile-opentracing.asciidoc#server-span-tags
+     *
+     * @param span The span to add the information to.
+     * @param exception Optional exception details.
+     */
+    public static void addSpanErrorInfo(BaseSpan<?> span, Throwable exception) {
+        String methodName = "addSpanErrorInfo";
+
+        span.setTag(Tags.ERROR.getKey(), true);
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(tc, methodName + " error", Boolean.TRUE);
+        }
+
+        if (exception != null) {
+            Map<String, Object> log = new HashMap<>();
+            // https://github.com/opentracing/specification/blob/master/semantic_conventions.md#log-fields-table
+            log.put("event", "error");
+
+            // Throwable implements Serializable so all exceptions are serializable
+            log.put("error.object", exception);
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, methodName + " adding log entry", log);
+            }
+
+            span.log(log);
+        }
     }
 }

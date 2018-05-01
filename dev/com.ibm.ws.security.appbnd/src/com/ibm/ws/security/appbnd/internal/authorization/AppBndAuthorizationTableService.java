@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2017 IBM Corporation and others.
+ * Copyright (c) 2011, 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,10 +21,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 import com.ibm.ejs.ras.TraceNLS;
 import com.ibm.websphere.ras.Tr;
@@ -42,6 +46,7 @@ import com.ibm.ws.runtime.metadata.ApplicationMetaData;
 import com.ibm.ws.security.AccessIdUtil;
 import com.ibm.ws.security.SecurityService;
 import com.ibm.ws.security.appbnd.internal.delegation.DefaultDelegationProvider;
+import com.ibm.ws.security.authentication.IdentityStoreHandlerService;
 import com.ibm.ws.security.authorization.AuthorizationTableService;
 import com.ibm.ws.security.authorization.RoleSet;
 import com.ibm.ws.security.authorization.builtin.BaseAuthorizationTableService;
@@ -53,6 +58,7 @@ import com.ibm.ws.security.registry.UserRegistryChangeListener;
 import com.ibm.ws.security.registry.UserRegistryService;
 import com.ibm.ws.security.token.internal.TraceConstants;
 import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
+import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 
 /**
  * WebAppAuthorizationTableService handles the creation
@@ -69,6 +75,10 @@ import com.ibm.wsspi.adaptable.module.UnableToAdaptException;
            property = { "service.vendor=IBM", "com.ibm.ws.security.authorization.table.name=WebApp" })
 public class AppBndAuthorizationTableService extends BaseAuthorizationTableService implements ApplicationMetaDataListener, AuthorizationTableService, UserRegistryChangeListener {
     private static final TraceComponent tc = Tr.register(AppBndAuthorizationTableService.class);
+
+    static final String KEY_IDENTITY_STORE_HANDLER_SERVICE = "identityStoreHandlerService";
+    private final AtomicServiceReference<IdentityStoreHandlerService> identityStoreHandlerServiceRef = new AtomicServiceReference<IdentityStoreHandlerService>(KEY_IDENTITY_STORE_HANDLER_SERVICE);
+
 
     private volatile DefaultDelegationProvider defaultDelegationProvider = null;
     private ServiceRegistration<DelegationProvider> defaultDelegationProviderReg;
@@ -91,6 +101,17 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
      * only modified during application deployment and undeployment.
      */
     private final ConcurrentMap<String, AuthzInfo> resourceToAuthzInfoMap = new ConcurrentHashMap<String, AuthzInfo>(16, 0.7f, 1);
+
+    @Reference(service = IdentityStoreHandlerService.class, name = KEY_IDENTITY_STORE_HANDLER_SERVICE,
+               cardinality = ReferenceCardinality.OPTIONAL,
+               policy = ReferencePolicy.DYNAMIC)
+    protected void setIdentityStoreHandlerService(ServiceReference<IdentityStoreHandlerService> reference) {
+        identityStoreHandlerServiceRef.setReference(reference);
+    }
+
+    protected void unsetIdentityStoreHandlerService(ServiceReference<IdentityStoreHandlerService> reference) {
+        identityStoreHandlerServiceRef.unsetReference(reference);
+    }
 
     private static final class AuthzInfo {
         final Collection<SecurityRole> securityRoles;
@@ -144,7 +165,7 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
     private void registerDefaultDelegationProvider(ComponentContext cc) {
         defaultDelegationProvider = new DefaultDelegationProvider();
         defaultDelegationProvider.setSecurityService(securityServiceRef.getService());
-
+        defaultDelegationProvider.setIdentityStoreHandlerService(identityStoreHandlerServiceRef);
         BundleContext bc = cc.getBundleContext();
         Dictionary<String, Object> props = new Hashtable<String, Object>();
         props.put("type", "defaultProvider");
@@ -156,12 +177,14 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
     @Override
     protected void activate(ComponentContext cc) {
         super.activate(cc);
+        identityStoreHandlerServiceRef.activate(cc);
         registerDefaultDelegationProvider(cc);
     }
 
     @Override
     protected void deactivate(ComponentContext cc) {
         super.deactivate(cc);
+        identityStoreHandlerServiceRef.deactivate(cc);
         if (defaultDelegationProviderReg != null) {
             defaultDelegationProviderReg.unregister();
         }
@@ -402,13 +425,14 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
      * the list contains the set of roles mapped to the accessId.
      *
      * @param accessid the access id of the entity
+     * @param realmName the realm name of the entity (this value suppoes to get from wscredential)
      * @param appName the name of the application, this is the key used when updating the
      *            accessId-to-roles map
      * @param secRoles the security-role entries, previously read either
      *            from server.xml or ibm-application.bnd.xmi/xml
      * @return the updated accessId-to-roles map
      */
-    private Map<String, RoleSet> updateMapsForAccessId(String appName, String accessId) {
+    private Map<String, RoleSet> updateMapsForAccessId(String appName, String accessId, String realmName) {
         RoleSet computedRoles = RoleSet.EMPTY_ROLESET;
         Set<String> rolesForSubject = new HashSet<String>();
 
@@ -418,7 +442,7 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
         for (SecurityRole role : authzInfo.securityRoles) {
             String roleName = role.getName();
 
-            if (accessId.startsWith(AccessIdUtil.TYPE_USER)) {
+            if (AccessIdUtil.isUserAccessId(accessId)) {
                 Iterator<User> users = role.getUsers().iterator();
                 while (users.hasNext()) {
                     User user = users.next();
@@ -429,8 +453,8 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
                         if (accessIdFromRole == null) {
                             accessIdFromRole = updateMissingUserAccessId(maps, user, userNameFromRole);
                         }
-                    } else if (!accessIdFromRole.startsWith(AccessIdUtil.TYPE_USER)) {
-                        accessIdFromRole = getCompleteAccessId(accessId, accessIdFromRole, AccessIdUtil.TYPE_USER);
+                    } else if (!AccessIdUtil.isUserAccessId(accessIdFromRole)) {
+                        accessIdFromRole = getCompleteAccessId(accessId, accessIdFromRole, AccessIdUtil.TYPE_USER, realmName);
                         maps.userToAccessIdMap.put(userNameFromRole, accessIdFromRole);
                     }
 
@@ -438,7 +462,7 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
                         rolesForSubject.add(roleName);
                     }
                 }
-            } else if (accessId.startsWith(AccessIdUtil.TYPE_GROUP)) {
+            } else if (AccessIdUtil.isGroupAccessId(accessId)) {
                 Iterator<Group> groups = role.getGroups().iterator();
                 while (groups.hasNext()) {
                     Group group = groups.next();
@@ -449,8 +473,8 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
                         if (accessIdFromRole == null) {
                             accessIdFromRole = updateMissingGroupAccessId(maps, group, groupNameFromRole);
                         }
-                    } else if (!accessIdFromRole.startsWith(AccessIdUtil.TYPE_GROUP)) {
-                        accessIdFromRole = getCompleteAccessId(accessId, accessIdFromRole, AccessIdUtil.TYPE_GROUP);
+                    } else if (!AccessIdUtil.isGroupAccessId(accessIdFromRole)) {
+                        accessIdFromRole = getCompleteAccessId(accessId, accessIdFromRole, AccessIdUtil.TYPE_GROUP, realmName);
                         maps.groupToAccessIdMap.put(groupNameFromRole, accessIdFromRole);
                     }
 
@@ -475,24 +499,32 @@ public class AppBndAuthorizationTableService extends BaseAuthorizationTableServi
         return maps.accessIdToRolesMap;
     }
 
-    private String getCompleteAccessId(String accessIdFromSubject, String accessIdFromRole, String type) {
+    private String getCompleteAccessId(String accessIdFromSubject, String accessIdFromRole, String type, String realmName) {
         String tempAccessId = type + AccessIdUtil.TYPE_SEPARATOR + accessIdFromRole;
         if (AccessIdUtil.isAccessId(tempAccessId)) {
             return tempAccessId;
         } else {
-            String realm = AccessIdUtil.getRealm(accessIdFromSubject);
-            return AccessIdUtil.createAccessId(type, realm, accessIdFromRole);
+            if (realmName == null) {
+                realmName = AccessIdUtil.getRealm(accessIdFromSubject);
+            }
+            return AccessIdUtil.createAccessId(type, realmName, accessIdFromRole);
         }
     }
 
     /** {@inheritDoc} */
     @Override
     public RoleSet getRolesForAccessId(String appName, String accessId) {
+        return getRolesForAccessId(appName, accessId, null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public RoleSet getRolesForAccessId(String appName, String accessId, String realmName) {
         AuthzInfo authzInfo = resourceToAuthzInfoMap.get(appName);
         if (authzInfo != null) {
             Map<String, RoleSet> accessIdToRolesMap = authzInfo.authzTableContainer.accessIdToRolesMap;
             if (accessIdToRolesMap.get(accessId) == null) {
-                accessIdToRolesMap = updateMapsForAccessId(appName, accessId);
+                accessIdToRolesMap = updateMapsForAccessId(appName, accessId, realmName);
             }
             return accessIdToRolesMap.get(accessId);
         } else {

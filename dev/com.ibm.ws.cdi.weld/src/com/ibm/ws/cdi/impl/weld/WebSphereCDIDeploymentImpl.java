@@ -67,7 +67,6 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
     private ClassLoader classloader;
     private final Set<ClassLoader> extensionClassLoaders = new HashSet<ClassLoader>();
 
-    private final Set<ClassLoader> appBdaClassLoaders = new HashSet<ClassLoader>();
     //overall isCDIEnabled for whole app
     private Boolean cdiEnabled;
     //per archive cache of isCDIEnabled (does a bda or any it can access have any beans)
@@ -131,7 +130,6 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
     @Override
     public void setClassLoader(ClassLoader classloader) {
         this.classloader = classloader;
-        appBdaClassLoaders.add(classloader);
         extensionClassLoaders.add(classloader);
     }
 
@@ -174,6 +172,11 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
     @Override
     public WebSphereBeanDeploymentArchive getBeanDeploymentArchive(String archiveID) {
         return deploymentDBAs.get(archiveID);
+    }
+
+    @Override
+    public Application getApplication() {
+        return application;
     }
 
     /**
@@ -573,7 +576,6 @@ public class WebSphereCDIDeploymentImpl implements WebSphereCDIDeployment {
         if (type != ArchiveType.SHARED_LIB &&
             type != ArchiveType.RUNTIME_EXTENSION) {
             applicationBDAs.add(bda);
-            appBdaClassLoaders.add(bda.getClassLoader());
         }
     }
 

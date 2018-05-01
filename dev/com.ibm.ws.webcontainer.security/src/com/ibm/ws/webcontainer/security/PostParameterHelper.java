@@ -36,6 +36,7 @@ import com.ibm.wsspi.webcontainer.servlet.IExtendedRequest;
  * login with user id/pwd or single sign on cookie.
  */
 public class PostParameterHelper {
+
     private static final TraceComponent tc = Tr.register(PostParameterHelper.class);
 
     public static final String INITIAL_URL = "INITIAL_URL";
@@ -60,7 +61,7 @@ public class PostParameterHelper {
 
     /**
      * Save POST parameters to the cookie or session.
-     * 
+     *
      * @param req
      * @param res
      */
@@ -75,7 +76,7 @@ public class PostParameterHelper {
 
     /**
      * Save POST parameters to the cookie or session.
-     * 
+     *
      * @param req
      * @param res
      * @param authResult
@@ -86,7 +87,7 @@ public class PostParameterHelper {
 
     /**
      * Save POST parameters to the cookie or session.
-     * 
+     *
      * @param req
      * @param res
      * @param authResult
@@ -124,7 +125,7 @@ public class PostParameterHelper {
 
     /**
      * Save POST parameters(reqURL, parameters) to the cookie
-     * 
+     *
      * @param extReq
      * @param reqURL
      * @param result
@@ -161,14 +162,14 @@ public class PostParameterHelper {
 
     /**
      * Save POST parameters (reqURL, parameters) to a session
-     * 
+     *
      * @param req
      * @param reqURL
      * @param params
      */
     private void saveToSession(HttpServletRequest req, String reqURL, Map params) {
         HttpSession postparamsession = req.getSession(true);
-        if (postparamsession != null && req.getParameterNames() != null) {
+        if (postparamsession != null && params != null && !params.isEmpty()) {
             postparamsession.setAttribute(INITIAL_URL, reqURL);
             postparamsession.setAttribute(PARAM_NAMES, null);
             postparamsession.setAttribute(PARAM_VALUES, params);
@@ -180,7 +181,7 @@ public class PostParameterHelper {
 
     /**
      * Restore POST parameters from session or cookie.
-     * 
+     *
      * @param req
      * @param res
      */
@@ -190,7 +191,7 @@ public class PostParameterHelper {
 
     /**
      * Restore POST parameters from session or cookie.
-     * 
+     *
      * @param req
      * @param res
      */
@@ -220,7 +221,7 @@ public class PostParameterHelper {
 
     /**
      * Restore the POST parameters from session
-     * 
+     *
      * @param extRequest
      * @param req
      * @param reqURL
@@ -261,7 +262,7 @@ public class PostParameterHelper {
 
     /**
      * Restore POST parameter from cookie
-     * 
+     *
      * @param extRequest
      * @param res
      * @param reqURL

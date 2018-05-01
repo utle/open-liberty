@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 IBM Corporation and others.
+ * Copyright (c) 2017, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package com.ibm.ws.webcontainer.security.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -23,8 +24,6 @@ import org.jmock.integration.junit4.JUnit4Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Before;
 import org.junit.Test;
-import org.osgi.framework.BundleContext;
-import org.osgi.service.component.ComponentContext;
 
 import com.ibm.ws.security.SecurityService;
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
@@ -32,15 +31,13 @@ import com.ibm.wsspi.kernel.service.location.WsLocationAdmin;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 
 public class WebAppSecurityConfigImplTest {
+
     private final Mockery mock = new JUnit4Mockery() {
         {
             setImposteriser(ClassImposteriser.INSTANCE);
         }
     };
     private final WebAppSecurityConfig mockedConfig = mock.mock(WebAppSecurityConfig.class);
-//    private final WsLocationAdmin mockLocationAdmin = mock.mock(WsLocationAdmin.class);
-    private final ComponentContext cc = mock.mock(ComponentContext.class);
-    private final BundleContext bundleContext = mock.mock(BundleContext.class);
     private final AtomicServiceReference<WsLocationAdmin> locationAdminRef = mock.mock(AtomicServiceReference.class, "locationAdminRef");
     private final AtomicServiceReference<SecurityService> securityServiceRef = mock.mock(AtomicServiceReference.class, "securityServiceRef");
     private final WsLocationAdmin locateService = mock.mock(WsLocationAdmin.class);
@@ -171,6 +168,8 @@ public class WebAppSecurityConfigImplTest {
         cfg.put("autoGenSsoCookieName", Boolean.FALSE);
         cfg.put("ssoDomainNames", "austin.ibm.com|raleigh.ibm.com|useDomainFromURL");
         cfg.put("webAlwaysLogin", Boolean.TRUE);
+        cfg.put("jaspicSessionForMechanismsEnabled", Boolean.TRUE);
+        cfg.put("jaspicSessionCookieName", "jaspicSession");
         WebAppSecurityConfig webCfgOld = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
 
         cfg.put("allowFailOverToBasicAuth", Boolean.FALSE);
@@ -179,10 +178,12 @@ public class WebAppSecurityConfigImplTest {
         cfg.put("autoGenSsoCookieName", Boolean.FALSE);
         cfg.put("ssoDomainNames", "");
         cfg.put("webAlwaysLogin", Boolean.FALSE);
+        cfg.put("jaspicSessionForMechanismsEnabled", Boolean.FALSE);
+        cfg.put("jaspicSessionCookieName", "myJaspicSession");
         WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
 
         assertEquals("When all settings have changed, all should be listed",
-                     "allowFailOverToBasicAuth=false,displayAuthenticationRealm=true,ssoCookieName=mySSOCookie,ssoDomainNames=,webAlwaysLogin=false",
+                     "allowFailOverToBasicAuth=false,displayAuthenticationRealm=true,jaspicSessionCookieName=myJaspicSession,jaspicSessionForMechanismsEnabled=false,ssoCookieName=mySSOCookie,ssoDomainNames=,webAlwaysLogin=false",
                      webCfg.getChangedProperties(webCfgOld));
     }
 
@@ -218,6 +219,18 @@ public class WebAppSecurityConfigImplTest {
     @Test
     public void getChangedProperties_httpOnlyCookies() {
         driveSingleAttributeTest("httpOnlyCookies",
+                                 Boolean.TRUE, Boolean.FALSE);
+    }
+
+    @Test
+    public void getChangedProperties_jaspicSessionCookieName() {
+        driveSingleAttributeTest("jaspicSessionCookieName",
+                                 "jaspicSession", "myJaspicSession");
+    }
+
+    @Test
+    public void getChangedProperties_jaspicSessionForMechanismsEnabled() {
+        driveSingleAttributeTest("jaspicSessionForMechanismsEnabled",
                                  Boolean.TRUE, Boolean.FALSE);
     }
 
@@ -306,6 +319,24 @@ public class WebAppSecurityConfigImplTest {
     }
 
     @Test
+    public void testGetJaspicSessionCookieName() {
+        String expectCookieName = "jaspicSession";
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        cfg.put("jaspicSessionCookieName", expectCookieName);
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertEquals("The jaspicSessionCookieName value must be set.", expectCookieName, webCfg.getJaspicSessionCookieName());
+    }
+
+    @Test
+    public void testIsJaspicSessionForMechanismsEnabled() {
+        Boolean expectedValue = Boolean.TRUE;
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        cfg.put("jaspicSessionForMechanismsEnabled", expectedValue);
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertEquals("The jaspicSessionForMechanismsEnabled value must be set.", expectedValue, webCfg.isJaspicSessionForMechanismsEnabled());
+    }
+
+    @Test
     public void testSetSsoCookieName_autoGenSsoCookieName_true_defaultSsoCookieName() {
         Map<String, Object> cfg = new HashMap<String, Object>();
         mockCookie(cfg, true);
@@ -322,6 +353,54 @@ public class WebAppSecurityConfigImplTest {
         cfg.put("ssoCookieName", "myCookieName");
         WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
         assertEquals("Did not get expected ssoCookieName myCookieName", "myCookieName", webCfg.getSSOCookieName());
+    }
+
+    @Test
+    public void testGetLoginErrorURL_NotSet() {
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertNull("Null should be get since the value is not set.", webCfg.getLoginErrorURL());
+    }
+
+    @Test
+    public void testGetLoginErrorURL_Valid() {
+        final String ERROR_URL = "/globalLogin/errorPage.html";
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        cfg.put("loginErrorURL", ERROR_URL);
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertEquals("Vallid value should be returned.", ERROR_URL, webCfg.getLoginErrorURL());
+    }
+
+    @Test
+    public void testGetLoginFormContextRoot_NotSet() {
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertNull("Null should be get since the value is not set.", webCfg.getLoginFormContextRoot());
+    }
+
+    @Test
+    public void testGetLoginFormContextRoot_Valid() {
+        final String CONTEXT_ROOT = "/globalLogin";
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        cfg.put("contextRootForFormAuthenticationMechanism", CONTEXT_ROOT);
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertEquals("Vallid value should be returned.", CONTEXT_ROOT, webCfg.getLoginFormContextRoot());
+    }
+
+    @Test
+    public void testGetBasicAuthRealmName_NotSet() {
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertNull("Null should be get since the value is not set.", webCfg.getBasicAuthRealmName());
+    }
+
+    @Test
+    public void testGetBasicAuthRealmName_Valid() {
+        final String REALM_NAME = "realmName";
+        Map<String, Object> cfg = new HashMap<String, Object>();
+        cfg.put("basicAuthenticationMechanismRealmName", REALM_NAME);
+        WebAppSecurityConfig webCfg = new WebAppSecurityConfigImpl(cfg, locationAdminRef, securityServiceRef);
+        assertEquals("Vallid value should be returned.", REALM_NAME, webCfg.getBasicAuthRealmName());
     }
 
     /**

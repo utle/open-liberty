@@ -48,7 +48,8 @@ import componenttest.topology.impl.LibertyServerFactory;
  * <li>{@link FATOpentracing#testNested2Sync}</li>
  * <li>{@link FATOpentracing#testNested2Async}</li>
  * <li>{@link FATOpentracing#testNested4Sync}</li>
- * <li>{@link FATOpentracing#testNested4ASync}</li> *
+ * <li>{@link FATOpentracing#testNested4ASync}</li>
+ * <li>{@link FATOpentracing#testExcludes}</li>
  * </ul>
  *
  * <p>Each test invokes an API within the FAT test service.  Two
@@ -96,6 +97,7 @@ public class FATOpentracing implements FATOpentracingConstants {
     // OpenTrace FAT server ...
 
     private static LibertyServer server;
+    private static final boolean usingMicroProfile = false;
 
     private static void setUpServer() throws Exception {
         server = LibertyServerFactory.getLibertyServer(OPENTRACING_FAT_SERVER1_NAME);
@@ -286,7 +288,13 @@ public class FATOpentracing implements FATOpentracingConstants {
                 continue;
             }
 
-            String operation = completedSpan.getOperation();
+            String operation = completedSpan.getTag("http.url");
+            
+            // If operation is null, it's a manual span
+            
+            if (operation == null) {
+                operation = completedSpan.getOperation();
+            }
 
             boolean foundAll = true;
             for ( String text : selectText ) {
@@ -354,6 +362,7 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         for ( int spanNo = actualSpanCount - expectedSpanCount; spanNo < actualSpanCount; spanNo++ ) {
             FATUtilsSpans.CompletedSpan nextSpan = completedSpans.get(spanNo);
+            
             String nextTraceId = nextSpan.getTraceId();
             String nextSpanId = nextSpan.getSpanId();
             String nextParentId = nextSpan.getParentId();
@@ -546,7 +555,7 @@ public class FATOpentracing implements FATOpentracingConstants {
         List<String> responseLines =
             FATUtilsServer.gatherHttpRequest(FATUtilsServer.HttpRequestMethod.GET, requestUrl); // throws Exception
 
-        FATLogging.info(CLASS, methodName, "Reponse:");
+        FATLogging.info(CLASS, methodName, "Response:");
 
         int lineNo = 0;
         for ( String responseLine : responseLines ) {
@@ -607,7 +616,13 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         // *** The completed span event must be be for a get tracer state request. ***
 
-        assertEq("Operation", requestUrl, completedSpan.getOperation());
+        String operationName;
+        if (usingMicroProfile) {
+            operationName = "GET:com.ibm.ws.testing.opentracing.service.FATOpentracingService.getTracerState";
+        } else {
+            operationName = requestUrl;
+        }
+        assertEq("Operation", operationName, completedSpan.getOperation());
 
         // *** The completed span must have valid state and finish times. ***
 
@@ -676,7 +691,7 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         // *** And is expected to have the response text as specified through the request parameter. ***
 
-        assertEq("Reponse text",
+        assertEq("Response text",
                  responseText, actualResponseLines.get(0));
     }
 
@@ -738,7 +753,7 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         // *** And is expected to have the response text as specified through the request parameter. ***
 
-        assertEq("Reponse text",
+        assertEq("Response text",
                  responseText, actualResponseLines.get(0));
     }
 
@@ -847,7 +862,7 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         // *** And is expected to have the response text as specified through the request parameter. ***
 
-        assertEq("Reponse text",
+        assertEq("Response text",
                  responseText, actualResponseLines.get(0));
    }
 
@@ -884,8 +899,6 @@ public class FATOpentracing implements FATOpentracingConstants {
         verifyNestedSpans0();
         verifyTracerStateEvent();
     }
-
-    //
 
     /**
      * <p>Test requests through the nesting service.</p>
@@ -958,8 +971,6 @@ public class FATOpentracing implements FATOpentracingConstants {
         verifyTracerStateEvent();
     }
 
-    //
-
     /**
      * <p>Test requests through the nesting service.</p>
      *
@@ -1031,8 +1042,6 @@ public class FATOpentracing implements FATOpentracingConstants {
         verifyTracerStateEvent();
     }
 
-    //
-
     public static final boolean IS_ASYNC = true;
     public static final boolean IS_SYNC = false;
 
@@ -1073,7 +1082,7 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         // *** And is expected to have the response text as specified through the request parameter. ***
 
-        assertEq("Reponse text",
+        assertEq("Response text",
                  responseText, actualResponseLines.get(0));
     }
 
@@ -1511,11 +1520,36 @@ public class FATOpentracing implements FATOpentracingConstants {
             requestPath );
     }
 
-    /*
+    /**
      * Removed filter processing until microprofile spec for it is approved. Expect to add back in 1Q18 - smf
      * Disable the tests until we add the code back in.
+     * 
+     * A collection of tests of the exclude and include filters.
+     *
+     * There is a single endpoint, /excludeTest which takes a query parameter `response`
+     * which is what's sent back to the client. We use this query parameter as a way
+     * to test the various filters because filter matching occurs on the full URI,
+     * including query parameters, so we can simply vary the parameter.
+     * 
+     * To test exclude filters, we call {@link FATOpentracing#testExcludedPath(String)}
+     * which ensures that the number of completed spans is the same before and after
+     * the call (taking into account that the call to get the completed spans itself counts).
+     * 
+     * To test include filters, we call {@link FATOpentracing#testIncludedPath(String)}
+     * which ensures that the expected span is created.
+     * 
+     * To test that the filters correctly pass through spans besides those that are
+     * excluded and that filters work with nested calls, we call
+     * {@link FATOpentracing#testNestedExcludePath(String, int, boolean)} for both
+     * an excluded span and an included span, and confirm the proper spans.
+     * 
+     * To understand the tests in full, find the filters configuration in the test
+     * server.xml based on the query parameter passed to the test*Path methods.
+     *
+     * @throws Exception Thrown if the service request failed, or if the completed
+     *     spans could not be marshalled from the text obtained from the FAT service.
      */
-    //@Test
+    // @Test
     public void testExcludes() throws Exception {
         testExcludedPath("simple");
         testExcludedPath("wildcardTest");
@@ -1528,10 +1562,6 @@ public class FATOpentracing implements FATOpentracingConstants {
         testIncludedPath("incomingIncluded");
     }
 
-    /**
-     * @throws Exception
-     * @throws UnsupportedEncodingException
-     */
     private void testExcludedPath(String param) throws Exception, UnsupportedEncodingException {
         int initialCompletedSpansSize = getCompletedSpans(GET_EXCLUDE_TEST_PATH).size();
 
@@ -1568,10 +1598,6 @@ public class FATOpentracing implements FATOpentracingConstants {
         verifyContiguousSpans(completedSpans, 1);
     }
 
-    /**
-     * @throws UnsupportedEncodingException
-     * @throws Exception
-     */
     private void sendRequest(String path, String responseText) throws UnsupportedEncodingException, Exception {
         String methodName = "sendRequest";
         Map<String, Object> requestParms = new HashMap<String, Object>();
@@ -1594,7 +1620,7 @@ public class FATOpentracing implements FATOpentracingConstants {
 
         // *** And is expected to have the response text as specified through the request parameter. ***
 
-        assertEq("Reponse text",
+        assertEq("Response text",
                  responseText, actualResponseLines.get(0));
     }
     

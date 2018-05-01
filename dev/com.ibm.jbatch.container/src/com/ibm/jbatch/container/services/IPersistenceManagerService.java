@@ -534,16 +534,6 @@ public interface IPersistenceManagerService extends IBatchServiceBase {
                                                                    RemotablePartitionState internalStatus);
 
     /**
-     * Check if the job repository table for job executions has been updated (JOBPARAMETER table for V2).
-     */
-    int getJobExecutionTableVersion() throws Exception;
-
-    /**
-     * Check if the job repository table for job instances has been updated (UPDATETIME column for V2).
-     */
-    int getJobInstanceTableVersion() throws Exception;
-
-    /**
      * @return
      */
     String getDisplayId();
@@ -553,4 +543,42 @@ public interface IPersistenceManagerService extends IBatchServiceBase {
      */
     String getPersistenceType();
 
+    /**
+     *
+     * @param jobInstanceID
+     * @return list of group names if any exist
+     */
+    /*
+     * public List<String> getGroupNamesForJobID(long jobInstanceID) throws NoSuchJobInstanceException;
+     */
+
+    public JobInstanceEntity updateJobInstanceWithGroupNames(long jobInstanceId, Set<String> groupNames);
+
+    /**
+     * Get the job repository table version number. This will initialize the persistent store (database)
+     * if necessary in order to calculate and provide this value.
+     *
+     * @return job executions table version number
+     * @throws Exception
+     */
+    int getJobExecutionTableVersion() throws Exception;
+
+    /**
+     * Get the job repository table version number. This will initialize the persistent store (database)
+     * if necessary in order to calculate and provide this value.
+     *
+     * @return job instances table version number
+     * @throws Exception
+     */
+    int getJobInstanceTableVersion() throws Exception;
+
+    /**
+     * @return the job execution version field, initialized or not (may return 'null')
+     */
+    Integer getJobExecutionTableVersionField();
+
+    /**
+     * @return the job instance version field, initialized or not, (may return 'null')
+     */
+    Integer getJobInstanceTableVersionField();
 }

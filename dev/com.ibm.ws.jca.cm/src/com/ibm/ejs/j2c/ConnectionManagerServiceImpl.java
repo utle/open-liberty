@@ -10,6 +10,7 @@
  *******************************************************************************/
 package com.ibm.ejs.j2c;
 
+import java.security.AccessController;
 import java.sql.Connection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,15 +34,13 @@ import org.osgi.service.component.ComponentContext;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.ffdc.FFDCFilter;
-import com.ibm.ws.j2c.SecurityHelper;
 import com.ibm.ws.j2c.poolmanager.ConnectionPoolProperties;
 import com.ibm.ws.javaee.dd.common.ResourceRef;
 import com.ibm.ws.jca.adapter.PurgePolicy;
 import com.ibm.ws.jca.cm.AbstractConnectionFactoryService;
 import com.ibm.ws.jca.cm.ConnectionManagerService;
 import com.ibm.ws.jca.cm.ConnectorService;
-import com.ibm.ws.kernel.security.thread.ThreadIdentityManager;
-import com.ibm.ws.kernel.service.util.PrivHelper;
+import com.ibm.ws.kernel.service.util.SecureAction;
 import com.ibm.ws.resource.ResourceRefInfo;
 import com.ibm.wsspi.kernel.service.utils.MetatypeUtils;
 import com.ibm.wsspi.resource.ResourceInfo;
@@ -52,6 +51,7 @@ import com.ibm.wsspi.resource.ResourceInfo;
 public class ConnectionManagerServiceImpl extends ConnectionManagerService {
 
     private static final TraceComponent tc = Tr.register(ConnectionManagerServiceImpl.class, J2CConstants.traceSpec, J2CConstants.NLS_FILE);
+    final static SecureAction priv = AccessController.doPrivileged(SecureAction.get());
 
     /**
      * Mapping of connection factory key to connection manager.
@@ -130,7 +130,7 @@ public class ConnectionManagerServiceImpl extends ConnectionManagerService {
         if (trace && tc.isEntryEnabled())
             Tr.entry(this, tc, "activate", properties);
 
-        bndCtx = PrivHelper.getBundleContext(context);
+        bndCtx = priv.getBundleContext(context);
 
         // config.displayId contains the Xpath identifier.
         name = (String) properties.get("config.displayId");
@@ -227,7 +227,7 @@ public class ConnectionManagerServiceImpl extends ConnectionManagerService {
                         gConfigProps, raClassLoader);
 
         if (bndCtx == null)
-            bndCtx = PrivHelper.getBundleContext(FrameworkUtil.getBundle(getClass()));
+            bndCtx = priv.getBundleContext(FrameworkUtil.getBundle(getClass()));
 
         try {
             pmMBean = new PoolManagerMBeanImpl(pm, svc.getFeatureVersion());
@@ -402,12 +402,11 @@ public class ConnectionManagerServiceImpl extends ConnectionManagerService {
             cm = cfKeyToCM.get(cfDetailsKey);
             if (cm == null) {
                 CommonXAResourceInfo xaResInfo = new EmbXAResourceInfo(cmConfigData);
-                SecurityHelper securityHelper = createSecurityHelper(svc);
                 J2CGlobalConfigProperties gConfigProps = pm.getGConfigProps();
                 synchronized (this) {
                     cm = cfKeyToCM.get(cfDetailsKey);
                     if (cm == null) {
-                        cm = new ConnectionManager(svc, pm, gConfigProps, xaResInfo, securityHelper);
+                        cm = new ConnectionManager(svc, pm, gConfigProps, xaResInfo);
                         cfKeyToCM.put(cfDetailsKey, cm);
                     }
                 }
@@ -420,28 +419,6 @@ public class ConnectionManagerServiceImpl extends ConnectionManagerService {
         if (trace && tc.isEntryEnabled())
             Tr.exit(this, tc, "getConnectionManager", cm);
         return cm;
-    }
-
-    /**
-     * Creates a new instance of DefaultSecurityHelper or ThreadIdentitySecurityHelper,
-     * based on the config of the connection factory.
-     *
-     * @param cfSvc the connection factory service.
-     * @return If thread identity is enabled, a ThreadIdentitySecurityHelper; otherwise a DefaultSecurityHelper.
-     * @throws ResourceException if an error occurs.
-     */
-    private SecurityHelper createSecurityHelper(AbstractConnectionFactoryService cfSvc) throws ResourceException {
-
-        if (ThreadIdentityManager.isThreadIdentityEnabled()) {
-            String threadIdentitySupport = cfSvc.getThreadIdentitySupport();
-            if (threadIdentitySupport.equals(J2CGlobalConfigProperties.THREADIDENTITY_ALLOWED)
-                || threadIdentitySupport.equals(J2CGlobalConfigProperties.THREADIDENTITY_REQUIRED)) {
-                return new ThreadIdentitySecurityHelper(threadIdentitySupport, cfSvc.getThreadSecurity());
-            }
-        }
-
-        // If we got here, thread identity must not be enabled.  Return default.
-        return new DefaultSecurityHelper();
     }
 
     /**

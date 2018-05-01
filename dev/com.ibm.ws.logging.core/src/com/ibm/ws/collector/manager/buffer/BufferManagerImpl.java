@@ -12,62 +12,136 @@ package com.ibm.ws.collector.manager.buffer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.wsspi.collector.manager.BufferManager;
-import com.ibm.wsspi.collector.manager.Handler;
 import com.ibm.wsspi.collector.manager.SynchronousHandler;
 
 public class BufferManagerImpl extends BufferManager {
 
-	private static final TraceComponent tc = Tr.register(BufferManagerImpl.class);
-	private static final ReentrantReadWriteLock RERWLOCK = new ReentrantReadWriteLock(true);
-	private Set<SynchronousHandler> synchronizedHandlerSet = new HashSet<SynchronousHandler>();
+    /* Package name in trace from BufferManagerImpl is changed in order to reduce the trace volume when traceSpecification is set to "com.ibm.ws.*" */
+    private static final TraceComponent tc = Tr.register("x.com.ibm.ws.collector.manager.buffer.BufferManagerImpl",BufferManagerImpl.class,(String)null);	
+    private Buffer<Object> ringBuffer;
+    private Set<SynchronousHandler> synchronousHandlerSet = new HashSet<SynchronousHandler>();
+
+	private final int capacity;
 
 	private final String sourceId;
 	/* Map to keep track of the next event for a handler */
 	private final ConcurrentHashMap<String, HandlerStats> handlerEventMap = new ConcurrentHashMap<String, HandlerStats>();
 
+	protected Queue<Object> earlyMessageQueue;
+
+	private static final int EARLY_MESSAGE_QUEUE_SIZE = 400;
+
 	public BufferManagerImpl(int capacity, String sourceId) {
-		super(capacity);
+		super();
+
+		BufferManagerEMQHelper.addBufferManagerList(this);
+		ringBuffer = null;
 		this.sourceId = sourceId;
+		this.capacity = capacity;
+		if (!BufferManagerEMQHelper.getEMQRemovedFlag()) {
+			earlyMessageQueue = new SimpleRotatingSoftQueue<Object>(new Object[EARLY_MESSAGE_QUEUE_SIZE]);
+			// Check again just in case
+			if (BufferManagerEMQHelper.getEMQRemovedFlag()) {
+				removeEMQ();
+			}
+		}
 	}
 
+	public BufferManagerImpl(int capacity, String sourceId, boolean isEMQ) {
+		super();
+		this.sourceId = sourceId;
+		this.capacity = capacity;
+		if (!isEMQ) {
+			earlyMessageQueue = null; // don't need earlyMessageQueue
+			ringBuffer = new Buffer<Object>(capacity);
+		}
+	}
+	
+	
 	@Override
 	public void add(Object event) {
 		if (event == null)
 			throw new NullPointerException();
 
-		/*
-		 * Check if we have any synchronized handlers, and write directly to
-		 * them
-		 */
-		if (!synchronizedHandlerSet.isEmpty()) {
+		if (earlyMessageQueue != null) { // startup time
 			/*
-			 * There can be many Reader locks, but only one writer lock. This
-			 * ReaderWriter lock is needed to avoid CMException when the add()
-			 * method is forwarding log events to synchronized handlers and an
-			 * addSyncHandler or removeSyncHandler is called
+			 * earlyMessageQueue was first checked to be not null but this "gap"
+			 * here may have allowed the earlyMessageQueue to be set to null
+			 * from removeEMQ()
 			 */
-			RERWLOCK.readLock().lock();
-			try {
-				for (SynchronousHandler synchronizedHandler : synchronizedHandlerSet) {
-					synchronizedHandler.synchronousWrite(event);
+			Set<SynchronousHandler> synchronousHandlerSetSnapShot;
+
+			synchronized (this) {
+				// Must check again - could have been removed
+				if (earlyMessageQueue != null) {
+					earlyMessageQueue.add(event);
 				}
-			} finally {
-				RERWLOCK.readLock().unlock();
+
+				// If async handler added before this synchronized block, need
+				// to add to ring buffer
+				if (ringBuffer != null) {
+					ringBuffer.add(event);
+				}
+				synchronousHandlerSetSnapShot = synchronousHandlerSet;
+			}
+
+			/*
+			 * Cannot put in synchronize block due to a deadlock, but under the
+			 * assumption it "could have been" placed in the synchronized block,
+			 * we would have sent to this snapshot of synchronous handlers
+			 */
+			for (SynchronousHandler synchronousHandler : synchronousHandlerSetSnapShot) {
+				synchronousHandler.synchronousWrite(event);
+			}
+		} else { // after startup
+			/*
+			 * Get the latest up to date synchronousHandlerSet until we start
+			 * looping
+			 */
+			for (SynchronousHandler synchronousHandler : synchronousHandlerSet) {
+				synchronousHandler.synchronousWrite(event);
+			}
+
+			if (ringBuffer != null) {
+				addEventToRingBuffer(event);
 			}
 		}
 
 		if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
 			Tr.debug(tc, "Adding event to buffer " + event);
 		}
-		ringBuffer.add(event);
+	}
+
+	/**
+	 * Method to add events to the ringBufferthat and ignores a possible NPE
+	 * with ringBuffer which is due to the removeHandler method call from this
+	 * same class
+	 * 
+	 * We do not wish synchronize the add for every ringBuffer due to
+	 * performance impacts
+	 * 
+	 * @param event
+	 *            event to add to the buffer
+	 */
+	@FFDCIgnore(NullPointerException.class)
+	private void addEventToRingBuffer(Object event) {
+		// Check again to see if the ringBuffer is null
+		if (ringBuffer != null) {
+			try {
+				ringBuffer.add(event);
+			} catch (NullPointerException npe) {
+				// Nothing to do! Perhaps a Trace?
+			}
+		}
 	}
 
 	@Override
@@ -112,42 +186,81 @@ public class BufferManagerImpl extends BufferManager {
 		return e;
 	}
 
-	public void addHandler(String handlerId) {
+	/**
+	 * Add an asynchronous handler that will consume events from this 
+	 * BufferManagerImpl/Conduit's buffer
+	 * 
+	 * @param handlerId handlerID to add to this BufferManager
+	 */
+	public synchronized void addHandler(String handlerId) {
+		// If it is first async handler subscribed, then create the main buffer
+		if (ringBuffer == null) {
+			ringBuffer = new Buffer<Object>(capacity);
+		}
+		/*
+		 * Every new Asynchronous handler starts off with all events from EMQ.
+		 * So we write all EMQ messages directly to RingBuffer
+		 */
+
+		if (earlyMessageQueue != null && earlyMessageQueue.size() != 0) {
+			for (Object message : earlyMessageQueue.toArray()) {
+				ringBuffer.add(message);
+			}
+		}
+
 		handlerEventMap.putIfAbsent(handlerId, new HandlerStats(handlerId, sourceId));
+		Tr.event(tc, "Added Asynchronous Handler: " + handlerId);
 	}
 
-	public void addSyncHandler(SynchronousHandler syncHandler) {
-		/*
-		 * There can be many Reader locks, but only one writer lock. This
-		 * ReaderWriter lock is needed to avoid CMException when the add()
-		 * method is forwarding log events to synchronized handlers and an
-		 * addSyncHandler or removeSyncHandler is called
-		 */
-		RERWLOCK.writeLock().lock();
-		try {
-			synchronizedHandlerSet.add(syncHandler);
-		} finally {
-			RERWLOCK.writeLock().unlock();
+	/**
+	 * Add a synchronousHandler that will receive log events directly
+	 * 
+	 * @param syncHandler synchronousHandler that will receive log events directly
+	 */
+	public synchronized void addSyncHandler(SynchronousHandler syncHandler) {
+		// Send messages from EMQ to synchronous handler when it subscribes to
+		// receive messages
+		if (earlyMessageQueue != null && earlyMessageQueue.size() != 0
+				&& !synchronousHandlerSet.contains(syncHandler)) {
+			for (Object message : earlyMessageQueue.toArray()) {
+				syncHandler.synchronousWrite(message);
+			}
 		}
+
+		Set<SynchronousHandler> synchronousHandlerSetCopy = new HashSet<SynchronousHandler>(synchronousHandlerSet);
+		synchronousHandlerSetCopy.add(syncHandler);
+		Tr.event(tc, "Added Synchronous Handler: " + syncHandler.getHandlerName());
+		synchronousHandlerSet = synchronousHandlerSetCopy;
 	}
 
-	public void removeSyncHandler(SynchronousHandler syncHandler) {
-		/*
-		 * There can be many Reader locks, but only one writer lock. This
-		 * ReaderWriter lock is needed to avoid CMException when the add()
-		 * method is forwarding log events to synchronized handlers and an
-		 * addSyncHandler or removeSyncHandler is called
-		 */
-		RERWLOCK.writeLock().lock();
-		try {
-			synchronizedHandlerSet.remove(syncHandler);
-		} finally {
-			RERWLOCK.writeLock().unlock();
-		}
+	/**
+	 * Remove a synchronousHandler from receiving log events directly
+	 * 
+	 * @param syncHandler syncHandler to remove
+	 */
+	public synchronized void removeSyncHandler(SynchronousHandler syncHandler) {
+		Set<SynchronousHandler> synchronousHandlerSetCopy = new HashSet<SynchronousHandler>(synchronousHandlerSet);
+		synchronousHandlerSetCopy.remove(syncHandler);
+		Tr.event(tc, "Removed Synchronous Handler: " + syncHandler.getHandlerName());
+		synchronousHandlerSet = synchronousHandlerSetCopy;
 	}
 
-	public void removeHandler(String handlerId) {
+	/**
+	 * Remove the given handlerId from this BufferManager
+	 * 
+	 * @param handlerId handlerId to remove
+	 */
+	public synchronized void removeHandler(String handlerId) {
 		handlerEventMap.remove(handlerId);
+		Tr.event(tc, "Removed Asynchronous Handler: " + handlerId);
+		if (handlerEventMap.isEmpty()) {
+			ringBuffer = null;
+			Tr.event(tc, "ringBuffer for this BufferManagerImpl has now been set to null");
+		}
+	}
+
+	public synchronized void removeEMQ() {
+		earlyMessageQueue = null;
 	}
 
 	public static class HandlerStats {

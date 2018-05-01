@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2017 IBM Corporation and others.
+ * Copyright (c) 2015, 2018 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,8 +15,14 @@ import java.util.logging.LogRecord;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.ws.logging.RoutedMessage;
 import com.ibm.ws.logging.WsTraceHandler;
+import com.ibm.ws.logging.collector.CollectorJsonHelpers;
+import com.ibm.ws.logging.collector.LogFieldConstants;
+import com.ibm.ws.logging.data.GenericData;
+import com.ibm.ws.logging.data.KeyValuePairList;
+import com.ibm.ws.logging.data.LogTraceData;
 import com.ibm.ws.logging.internal.WsLogRecord;
 import com.ibm.ws.logging.synch.ThreadLocalHandler;
 import com.ibm.ws.logging.utils.LogFormatUtils;
@@ -25,7 +31,6 @@ import com.ibm.wsspi.collector.manager.BufferManager;
 import com.ibm.wsspi.collector.manager.Source;
 
 public class TraceSource implements Source, WsTraceHandler {
-
     private static final TraceComponent tc = Tr.register(TraceSource.class);
 
     private final String sourceName = "com.ibm.ws.logging.source.trace";
@@ -82,37 +87,90 @@ public class TraceSource implements Source, WsTraceHandler {
     }
 
     /** {@inheritDoc} */
-    @Override
-    public void publish(RoutedMessage routedMessage) {
-        //Publish the message if it is not coming from a handler thread
+    public void publish(RoutedMessage routedMessage, Object id) {
+        //Publish the trace if it is not coming from a handler thread
         if (!ThreadLocalHandler.get()) {
-            LogRecord logRecord = routedMessage.getLogRecord();
-            if (logRecord != null) {
-                if (bufferMgr != null) {
-                    bufferMgr.add(parse(routedMessage, logRecord));
-                }
+            if (routedMessage.getLogRecord() != null && bufferMgr != null) {
+                bufferMgr.add(parse(routedMessage, id));
             }
         }
     }
 
-    public TraceLogData parse(RoutedMessage routedMessage, LogRecord logRecord) {
-        String message = routedMessage.getFormattedVerboseMsg();
-        if (message == null)
-            message = logRecord.getMessage();
-        long timestamp = logRecord.getMillis();
-        int threadId = logRecord.getThreadID();
-        String loggerName = logRecord.getLoggerName();
-        String logLevel = LogFormatUtils.mapLevelToType(logRecord);
-        String logLevelRaw = LogFormatUtils.mapLevelToRawType(logRecord);
-        String methodName = logRecord.getSourceMethodName();
-        String className = logRecord.getSourceClassName();
-        Map<String, String> extensions = null;
-        if (logRecord instanceof WsLogRecord)
-            extensions = ((WsLogRecord) logRecord).getExtensions();
-        String sequence = sequenceNumber.next(timestamp);
-        //String sequence = timestamp + "_" + String.format("%013X", seq.incrementAndGet());
+    /** {@inheritDoc} */
+    @Override
+    public void publish(RoutedMessage routedMessage) {
+        //Publish the message if it is not coming from a handler thread
+        if (!ThreadLocalHandler.get()) {
+            if (routedMessage.getLogRecord() != null && bufferMgr != null) {
+                bufferMgr.add(parse(routedMessage, null));
+            }
+        }
+    }
 
-        return new TraceLogData(timestamp, threadId, loggerName, logLevel, logLevelRaw, message, methodName, className, extensions, sequence);
+    public LogTraceData parse(RoutedMessage routedMessage, Object id) {
 
+        GenericData genData = new GenericData();
+        LogRecord logRecord = routedMessage.getLogRecord();
+        String verboseMessage = routedMessage.getFormattedVerboseMsg();
+
+        if (verboseMessage == null) {
+            genData.addPair(LogFieldConstants.MESSAGE, logRecord.getMessage());
+        } else {
+            genData.addPair(LogFieldConstants.MESSAGE, verboseMessage);
+        }
+
+        long datetimeValue = logRecord.getMillis();
+        genData.addPair(LogFieldConstants.IBM_DATETIME, datetimeValue);
+        genData.addPair(LogFieldConstants.IBM_THREADID, logRecord.getThreadID());
+        genData.addPair(LogFieldConstants.MODULE, logRecord.getLoggerName());
+        genData.addPair(LogFieldConstants.SEVERITY, LogFormatUtils.mapLevelToType(logRecord));
+        genData.addPair(LogFieldConstants.LOGLEVEL, LogFormatUtils.mapLevelToRawType(logRecord));
+        genData.addPair(LogFieldConstants.IBM_METHODNAME, logRecord.getSourceMethodName());
+        genData.addPair(LogFieldConstants.IBM_CLASSNAME, logRecord.getSourceClassName());
+        String sequenceNum = sequenceNumber.next(datetimeValue);
+        genData.addPair(LogFieldConstants.IBM_SEQUENCE, sequenceNum);
+
+        genData.addPair(LogFieldConstants.LEVELVALUE, logRecord.getLevel().intValue());
+
+        String threadName = Thread.currentThread().getName();
+        genData.addPair(LogFieldConstants.THREADNAME, threadName);
+
+        if (id != null) {
+            Integer objid = System.identityHashCode(id);
+            genData.addPair(LogFieldConstants.OBJECT_ID, objid);
+        }
+        WsLogRecord wsLogRecord = getWsLogRecord(logRecord);
+
+        if (wsLogRecord != null) {
+            genData.addPair(LogFieldConstants.CORRELATION_ID, wsLogRecord.getCorrelationId());
+            genData.addPair(LogFieldConstants.ORG, wsLogRecord.getOrganization());
+            genData.addPair(LogFieldConstants.PRODUCT, wsLogRecord.getProduct());
+            genData.addPair(LogFieldConstants.COMPONENT, wsLogRecord.getComponent());
+        }
+
+        if (logRecord instanceof WsLogRecord) {
+            if (((WsLogRecord) logRecord).getExtensions() != null) {
+                KeyValuePairList extensions = new KeyValuePairList(LogFieldConstants.EXTENSIONS_KVPL);
+                Map<String, String> extMap = ((WsLogRecord) logRecord).getExtensions();
+                for (Map.Entry<String, String> entry : extMap.entrySet()) {
+                    CollectorJsonHelpers.handleExtensions(extensions, entry.getKey(), entry.getValue());
+                }
+                genData.addPairs(extensions);
+            }
+        }
+        genData.setSourceType(sourceName);
+        LogTraceData traceData = new LogTraceData(genData);
+        traceData.setLevelValue(logRecord.getLevel().intValue());
+
+        return traceData;
+    }
+
+    @FFDCIgnore(value = { ClassCastException.class })
+    private WsLogRecord getWsLogRecord(LogRecord logRecord) {
+        try {
+            return (WsLogRecord) logRecord;
+        } catch (ClassCastException ex) {
+            return null;
+        }
     }
 }

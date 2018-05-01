@@ -1332,8 +1332,17 @@ public class MemoryPersistenceManagerImpl extends AbstractPersistenceManager imp
     @Override
     public List<JobInstanceEntity> getJobInstances(IJPAQueryHelper queryHelper, int page, int pageSize) {
         // TODO: Should we implement this for Memory Persistence?
-        throw new UnsupportedOperationException("The REST URL search parameters requesting this function "
-                                                + "are not supported by the Java batch memory-based persistence configuration.");
+        //throw new UnsupportedOperationException("The REST URL search parameters requesting this function "
+        //   + "are not supported by the Java batch memory-based persistence configuration.");
+
+        String delieveredQuery = queryHelper.getQuery();
+
+        if (delieveredQuery.equals(queryHelper.DEFAULT_QUERY)) {
+            return getJobInstances(page, pageSize);
+        } else {
+            throw new UnsupportedOperationException("The REST URL search parameters requesting this function "
+                                                    + "are not supported by the Java batch memory-based persistence configuration.");
+        }
     }
 
     @Override
@@ -1368,20 +1377,48 @@ public class MemoryPersistenceManagerImpl extends AbstractPersistenceManager imp
 
     /** {@inheritDoc} */
     @Override
+    public String getPersistenceType() {
+        return "MEM";
+    }
+
+    /** {@inheritDoc} */
+    /*
+     * @Override
+     *
+     * public List<String> getGroupNamesForJobID(long jobInstanceID) throws NoSuchJobInstanceException {
+     * // TODO Auto-generated method stub
+     * return null;
+     * }
+     */
+
+    /** {@inheritDoc} */
+    @Override
+    public JobInstanceEntity updateJobInstanceWithGroupNames(long jobInstanceId, Set<String> groupNames) {
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public int getJobExecutionTableVersion() {
-        return 2;
+        return getJobExecutionTableVersionField();
     }
 
     /** {@inheritDoc} */
     @Override
     public int getJobInstanceTableVersion() {
+        return getJobInstanceTableVersionField();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Integer getJobExecutionTableVersionField() {
         return 2;
     }
 
     /** {@inheritDoc} */
     @Override
-    public String getPersistenceType() {
-        return "MEM";
+    public Integer getJobInstanceTableVersionField() {
+        return 3;
     }
 
 }
