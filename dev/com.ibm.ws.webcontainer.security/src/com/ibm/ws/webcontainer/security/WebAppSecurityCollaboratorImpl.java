@@ -1430,13 +1430,13 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         return url;
     }
 
-//    public static void setGlobalWebAppSecurityConfig(WebAppSecurityConfig config) {
-//        globalConfig = config;
-//    }
-//
-//    public static WebAppSecurityConfig getGlobalWebAppSecurityConfig() {
-//        return globalConfig;
-//    }
+    public static void setGlobalWebAppSecurityConfig(WebAppSecurityConfig config) {
+        webAppSecurityConfig = config;
+    }
+
+    public static WebAppSecurityConfig getGlobalWebAppSecurityConfig() {
+        return webAppSecurityConfig;
+    }
 
     protected AuthenticateApi getAuthenticateApi() {
         if (authenticateApi == null) {
