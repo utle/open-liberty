@@ -17,6 +17,7 @@ import java.util.Map;
 import com.ibm.ws.webcontainer.security.ReferrerURLCookieHandler;
 import com.ibm.ws.webcontainer.security.SSOCookieHelper;
 import com.ibm.ws.webcontainer.security.SSOCookieHelperImpl;
+import com.ibm.ws.webcontainer.security.WebAppSecurityCollaboratorImpl;
 import com.ibm.ws.webcontainer.security.WebAppSecurityConfig;
 import com.ibm.ws.webcontainer.security.WebAuthenticatorProxy;
 
@@ -102,7 +103,11 @@ class WebAdminSecurityConfigImpl implements WebAppSecurityConfig {
     /** {@inheritDoc} */
     @Override
     public String getSSOCookieName() {
-        return ssoCookieName;
+        WebAppSecurityConfig globalConfig = WebAppSecurityCollaboratorImpl.getGlobalWebAppSecurityConfig();
+        if (globalConfig != null)
+            return WebAppSecurityCollaboratorImpl.getGlobalWebAppSecurityConfig().getSSOCookieName();
+        else
+            return ssoCookieName;
     }
 
     /** {@inheritDoc} */
