@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2020 IBM Corporation and others.
+ * Copyright (c) 2020 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,31 +20,11 @@ import javax.security.auth.spi.LoginModule;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.ffdc.annotation.FFDCIgnore;
-import com.ibm.ws.kernel.service.util.JavaInfo;
-import com.ibm.ws.kernel.service.util.JavaInfo.Vendor;
 
 public class Krb5LoginModuleWrapper implements LoginModule {
     private static final TraceComponent tc = Tr.register(Krb5LoginModuleWrapper.class);
 
     public static final String COM_IBM_SECURITY_AUTH_MODULE_KRB5LOGINMODULE = "com.ibm.security.auth.module.Krb5LoginModule";
-    public static final String COM_SUN_SECURITY_AUTH_MODULE_KRB5LOGINMODULE = "com.sun.security.auth.module.Krb5LoginModule";
-    public static final String COM_SUN_SECURITY_JGSS_KRB5_INITIATE = "com.sun.security.jgss.krb5.initiate";
-    public static final String COM_SUN_SECURITY_JGSS_KRB5_ACCEPT = "com.sun.security.jgss.krb5.accept";
-
-    @FFDCIgnore(Throwable.class)
-    private static boolean isIBMLoginModuleAvailable() {
-        try {
-            Class.forName(COM_IBM_SECURITY_AUTH_MODULE_KRB5LOGINMODULE);
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
-    // Cannot rely purely on JavaInfo.vendor() because IBM JDK 8 for Mac OS reports vendor = Oracle and only has some IBM API available
-    private static final boolean isIBMJdk8 = (JavaInfo.vendor() == Vendor.IBM || isIBMLoginModuleAvailable())
-                                             && JavaInfo.majorVersion() <= 8;
 
     public CallbackHandler callbackHandler;
     public Subject subject;
@@ -59,9 +39,8 @@ public class Krb5LoginModuleWrapper implements LoginModule {
      * <p>Construct an uninitialized Krb5LoginModuleWrapper object.</p>
      */
     public Krb5LoginModuleWrapper() {
-        String targetClass = isIBMJdk8 //
-                        ? COM_IBM_SECURITY_AUTH_MODULE_KRB5LOGINMODULE //
-                        : COM_SUN_SECURITY_AUTH_MODULE_KRB5LOGINMODULE;
+        String targetClass = COM_IBM_SECURITY_AUTH_MODULE_KRB5LOGINMODULE;
+
         if (TraceComponent.isAnyTracingEnabled()) {
             Tr.debug(tc, "Using target class: " + targetClass);
         }
@@ -83,33 +62,27 @@ public class Krb5LoginModuleWrapper implements LoginModule {
         this.sharedState = (Map<String, Object>) sharedState;
         this.options = new HashMap<>(opts);
 
-        if (!isIBMJdk8)
-            useKeytabValue = options.get("useKeyTab");
-
-        if (isIBMJdk8) {
-            // Sanitize any OpenJDK-only config options
-            if (options.containsKey("isInitiator")) {
-                String isInitiator = (String) options.remove("isInitiator");
-                if ("true".equalsIgnoreCase(isInitiator)) {
-                    options.put("credsType", "both");
-                }
+        if (options.containsKey("isInitiator")) {
+            String isInitiator = (String) options.remove("isInitiator");
+            if ("true".equalsIgnoreCase(isInitiator)) {
+                options.put("credsType", "both");
             }
-            options.remove("doNotPrompt");
-            options.remove("refreshKrb5Config");
-            if (options.containsKey("keyTab")) {
-                String keytab = (String) options.remove("keyTab");
-                options.remove("useKeyTab");
-                options.put("useKeytab", keytab);
-            }
-            options.remove("clearPass");
-            boolean useTicketCache = Boolean.valueOf((String) options.remove("useTicketCache"));
-            String ticketCache = (String) options.remove("ticketCache");
-            if (useTicketCache) {
-                if (ticketCache != null) {
-                    options.put("useCcache", ticketCache);
-                } else {
-                    options.put("useDefaultCcache", "true");
-                }
+        }
+        options.remove("doNotPrompt");
+        options.remove("refreshKrb5Config");
+        if (options.containsKey("keyTab")) {
+            String keytab = (String) options.remove("keyTab");
+            options.remove("useKeyTab");
+            options.put("useKeytab", keytab);
+        }
+        options.remove("clearPass");
+        boolean useTicketCache = Boolean.valueOf((String) options.remove("useTicketCache"));
+        String ticketCache = (String) options.remove("ticketCache");
+        if (useTicketCache) {
+            if (ticketCache != null) {
+                options.put("useCcache", ticketCache);
+            } else {
+                options.put("useDefaultCcache", "true");
             }
         }
 
@@ -175,5 +148,4 @@ public class Krb5LoginModuleWrapper implements LoginModule {
             throw new IllegalStateException(e);
         }
     }
-
 }
