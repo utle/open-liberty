@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2020 IBM Corporation and others.
+ * Copyright (c) 2018, 2021 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -110,30 +110,6 @@ public class Krb5LoginModuleWrapper implements LoginModule {
             //Enable noninteractive keyTab login to start with (requires useKeytab or useDefaultKeytab to also be set).
             options.put("credsType", "both");
 
-            /*
-             * Taken from:
-             * https://www.ibm.com/support/knowledgecenter/SSYKE2_8.0.0/com.ibm.java.security.api.80.doc/jgss/com/ibm/security/auth/module/Krb5LoginModule.html
-             * The keytab and ccache options take precedence over tryFirstPass.
-             *
-             * Taken from:
-             * https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_71/rzaha/rzahajgssusejaas20.htm
-             *
-             * The login proceeds noninteractively when you specify the credential type as initiator (credsType=initiator) and
-             * you perform one of the following actions:
-             *
-             * Specify the useCcache option
-             * Set the useDefaultCcache option to true
-             *
-             * The login also proceeds noninteractively when you specify the credential type as acceptor or both (credsType=acceptor or credsType=both)
-             * and you perform one of the following actions:
-             *
-             * Specify the useKeytab option
-             * Set the useDefaultKeytab option to true
-             *
-             * Interactive logins:
-             * Other configurations result in the login module prompting for a principal name and password so that it may obtain a TGT from a Kerberos KDC.
-             * The login module prompts for only a password when you specify the principal option.
-             */
             if (!doNotPrompt) {
                 //A password was provided so enable interactive login.
                 options.put("useFirstPass", "true");
@@ -154,12 +130,11 @@ public class Krb5LoginModuleWrapper implements LoginModule {
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
                     Tr.debug(tc, "Coerced keytab path from " + keytab + " to " + keytabURL);
                 options.put(IBM_JDK_USE_KEYTAB, keytabURL);
-            } else {
-                // If no keyTab path specified, still set useDefaultKeytab=true because then the
+            } else if (ticketCache == null) {
+                // If no keyTab  and ticket cache path specified, still set useDefaultKeytab=true because then the
                 // default JDK or default OS locations will be checked
                 options.put("useDefaultKeytab", "true");
             }
-
         }
 
         if (useKeytabValue != null && useKeytabValue.equals("true") && options.get("keyTab") == null) {
@@ -174,33 +149,35 @@ public class Krb5LoginModuleWrapper implements LoginModule {
 
     @Override
     public boolean login() throws LoginException {
-        krb5loginModule.login();
         login_called = true;
-        return true;
+        return krb5loginModule.login();
     }
 
     /** {@inheritDoc} */
     @Override
     public boolean commit() throws LoginException {
         if (login_called)
-            krb5loginModule.commit();
-        return true;
+            return krb5loginModule.commit();
+        else
+            return true;
     }
 
     /** {@inheritDoc} */
     @Override
     public boolean abort() throws LoginException {
         if (login_called)
-            krb5loginModule.abort();
-        return true;
+            return krb5loginModule.abort();
+        else
+            return true;
     }
 
     /** {@inheritDoc} */
     @Override
     public boolean logout() throws LoginException {
         if (login_called)
-            krb5loginModule.logout();
-        return true;
+            return krb5loginModule.logout();
+        else
+            return true;
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

@@ -214,9 +214,9 @@ public class KerberosService {
      * the resulting Subject is cached.
      *
      * @param principal The principal to obtain a subject for
-     * @param pass      The password to be used via CallbackHandler. This will only be used if no password
-     *                      is found in the credential cache or keytab files first. May be null.
-     * @param ccache    The path to the credential cache to be used for this principal. May be null.
+     * @param pass The password to be used via CallbackHandler. This will only be used if no password
+     *            is found in the credential cache or keytab files first. May be null.
+     * @param ccache The path to the credential cache to be used for this principal. May be null.
      * @return A valid subject for the supplied principal
      */
     public Subject getOrCreateSubject(String principal, SerializableProtectedString pass, Path ccache) throws LoginException {
@@ -250,10 +250,11 @@ public class KerberosService {
         if (ccache != null) {
             options.put("useTicketCache", "true");
             options.put("ticketCache", ccache.toAbsolutePath().toString());
+        } else {
+            // If no ccache and  keytab path specified, still set useKeyTab=true because then the
+            // default JDK or default OS locations will be checked
+            options.put("useKeyTab", "true");
         }
-        // If no keytab path specified, still set useKeyTab=true because then the
-        // default JDK or default OS locations will be checked
-        options.put("useKeyTab", "true");
         if (keytab != null) {
             options.put("keyTab", keytab.toAbsolutePath().toString());
         }
