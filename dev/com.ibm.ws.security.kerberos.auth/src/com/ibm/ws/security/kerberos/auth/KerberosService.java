@@ -261,7 +261,7 @@ public class KerberosService {
         options.put("principal", principal);
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             options.put("debug", "true");
-            Tr.debug(tc, "All kerberos config properties are: " + options);
+            Tr.debug(tc, "<UTLE>All kerberos config properties are: " + options);
         }
 
         krb5.initialize(subject, callback, sharedState, options);
