@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -67,7 +67,7 @@ public class AcmeSSLCertificateCreator implements DefaultSSLCertificateCreator {
      *
      * @return The {@link AcmeProvider} instance to use.
      * @throws CertificateException
-     *             If the {@link AcmeProvider} instance is null.
+     *                                  If the {@link AcmeProvider} instance is null.
      */
     @Trivial
     private AcmeProvider getAcmeProvider() throws CertificateException {
@@ -84,5 +84,18 @@ public class AcmeSSLCertificateCreator implements DefaultSSLCertificateCreator {
 
     protected void unsetAcmeProvider(AcmeProvider acmeProvider) {
         acmeProviderRef.compareAndSet(acmeProvider, null);
+    }
+
+    @Override
+    public File createSignDefaultSSLCertificate(String filePath, String password, String keyStoreType, String keyStoreProvider, int validity, String subjectDN, int keySize,
+                                                String sigAlg, List<String> extInfo, String signer, String signerKeyPass) throws CertificateException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public void updateSignDefaultSSLCertificate(KeyStore keyStore, File keyStoreFile, String password) throws CertificateException {
+        // TODO Auto-generated method stub
+
     }
 }

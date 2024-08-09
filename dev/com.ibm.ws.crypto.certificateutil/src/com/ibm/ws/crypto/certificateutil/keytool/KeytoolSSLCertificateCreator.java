@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -152,5 +152,32 @@ public class KeytoolSSLCertificateCreator implements DefaultSSLCertificateCreato
     @Override
     public String getType() {
         return TYPE_SELF_SIGNED;
+    }
+
+    @Override
+    public File createSignDefaultSSLCertificate(String filePath, String password, String keyStoreType, String keyStoreProvider, int validity, String subjectDN, int keySize,
+                                                String sigAlg, List<String> extInfo, String signer, String signerKeyPass) throws CertificateException {
+        KeytoolCommand keytoolCmd = null;
+
+        validateParameters(filePath, password, validity, subjectDN, keySize, sigAlg);
+
+        String keyType = getKeyFromSigAlg(sigAlg);
+
+        keyStoreType = (keyStoreType == null) ? DEFAULT_KEYSTORE_TYPE : keyStoreType;
+
+        keytoolCmd = new KeytoolCommand(filePath, password, validity, subjectDN, keySize, keyType, sigAlg, keyStoreType, extInfo, signer, signerKeyPass);
+
+        keytoolCmd.executeCommand();
+        File f = new File(filePath);
+        if (f.exists()) {
+            return f;
+        } else {
+            throw new CertificateException("KeytoolCommand executed successfully but file does not exist.");
+        }
+    }
+
+    @Override
+    public void updateSignDefaultSSLCertificate(KeyStore keyStore, File keyStoreFile, String password) throws CertificateException {
+
     }
 }

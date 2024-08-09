@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -35,7 +35,7 @@ class KeytoolCommand {
     private String toString = null;
 
     /**
-     * KeytoolCommand represents a keytool command-line invocation.
+     * KeytoolCommand represents a keytool command-line invocation to create a self sign certificate
      * <p>
      * No validation is done on the arguments, as the caller should have done
      * so already.
@@ -51,7 +51,6 @@ class KeytoolCommand {
      * @param extInfo
      */
     KeytoolCommand(String filePath, String password, int validity, String subjectDN, int keySize, String keyType, String sigAlg, String ksType, List<String> extInfo) {
-
         cmd = new ArrayList<String>();
         cmd.add(getAbsoluteKeytoolPath());
         cmd.add("-genkey");
@@ -75,6 +74,64 @@ class KeytoolCommand {
         cmd.add(Integer.toString(keySize));
         cmd.add("-storetype");
         cmd.add(ksType);
+
+        if (extInfo != null && !extInfo.isEmpty()) {
+            for (Object extVal : extInfo) {
+                cmd.add("-ext");
+                cmd.add((String) (extVal));
+            }
+        }
+    }
+
+    /**
+     * KeytoolCommand represents a keytool command-line invocation to create a sign certificate
+     * <p>
+     * No validation is done on the arguments, as the caller should have done
+     * so already.
+     *
+     * @param filePath
+     * @param password
+     * @param validity
+     * @param subjectDN
+     * @param keySize
+     * @param keyType
+     * @param sigAlg
+     * @param ksType
+     * @param extInfo
+     * @param signer
+     * @param signerKeyPass
+     */
+    KeytoolCommand(String filePath, String password, int validity, String subjectDN, int keySize, String keyType, String sigAlg, String ksType, List<String> extInfo, String signer,
+                   String signerKeyPass) {
+        cmd = new ArrayList<String>();
+        cmd.add(getAbsoluteKeytoolPath());
+        cmd.add("-genkey");
+        cmd.add("-keystore");
+        cmd.add(filePath);
+        cmd.add("-storepass");
+        cmd.add(password);
+        cmd.add("-keypass");
+        cmd.add(password);
+        cmd.add("-validity");
+        cmd.add(Integer.toString(validity));
+        cmd.add("-dname");
+        cmd.add(subjectDN);
+        cmd.add("-alias");
+        cmd.add(DefaultSSLCertificateCreator.ALIAS);
+        cmd.add("-sigalg");
+        cmd.add(sigAlg);
+        cmd.add("-keyalg");
+        cmd.add(keyType);
+        cmd.add("-keySize");
+        cmd.add(Integer.toString(keySize));
+        cmd.add("-storetype");
+        cmd.add(ksType);
+        cmd.add("-storetype");
+        cmd.add(ksType);
+        cmd.add("-signer");
+        cmd.add(signer);
+        cmd.add("-signerkeypass");
+        cmd.add(signerKeyPass);
 
         if (extInfo != null && !extInfo.isEmpty()) {
             for (Object extVal : extInfo) {
