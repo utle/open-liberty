@@ -27,8 +27,8 @@ public class LTPAValidationKeysInfo {
     private byte[] secretKey = null;
     private byte[] privateKey = null;
     private byte[] publicKey = null;
-    private LTPAPrivateKey ltpaPrivateKey = null;
-    private LTPAPublicKey ltpaPublicKey = null;
+    private final LTPAPrivateKey ltpaPrivateKey = null;
+    private final LTPAPublicKey ltpaPublicKey = null;
     OffsetDateTime validUntilDateOdt = null;
 
     LTPAValidationKeysInfo(String filename, byte[] secretKey, byte[] privateKey, byte[] publicKey, OffsetDateTime validUntilDateOdt) {
@@ -37,8 +37,8 @@ public class LTPAValidationKeysInfo {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.validUntilDateOdt = validUntilDateOdt;
-        ltpaPrivateKey = new LTPAPrivateKey(privateKey);
-        ltpaPublicKey = new LTPAPublicKey(publicKey);
+//        ltpaPrivateKey = new LTPAPrivateKey(privateKey);
+//        ltpaPublicKey = new LTPAPublicKey(publicKey);
     }
 
     public byte[] getSecretKey() {
@@ -66,16 +66,18 @@ public class LTPAValidationKeysInfo {
     // Otherwise, the key is valid and will return false.
     // If the validUntilDateOdt is null, then the key is forever valid and will return false.
     public boolean isValidUntilDateExpired() {
-        if (validUntilDateOdt == null) // If not specified, then it is forever valid.
-            return false;
+        return true;
 
-        OffsetDateTime currentTime = OffsetDateTime.now(validUntilDateOdt.getOffset());
-
-        if (validUntilDateOdt.isBefore(currentTime)) {
-            Tr.warning(tc, "LTPA_VALIDATION_KEYS_VALID_UNTIL_DATE_IS_IN_THE_PAST", validUntilDateOdt, filename);
-            return true;
-        } else {
-            return false;
-        }
+//        if (validUntilDateOdt == null) // If not specified, then it is forever valid.
+//            return false;
+//
+//        OffsetDateTime currentTime = OffsetDateTime.now(validUntilDateOdt.getOffset());
+//
+//        if (validUntilDateOdt.isBefore(currentTime)) {
+//            Tr.warning(tc, "LTPA_VALIDATION_KEYS_VALID_UNTIL_DATE_IS_IN_THE_PAST", validUntilDateOdt, filename);
+//            return true;
+//        } else {
+//            return false;
+//        }
     }
 }

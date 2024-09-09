@@ -12,6 +12,8 @@
  *******************************************************************************/
 package com.ibm.ws.crypto.ltpakeyutil;
 
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Properties;
 
 public interface LTPAKeyFileUtility {
@@ -40,5 +42,9 @@ public interface LTPAKeyFileUtility {
 	 * @throws Exception
 	 */
 	Properties createLTPAKeysFile(String keyFile, byte[] keyPasswordBytes) throws Exception;
+
+	PublicKey getPublicKey();
+
+	PrivateKey getPrivateKey();
 
 }

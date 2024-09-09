@@ -15,6 +15,8 @@ package com.ibm.ws.security.token.ltpa.internal;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -28,6 +30,7 @@ import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.websphere.security.auth.InvalidTokenException;
 import com.ibm.websphere.security.auth.TokenExpiredException;
 import com.ibm.ws.common.encoder.Base64Coder;
+import com.ibm.ws.crypto.ltpakeyutil.LTPAKeyFileUtilityImpl;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAKeyUtil;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAPrivateKey;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAPublicKey;
@@ -70,11 +73,11 @@ public class LTPAToken2 implements Token, Serializable {
                 m1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256, LTPAKeyUtil.IBMJCE_PLUS_FIPS_NAME);
                 m2 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256, LTPAKeyUtil.IBMJCE_PLUS_FIPS_NAME);
             } else if (LTPAKeyUtil.isIBMJCEAvailable()) {
-                m1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA, LTPAKeyUtil.IBMJCE_NAME);
-                m2 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA, LTPAKeyUtil.IBMJCE_NAME);
+                m1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256, LTPAKeyUtil.IBMJCE_NAME);
+                m2 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256, LTPAKeyUtil.IBMJCE_NAME);
             } else {
-                m1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA);
-                m2 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA);
+                m1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256);
+                m2 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256);
             }
         } catch (Exception e) {
             if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
@@ -291,10 +294,19 @@ public class LTPAToken2 implements Token, Serializable {
         synchronized (lockObj1) {
             data = md1JCE.digest(msg);
         }
-        byte[][] rsaPrivKey = LTPAKeyUtil.getRawKey(privKey);
-        LTPAKeyUtil.setRSAKey(rsaPrivKey);
+//        byte[][] rsaPrivKey = LTPAKeyUtil.getRawKey(privKey);
+//        LTPAKeyUtil.setRSAKey(rsaPrivKey);
+//        KeyEncryptor encryptor = new KeyEncryptor("WebAS".getBytes());
+
+        PrivateKey rsaPrivKey2 = privKey.getRsaPrivateKey();
+        if (rsaPrivKey2 == null) {
+            rsaPrivKey2 = LTPAKeyFileUtilityImpl.rsaPrivKey;
+        }
+
+        System.out.println("DEBUG UTLE: sign() rsaPrivKey2 " + rsaPrivKey2);
+
         byte[] signature;
-        signature = LTPAKeyUtil.signISO9796(rsaPrivKey, data, 0, data.length);
+        signature = LTPAKeyUtil.signISO9796(null, data, 0, data.length, rsaPrivKey2);
 
         return signature;
     }
@@ -319,8 +331,12 @@ public class LTPAToken2 implements Token, Serializable {
         synchronized (lockObj2) {
             data = md2JCE.digest(msg);
         }
-        byte[][] rsaPubKey = LTPAKeyUtil.getRawKey(pubKey);
-        return LTPAKeyUtil.verifyISO9796(rsaPubKey, data, 0, data.length, signature, 0, signature.length);
+        //byte[][] rsaPubKey = LTPAKeyUtil.getRawKey(pubKey);
+        PublicKey rsaPublicKey2 = pubKey.getPublicKey();
+        if (rsaPublicKey2 == null) {
+            rsaPublicKey2 = LTPAKeyFileUtilityImpl.rsaPubKey;
+        }
+        return LTPAKeyUtil.verifyISO9796(null, data, 0, data.length, signature, 0, signature.length, rsaPublicKey2);
     }
 
     /** {@inheritDoc} */

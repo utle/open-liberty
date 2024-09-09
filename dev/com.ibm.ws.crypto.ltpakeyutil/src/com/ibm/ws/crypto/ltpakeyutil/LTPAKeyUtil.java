@@ -13,7 +13,9 @@
 package com.ibm.ws.crypto.ltpakeyutil;
 
 import java.security.AccessController;
+import java.security.PrivateKey;
 import java.security.PrivilegedAction;
+import java.security.PublicKey;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
@@ -60,13 +62,14 @@ public final class LTPAKeyUtil {
 		return LTPACrypto.decrypt(msg, key, cipher);
 	}
 
-	public static boolean verifyISO9796(byte[][] key, byte[] data, int off, int len, byte[] sig, int sigOff, int sigLen)
-			throws Exception {
-		return LTPACrypto.verifyISO9796(key, data, off, len, sig, sigOff, sigLen);
+	public static boolean verifyISO9796(byte[][] key, byte[] data, int off, int len, byte[] sig, int sigOff, int sigLen,
+			PublicKey rsaPublicKey2) throws Exception {
+		return LTPACrypto.verifyISO9796(key, data, off, len, sig, sigOff, sigLen, rsaPublicKey2);
 	}
 
-	public static byte[] signISO9796(byte[][] key, byte[] data, int off, int len) throws Exception {
-		return LTPACrypto.signISO9796(key, data, off, len);
+	public static byte[] signISO9796(byte[][] key, byte[] data, int off, int len, PrivateKey rsaPrivKey2)
+			throws Exception {
+		return LTPACrypto.signISO9796(key, data, off, len, rsaPrivKey2);
 	}
 
 	public static void setRSAKey(byte[][] key) {
@@ -145,7 +148,7 @@ public final class LTPAKeyUtil {
 				return System.getProperty("com.ibm.jsse2.usefipsprovider");
 			}
 		});
-		if (fipsON == "true") {
+		if ("true".equalsIgnoreCase(fipsON)) {
 			return true;
 		} else {
 			return false;

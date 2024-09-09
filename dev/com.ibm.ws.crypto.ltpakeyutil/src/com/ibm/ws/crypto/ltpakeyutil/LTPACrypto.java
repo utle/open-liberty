@@ -15,7 +15,6 @@ package com.ibm.ws.crypto.ltpakeyutil;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -27,17 +26,12 @@ import java.security.Signature;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.DESedeKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -63,6 +57,9 @@ final class LTPACrypto {
 	private static final String ENCRYPT_ALGORITHM_RSA = "RSA";
 	private static final String encryptAlgorithm = getEncryptionAlgorithm();
 
+	private static RSAPublicKey rsaPubKey;
+	private static RSAPrivateCrtKey rsaPrivKey;
+
 	private static int MAX_CACHE = 500;
 	private static IvParameterSpec ivs8 = null;
 	private static IvParameterSpec ivs16 = null;
@@ -71,7 +68,7 @@ final class LTPACrypto {
 	private static class CachingKey {
 
 		private boolean reused = false;
-		private long successfulUses;
+		private final long successfulUses;
 		private final byte[][] key;
 		private final byte[] data;
 		private final int off;
@@ -197,81 +194,84 @@ final class LTPACrypto {
 	/**
 	 * Sign the data.
 	 *
-	 * @param key  The key used to sign the data
-	 * @param data The byte representation of the data
-	 * @param off  The offset of the data
-	 * @param len  The length of the data
+	 * @param key         The key used to sign the data
+	 * @param data        The byte representation of the data
+	 * @param off         The offset of the data
+	 * @param len         The length of the data
+	 * @param rsaPrivKey2
 	 * @return The signature of the data
 	 */
 	@Trivial
-	protected static final byte[] signISO9796(byte[][] key, byte[] data, int off, int len) throws Exception {
-		CachingKey ck = new CachingKey(key, data, off, len);
-		CachingKey result = cryptoKeysMap.get(ck);
-
-		if (result != null) {
-			result.successfulUses += 1;
-			result.reused = true;
-			return result.result;
-		} else {
-			if (cryptoKeysMap.size() > MAX_CACHE) {
-				try {
-					CachingKey[] keys = cryptoKeysMap.keySet().toArray(new CachingKey[cryptoKeysMap.size()]);
-					Arrays.sort(keys, cachingKeyComparator);
-					if (cachingKeyComparator.compare(keys[0], keys[keys.length - 1]) < 0) {
-						for (int i = 0; i < cryptoKeysMap.size() / 5; i++) {
-							cryptoKeysMap.remove(keys[i]);
-							keys[i + 1 * cryptoKeysMap.size() / 5].successfulUses--;
-							keys[i + 2 * cryptoKeysMap.size() / 5].successfulUses--;
-							keys[i + 3 * cryptoKeysMap.size() / 5].successfulUses--;
-							keys[i + 4 * cryptoKeysMap.size() / 5].successfulUses--;
-						}
-					} else {
-						for (int i = 0; i < cryptoKeysMap.size() / 5; i++) {
-							cryptoKeysMap.remove(keys[keys.length - 1 - i]);
-							keys[keys.length - 1 - i - 1 * cryptoKeysMap.size() / 5].successfulUses--;
-							keys[keys.length - 1 - i - 2 * cryptoKeysMap.size() / 5].successfulUses--;
-							keys[keys.length - 1 - i - 3 * cryptoKeysMap.size() / 5].successfulUses--;
-							keys[keys.length - 1 - i - 4 * cryptoKeysMap.size() / 5].successfulUses--;
-						}
-					}
-				} catch (Exception e) {
-					// do nothing. since this code is used for the command line
-					// utility, no log is
-					// taken.
-				}
-
-			}
-		}
-
-		/** Invoked by LTPADigSignature **/
-		BigInteger n = new BigInteger(key[0]);
-		BigInteger e = new BigInteger(key[2]);
-		BigInteger p = new BigInteger(key[3]);
-		BigInteger q = new BigInteger(key[4]);
-		BigInteger d = e.modInverse((p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE)));
-		KeyFactory kFact = null;
-
-		kFact = (provider == null) ? KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA)
-				: KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA, provider);
-
-		BigInteger pep = new BigInteger(key[5]);
-		BigInteger peq = new BigInteger(key[6]);
-		BigInteger crtC = new BigInteger(key[7]);
-		RSAPrivateCrtKeySpec privCrtKeySpec = new RSAPrivateCrtKeySpec(n, e, d, p, q, pep, peq, crtC);
-		PrivateKey privKey = kFact.generatePrivate(privCrtKeySpec);
+	protected static final byte[] signISO9796(byte[][] key, byte[] data, int off, int len, PrivateKey rsaPrivKey2)
+			throws Exception {
+//		CachingKey ck = new CachingKey(key, data, off, len);
+//		CachingKey result = cryptoKeysMap.get(ck);
+//
+//		if (result != null) {
+//			result.successfulUses += 1;
+//			result.reused = true;
+//			return result.result;
+//		} else {
+//			if (cryptoKeysMap.size() > MAX_CACHE) {
+//				try {
+//					CachingKey[] keys = cryptoKeysMap.keySet().toArray(new CachingKey[cryptoKeysMap.size()]);
+//					Arrays.sort(keys, cachingKeyComparator);
+//					if (cachingKeyComparator.compare(keys[0], keys[keys.length - 1]) < 0) {
+//						for (int i = 0; i < cryptoKeysMap.size() / 5; i++) {
+//							cryptoKeysMap.remove(keys[i]);
+//							keys[i + 1 * cryptoKeysMap.size() / 5].successfulUses--;
+//							keys[i + 2 * cryptoKeysMap.size() / 5].successfulUses--;
+//							keys[i + 3 * cryptoKeysMap.size() / 5].successfulUses--;
+//							keys[i + 4 * cryptoKeysMap.size() / 5].successfulUses--;
+//						}
+//					} else {
+//						for (int i = 0; i < cryptoKeysMap.size() / 5; i++) {
+//							cryptoKeysMap.remove(keys[keys.length - 1 - i]);
+//							keys[keys.length - 1 - i - 1 * cryptoKeysMap.size() / 5].successfulUses--;
+//							keys[keys.length - 1 - i - 2 * cryptoKeysMap.size() / 5].successfulUses--;
+//							keys[keys.length - 1 - i - 3 * cryptoKeysMap.size() / 5].successfulUses--;
+//							keys[keys.length - 1 - i - 4 * cryptoKeysMap.size() / 5].successfulUses--;
+//						}
+//					}
+//				} catch (Exception e) {
+//					// do nothing. since this code is used for the command line
+//					// utility, no log is
+//					// taken.
+//				}
+//
+//			}
+//		}
+//
+//		/** Invoked by LTPADigSignature **/
+//		BigInteger n = new BigInteger(key[0]);
+//		BigInteger e = new BigInteger(key[2]);
+//		BigInteger p = new BigInteger(key[3]);
+//		BigInteger q = new BigInteger(key[4]);
+//		BigInteger d = e.modInverse((p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE)));
+//		KeyFactory kFact = null;
+//
+//		kFact = (provider == null) ? KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA)
+//				: KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA, provider);
+//
+//		BigInteger pep = new BigInteger(key[5]);
+//		BigInteger peq = new BigInteger(key[6]);
+//		BigInteger crtC = new BigInteger(key[7]);
+//		RSAPrivateCrtKeySpec privCrtKeySpec = new RSAPrivateCrtKeySpec(n, e, d, p, q, pep, peq, crtC);
+//		PrivateKey privKey = kFact.generatePrivate(privCrtKeySpec);
 
 		Signature rsaSig = null;
 
 		rsaSig = (provider == null) ? Signature.getInstance(signatureAlgorithm)
 				: Signature.getInstance(signatureAlgorithm, provider);
 
-		rsaSig.initSign(privKey);
+//		rsaSig.initSign(privKey);
+		rsaSig.initSign(rsaPrivKey2);
 		rsaSig.update(data, off, len);
 		byte[] sig = rsaSig.sign();
 
-		cryptoKeysMap.put(ck, ck);
-		ck.result = sig;
-		ck.successfulUses = 0;
+//		cryptoKeysMap.put(ck, ck);
+//		ck.result = sig;
+//		ck.successfulUses = 0;
 
 		return sig;
 	}
@@ -281,7 +281,7 @@ final class LTPACrypto {
 	@Trivial
 	private static class CachingVerifyKey {
 
-		private long successfulUses;
+		private final long successfulUses;
 		private final byte[][] key;
 		private final byte[] data;
 		private final int off;
@@ -476,72 +476,74 @@ final class LTPACrypto {
 	/**
 	 * Verify if the signature of the data is correct.
 	 *
-	 * @param key  The key used to verify the data
-	 * @param data The byte representation of the data
-	 * @param off  The offset of the data
-	 * @param len  The length of the data
-	 * @param sig  The signature of the data
-	 * @param off  The offset of the signature
-	 * @param len  The length of the signature
+	 * @param key           The key used to verify the data
+	 * @param data          The byte representation of the data
+	 * @param off           The offset of the data
+	 * @param len           The length of the data
+	 * @param sig           The signature of the data
+	 * @param off           The offset of the signature
+	 * @param len           The length of the signature
+	 * @param rsaPublicKey2
 	 * @return True if the signature of the data is correct
 	 */
 	@Trivial
 	protected static final boolean verifyISO9796(byte[][] key, byte[] data, int off, int len, byte[] sig, int sigOff,
-			int sigLen) throws Exception {
-		CachingVerifyKey ck = new CachingVerifyKey(key, data, off, len, sig, sigOff, sigLen);
-		CachingVerifyKey result = verifyKeysMap.get(ck);
-
-		if (result != null) {
-			result.successfulUses += 1;
-			return result.result;
-		} else {
-			if (verifyKeysMap.size() > MAX_CACHE) {
-				CachingVerifyKey[] keys = verifyKeysMap.keySet().toArray(new CachingVerifyKey[verifyKeysMap.size()]);
-				Arrays.sort(keys, cachingVerifyKeyComparator);
-				if (cachingVerifyKeyComparator.compare(keys[0], keys[keys.length - 1]) < 0) {
-					for (int i = 0; i < verifyKeysMap.size() / 5; i++) {
-						verifyKeysMap.remove(keys[i]);
-						keys[i + 1 * verifyKeysMap.size() / 5].successfulUses--;
-						keys[i + 2 * verifyKeysMap.size() / 5].successfulUses--;
-						keys[i + 3 * verifyKeysMap.size() / 5].successfulUses--;
-						keys[i + 4 * verifyKeysMap.size() / 5].successfulUses--;
-					}
-				} else {
-					for (int i = 0; i < verifyKeysMap.size() / 5; i++) {
-						verifyKeysMap.remove(keys[keys.length - 1 - i]);
-						keys[keys.length - 1 - i - 1 * verifyKeysMap.size() / 5].successfulUses--;
-						keys[keys.length - 1 - i - 2 * verifyKeysMap.size() / 5].successfulUses--;
-						keys[keys.length - 1 - i - 3 * verifyKeysMap.size() / 5].successfulUses--;
-						keys[keys.length - 1 - i - 4 * verifyKeysMap.size() / 5].successfulUses--;
-					}
-				}
-			}
-		}
-
+			int sigLen, PublicKey rsaPublicKey2) throws Exception {
+//		CachingVerifyKey ck = new CachingVerifyKey(key, data, off, len, sig, sigOff, sigLen);
+//		CachingVerifyKey result = verifyKeysMap.get(ck);
+//
+//		if (result != null) {
+//			result.successfulUses += 1;
+//			return result.result;
+//		} else {
+//			if (verifyKeysMap.size() > MAX_CACHE) {
+//				CachingVerifyKey[] keys = verifyKeysMap.keySet().toArray(new CachingVerifyKey[verifyKeysMap.size()]);
+//				Arrays.sort(keys, cachingVerifyKeyComparator);
+//				if (cachingVerifyKeyComparator.compare(keys[0], keys[keys.length - 1]) < 0) {
+//					for (int i = 0; i < verifyKeysMap.size() / 5; i++) {
+//						verifyKeysMap.remove(keys[i]);
+//						keys[i + 1 * verifyKeysMap.size() / 5].successfulUses--;
+//						keys[i + 2 * verifyKeysMap.size() / 5].successfulUses--;
+//						keys[i + 3 * verifyKeysMap.size() / 5].successfulUses--;
+//						keys[i + 4 * verifyKeysMap.size() / 5].successfulUses--;
+//					}
+//				} else {
+//					for (int i = 0; i < verifyKeysMap.size() / 5; i++) {
+//						verifyKeysMap.remove(keys[keys.length - 1 - i]);
+//						keys[keys.length - 1 - i - 1 * verifyKeysMap.size() / 5].successfulUses--;
+//						keys[keys.length - 1 - i - 2 * verifyKeysMap.size() / 5].successfulUses--;
+//						keys[keys.length - 1 - i - 3 * verifyKeysMap.size() / 5].successfulUses--;
+//						keys[keys.length - 1 - i - 4 * verifyKeysMap.size() / 5].successfulUses--;
+//					}
+//				}
+//			}
+//		}
+//
 		boolean verified = false;
-
-		BigInteger n = new BigInteger(key[0]);
-		BigInteger e = new BigInteger(key[1]);
-
-		KeyFactory kFact = null;
+//
+//		BigInteger n = new BigInteger(key[0]);
+//		BigInteger e = new BigInteger(key[1]);
+//
+//		KeyFactory kFact = null;
 		Signature rsaSig = null;
-
-		kFact = (provider == null) ? KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA)
-				: KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA, provider);
-
-		RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(n, e);
-		PublicKey pubKey = kFact.generatePublic(pubKeySpec);
+//
+//		kFact = (provider == null) ? KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA)
+//				: KeyFactory.getInstance(CRYPTO_ALGORITHM_RSA, provider);
+//
+//		RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(n, e);
+//		PublicKey pubKey = kFact.generatePublic(pubKeySpec);
 
 		rsaSig = (provider == null) ? Signature.getInstance(signatureAlgorithm)
 				: Signature.getInstance(signatureAlgorithm, provider);
 
-		rsaSig.initVerify(pubKey);
+//		rsaSig.initVerify(pubKey);
+		rsaSig.initVerify(rsaPublicKey2);
 		rsaSig.update(data, off, len);
 		verified = rsaSig.verify(sig);
 
-		verifyKeysMap.put(ck, ck);
-		ck.result = verified;
-		ck.successfulUses = 0;
+//		verifyKeysMap.put(ck, ck);
+//		ck.result = verified;
+//		ck.successfulUses = 0;
 
 		return verified;
 	}
@@ -599,22 +601,25 @@ final class LTPACrypto {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeySpecException
 	 */
-	@Trivial
+	// @Trivial
 	private static SecretKey constructSecretKey(byte[] key, String cipher)
 			throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
 		SecretKey sKey = null;
-		if (cipher.indexOf("AES") != -1) {
-			// 16 bytes = 128 bit key
-			sKey = new SecretKeySpec(key, 0, 16, "AES");
-		} else {
-			DESedeKeySpec kSpec = new DESedeKeySpec(key);
-			SecretKeyFactory kFact = null;
-
-			kFact = (provider == null) ? SecretKeyFactory.getInstance(encryptAlgorithm)
-					: SecretKeyFactory.getInstance(encryptAlgorithm, provider);
-
-			sKey = kFact.generateSecret(kSpec);
-		}
+//		if (cipher.indexOf("AES") != -1) {
+		// 16 bytes = 128 bit key
+		// 32 bytes = 256 bit key
+		System.out.println("DEBUG UTLE: constructSecretKey: key length " + key.length);
+		System.out.println("DEBUG UTLE: constructSecretKey: cipher " + cipher);
+		sKey = new SecretKeySpec(key, 0, 32, "AES");
+//		} else {
+//			DESedeKeySpec kSpec = new DESedeKeySpec(key);
+//			SecretKeyFactory kFact = null;
+//
+//			kFact = (provider == null) ? SecretKeyFactory.getInstance(encryptAlgorithm)
+//					: SecretKeyFactory.getInstance(encryptAlgorithm, provider);
+//
+//			sKey = kFact.generateSecret(kSpec);
+//		}
 		return sKey;
 	}
 
@@ -628,7 +633,7 @@ final class LTPACrypto {
 	 * @throws InvalidKeyException
 	 * @throws InvalidAlgorithmParameterException
 	 */
-	@Trivial
+//	@Trivial
 	private static Cipher createCipher(int cipherMode, byte[] key, String cipher, SecretKey sKey)
 			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
 			InvalidAlgorithmParameterException, NoSuchProviderException {
@@ -679,6 +684,9 @@ final class LTPACrypto {
 	 */
 	@Trivial
 	protected static final byte[] decrypt(byte[] msg, byte[] key, String cipher) throws Exception {
+		System.out.println("DEBUG UTLE: decrypt: msg length " + msg.length);
+		System.out.println("DEBUG UTLE: decrypt: key length " + key.length);
+		System.out.println("DEBUG UTLE: decrypt: cipher " + cipher);
 		SecretKey sKey = constructSecretKey(key, cipher);
 		Cipher ci = createCipher(Cipher.DECRYPT_MODE, key, cipher, sKey);
 		return ci.doFinal(msg);
@@ -1047,13 +1055,40 @@ final class LTPACrypto {
 	@Trivial
 	static final byte[] generate3DESKey() {
 		byte[] rndSeed = null;
-		int len = 24; // 3DES
+		int len = 32; // 3DES - 24 , AES -32
 		rndSeed = new byte[len];
 		random(rndSeed, 0, len);
 		return rndSeed;
 	}
 
-	@Trivial
+	// @Trivial
+	public static final KeyPair rsaKeyPair(int len, boolean crt, boolean f4) {
+		byte[][] key = new byte[crt ? 8 : 3][];
+		KeyPair pair = null;
+		KeyPairGenerator keyGen = null;
+
+		try {
+			keyGen = (provider == null) ? KeyPairGenerator.getInstance(CRYPTO_ALGORITHM_RSA)
+					: KeyPairGenerator.getInstance(CRYPTO_ALGORITHM_RSA, provider);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			// Do you need FFDC here? Remember FFDC instrumentation and @FFDCIgnore
+			e.printStackTrace();
+		} catch (NoSuchProviderException e) {
+			// TODO Auto-generated catch block
+			// Do you need FFDC here? Remember FFDC instrumentation and @FFDCIgnore
+			e.printStackTrace();
+		}
+		keyGen.initialize(len * 8, new SecureRandom());
+		// 2048, 4096
+		// keyGen.initialize(2048, new SecureRandom());
+		pair = keyGen.generateKeyPair();
+//			RSAPublicKey rsaPubKey = (RSAPublicKey) pair.getPublic();
+//			RSAPrivateCrtKey rsaPrivKey = (RSAPrivateCrtKey) pair.getPrivate();
+		return pair;
+	}
+
+	// @Trivial
 	static final byte[][] rsaKey(int len, boolean crt, boolean f4) {
 		byte[][] key = new byte[crt ? 8 : 3][];
 		KeyPair pair = null;
@@ -1065,8 +1100,8 @@ final class LTPACrypto {
 
 			keyGen.initialize(len * 8, new SecureRandom());
 			pair = keyGen.generateKeyPair();
-			RSAPublicKey rsaPubKey = (RSAPublicKey) pair.getPublic();
-			RSAPrivateCrtKey rsaPrivKey = (RSAPrivateCrtKey) pair.getPrivate();
+			rsaPubKey = (RSAPublicKey) pair.getPublic();
+			rsaPrivKey = (RSAPrivateCrtKey) pair.getPrivate();
 
 			BigInteger e = rsaPubKey.getPublicExponent();
 			BigInteger n = rsaPubKey.getModulus();
@@ -1181,14 +1216,14 @@ final class LTPACrypto {
 		if (LTPAKeyUtil.isFIPSEnabled() && LTPAKeyUtil.isIBMJCEPlusFIPSAvailable())
 			return SIGNATURE_ALGORITHM_SHA256WITHRSA;
 		else
-			return SIGNATURE_ALGORITHM_SHA1WITHRSA;
+			return SIGNATURE_ALGORITHM_SHA256WITHRSA;
 	}
 
 	private static String getEncryptionAlgorithm() {
 		if (LTPAKeyUtil.isFIPSEnabled() && LTPAKeyUtil.isIBMJCEPlusFIPSAvailable())
 			return ENCRYPT_ALGORITHM_RSA;
 		else
-			return ENCRYPT_ALGORITHM_DESEDE;
+			return ENCRYPT_ALGORITHM_RSA;
 	}
 
 }
