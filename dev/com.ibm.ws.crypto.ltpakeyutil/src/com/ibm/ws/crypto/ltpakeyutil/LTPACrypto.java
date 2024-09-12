@@ -551,16 +551,19 @@ final class LTPACrypto {
 	 *
 	 * @param key The key
 	 */
-	@Trivial
+	// @Trivial
 	protected static final void setRSAKey(byte[][] key) {
+		Thread.dumpStack();
 		BigInteger[] k = new BigInteger[8];
 		for (int i = 0; i < 8; i++) {
 			if (key[i] != null) {
 				k[i] = new BigInteger(1, key[i]);
+				Tr.debug(tc, "<<UTLE>> setRsaKey() for loop k[" + i + "] " + key[i].toString());
 			}
 		}
 
 		if (k[3].compareTo(k[4]) < 0) {
+			Tr.debug(tc, "<<UTLE>> setRsaKey() - k[3].compareTo(k[4]) < 0 - return true");
 			BigInteger tmp;
 			tmp = k[3];
 			k[3] = k[4];
@@ -571,18 +574,27 @@ final class LTPACrypto {
 			k[7] = null;
 		}
 		if (k[7] == null) {
+			Tr.debug(tc, "<<UTLE>> setRsaKey() - k[7) = null");
 			k[7] = k[4].modInverse(k[3]);
 		}
 		if (k[0] == null) {
+			Tr.debug(tc, "<<UTLE>> setRsaKey() - k[0) = null");
+			k[7] = k[4].modInverse(k[3]);
 			k[0] = k[3].multiply(k[4]);
 		}
 		if (k[1] == null) {
+			Tr.debug(tc, "<<UTLE>> setRsaKey() - k[1) = null");
+			k[7] = k[4].modInverse(k[3]);
 			k[1] = k[2].modInverse(k[3].subtract(BigInteger.valueOf(1)).multiply(k[4].subtract(BigInteger.valueOf(1))));
 		}
 		if (k[5] == null) {
+			Tr.debug(tc, "<<UTLE>> setRsaKey() - k[5) = null");
+			k[7] = k[4].modInverse(k[3]);
 			k[5] = k[1].remainder(k[3].subtract(BigInteger.valueOf(1)));
 		}
 		if (k[6] == null) {
+			Tr.debug(tc, "<<UTLE>> setRsaKey() - k[6) = null");
+			k[7] = k[4].modInverse(k[3]);
 			k[6] = k[1].remainder(k[4].subtract(BigInteger.valueOf(1)));
 		}
 		for (int i = 0; i < 8; i++) {
@@ -1053,8 +1065,9 @@ final class LTPACrypto {
 		return rndSeed;
 	}
 
-	@Trivial
+	// @Trivial
 	static final byte[][] rsaKey(int len, boolean crt, boolean f4) {
+		Thread.dumpStack();
 		byte[][] key = new byte[crt ? 8 : 3][];
 		KeyPair pair = null;
 		KeyPairGenerator keyGen = null;
@@ -1072,20 +1085,47 @@ final class LTPACrypto {
 			BigInteger n = rsaPubKey.getModulus();
 			BigInteger pe = rsaPrivKey.getPrivateExponent();
 			key[0] = n.toByteArray();
+			Tr.debug(tc, "<<UTLE>> rsaKey() - key[0]: modulus: " + (key[0] == null ? "null" : key[0].toString()));
 			key[1] = crt ? null : pe.toByteArray();
+			Tr.debug(tc, "<<UTLE>> rsaKey() - key[1]: CRT  -  Private Exponent"
+					+ (key[1] == null ? "null" : key[1].toString()));
 			key[2] = e.toByteArray();
-
+			Tr.debug(tc, "<<UTLE>> rsaKey() - key[2]: public Exponent" + (key[2] == null ? "null" : key[2].toString()));
 			if (crt) {
+
 				BigInteger p = rsaPrivKey.getPrimeP();
 				BigInteger q = rsaPrivKey.getPrimeQ();
 				BigInteger ep = rsaPrivKey.getPrimeExponentP();
 				BigInteger eq = rsaPrivKey.getPrimeExponentQ();
 				BigInteger c = rsaPrivKey.getCrtCoefficient();
 				key[3] = p.toByteArray();
+				Tr.debug(tc, "<<UTLE>> rsaKey() - key[3] primeP: " + (key[3] == null ? "null" : key[3].toString()));
 				key[4] = q.toByteArray();
+				Tr.debug(tc, "<<UTLE>> rsaKey() - key[4] primeQ: " + (key[4] == null ? "null" : key[4].toString()));
 				key[5] = ep.toByteArray();
+				Tr.debug(tc, "<<UTLE>> rsaKey() - key[5] ExponentP: " + (key[5] == null ? "null" : key[5].toString()));
 				key[6] = eq.toByteArray();
+				Tr.debug(tc, "<<UTLE>> rsaKey() - key[6] ExponentQ: " + (key[6] == null ? "null" : key[6].toString()));
 				key[7] = c.toByteArray();
+				Tr.debug(tc, "<<UTLE>> rsaKey() - key[7] CRT: " + (key[7] == null ? "null" : key[7].toString()));
+
+				/*
+				 * private static final int PRIVATE_EXPONENT_LENGTH_FIELD_LENGTH = 4; private
+				 * static final int PUBLIC_EXPONENT_LENGTH = 3; private static final int
+				 * PRIME_P_LENGTH = 65; private static final int PRIME_Q_LENGTH = 65;
+				 */
+
+				Tr.debug(tc, "<<UTLE>> rsaKey() - private prime P length: " + rsaPrivKey.getPrimeP().bitLength());
+				Tr.debug(tc, "<<UTLE>> rsaKey() - private prime P length: " + p.bitLength());
+				Tr.debug(tc, "<<UTLE>> rsaKey() - private prime P length: " + rsaPrivKey.getPrimeQ().bitLength());
+				Tr.debug(tc, "<<UTLE>> rsaKey() - private prime Q length: " + q.bitLength());
+				Tr.debug(tc,
+						"<<UTLE>> rsaKey() - private prime P length: " + rsaPrivKey.getPrimeExponentP().bitLength());
+				Tr.debug(tc, "<<UTLE>> rsaKey() - private prime Exponent P length: " + ep.bitLength());
+				Tr.debug(tc,
+						"<<UTLE>> rsaKey() - private prime Q length: " + rsaPrivKey.getPrimeExponentQ().bitLength());
+				Tr.debug(tc, "<<UTLE>> rsaKey() - private prime Exponent Q length: " + eq.bitLength());
+
 			}
 		} catch (java.security.NoSuchAlgorithmException e) {
 			// instrumented ffdc
@@ -1136,25 +1176,35 @@ final class LTPACrypto {
 			}
 
 			key[0] = n.toByteArray(); // modulus
+			Tr.debug(tc, " <<UTLE>> rsaKey() - key[0]: " + key[0].toString());
 			key[1] = crt ? null : d.toByteArray(); // private exponent if a CRT key
+			Tr.debug(tc, " <<UTLE>> rsaKey() - key[1]: " + key[1].toString());
 			key[2] = e.toByteArray(); // public exponent
+			Tr.debug(tc, " <<UTLE>> rsaKey() - key[2]: " + key[2].toString());
 
 			if (crt) {
 				if (p.compareTo(q) < 0) {
+					Tr.debug(tc, "<<UTLE>> rsaKey() - p.compareTo(q) < 0 = true ");
+
 					e = p;
 					p = q;
 					q = e;
 				}
 				key[3] = p.toByteArray(); // PrimeP
+				Tr.debug(tc, " <<UTLE>> rsaKey() - key[3]: " + key[3].toString());
 				key[4] = q.toByteArray(); // PrimeQ
+				Tr.debug(tc, " <<UTLE>> rsaKey() - key[4]: " + key[4].toString());
 				key[5] = d.remainder(p.subtract(one)).toByteArray(); // PrimeExponentP \
+				Tr.debug(tc, " <<UTLE>> rsaKey() - key[5]: " + key[5].toString());
 				key[6] = d.remainder(q.subtract(one)).toByteArray(); // PrimeExponentQ - looks like JCE sets these to
 																		// zero. You could calculate these if you want
 																		// to.
+				Tr.debug(tc, " <<UTLE>> rsaKey() - key[6]: " + key[6].toString());
 				key[7] = q.modInverse(p).toByteArray(); // getCrtCoefficient /
+				Tr.debug(tc, " <<UTLE>> rsaKey() - key[7]: " + key[7].toString());
 			}
 		}
-
+		Tr.debug(tc, " <<UTLE>> rsaKey() - key: " + key.toString());
 		return key;
 	}
 

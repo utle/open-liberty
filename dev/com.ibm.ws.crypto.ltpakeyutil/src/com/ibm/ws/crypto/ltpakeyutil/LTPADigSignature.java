@@ -17,7 +17,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 
 final class LTPADigSignature {
-
 	static byte[][] testRawPubKey = null;
 	static byte[][] testRawPrivKey = null;
 	static MessageDigest md1 = null;
@@ -31,9 +30,9 @@ final class LTPADigSignature {
 				md1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256,
 						LTPAKeyUtil.IBMJCE_PLUS_FIPS_NAME);
 			} else if (LTPAKeyUtil.isIBMJCEAvailable()) {
-				md1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA, LTPAKeyUtil.IBMJCE_NAME);
+				md1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256, LTPAKeyUtil.IBMJCE_NAME);
 			} else {
-				md1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA);
+				md1 = MessageDigest.getInstance(LTPAKeyUtil.MESSAGE_DIGEST_ALGORITHM_SHA256);
 			}
 
 		} catch (NoSuchAlgorithmException e) {
@@ -48,19 +47,17 @@ final class LTPADigSignature {
 	}
 
 	static void generateRSAKeys(byte[][] rsaPubKey, byte[][] rsaPrivKey) {
-		byte[][] rsaKey = LTPACrypto.rsaKey(128, true, true); // 64 is 512, 128
+		byte[][] rsaKey = LTPACrypto.rsaKey(256, true, true); // 64 is 512, 128
 																// is 1024
+		rsaPrivKey[2] = rsaKey[2]; // Public Exponent
+		rsaPrivKey[4] = rsaKey[3]; // Prime P
+		rsaPrivKey[3] = rsaKey[4]; // Prime Q
+		rsaPrivKey[5] = rsaKey[5]; // Prime Exponent P
+		rsaPrivKey[6] = rsaKey[6]; // Prime Exponent Q
+		rsaPrivKey[7] = rsaKey[7]; // CRT
 
-		rsaPrivKey[0] = rsaKey[0];
-		rsaPrivKey[2] = rsaKey[2];
-		rsaPrivKey[4] = rsaKey[3];
-		rsaPrivKey[3] = rsaKey[4];
-		rsaPrivKey[5] = rsaKey[5];
-		rsaPrivKey[6] = rsaKey[6];
-		rsaPrivKey[7] = rsaKey[7];
-
-		rsaPubKey[0] = rsaKey[0];
-		rsaPubKey[1] = rsaKey[2];
+		rsaPubKey[0] = rsaKey[0]; // Modulus
+		rsaPubKey[1] = rsaKey[2]; // Public Exponent
 	}
 
 	static boolean verify(byte[] mesg, byte[] signature, LTPAPublicKey pubKey) throws Exception {
