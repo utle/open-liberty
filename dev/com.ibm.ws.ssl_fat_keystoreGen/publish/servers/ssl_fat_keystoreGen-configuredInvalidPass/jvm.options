@@ -1,0 +1,7 @@
+-Dfat.test.mode=FULL
+-Dcom.ibm.ws.beta.edition=true
+-Dglobal.debug.java2.sec=false
+-Dglobal.fips_140-3=true
+-Dglobal.client.fips_140-3=true 
+-Djavax.net.debug=all
+-Dcom.ibm.ws.beta.edition=true
