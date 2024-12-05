@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -12,7 +12,6 @@
  *******************************************************************************/
 package com.ibm.ws.ui.internal.v1.utils;
 
-import com.google.gson.Gson;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,9 +22,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
+import com.google.gson.Gson;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.wsspi.rest.handler.RESTRequest;
 
@@ -38,7 +39,7 @@ public class Utils {
 
     static {
         try {
-            messagedigest = MessageDigest.getInstance("MD5");
+            messagedigest = CryptoUtils.getMessageDigest();
         } catch (NoSuchAlgorithmException e) {
             //should not happen
             throw new RuntimeException(e);
@@ -140,25 +141,24 @@ public class Utils {
         return sb.toString();
     }
 
-    
-
     /**
      * This method validates whether the input string is a valid JSON or not.
+     *
      * @param inputString, Input string
-     * @param prefix, Prefix string to be trimmed from input string
+     * @param prefix,      Prefix string to be trimmed from input string
      * @return Boolean, true if input string is valid JSON.
      */
     public static boolean isValidJsonString(String inputString, String prefix) {
-        if(!prefix.equals("")) {
+        if (!prefix.equals("")) {
             inputString = inputString.replace(prefix, "");
         }
 
         return isValidJsonString(inputString);
     }
-    
 
     /**
      * This method validates whether the input string is a valid JSON or not
+     *
      * @param inputString The input string
      * @return Boolean, true if input string is valid JSON.
      */

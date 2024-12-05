@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -32,6 +32,7 @@ import java.util.Arrays;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Sensitive;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.common.encoder.Base64Coder;
 import com.ibm.ws.wsoc.Constants;
 import com.ibm.ws.wsoc.WsocBufferException;
@@ -467,7 +468,7 @@ public class Utils {
 
         String inputKey = key + Constants.GUID;
 
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        MessageDigest md = CryptoUtils.getMessageDigest();
         byte[] arrayKey = inputKey.getBytes(StandardCharsets.ISO_8859_1);
         // Question: should it be:  "utf-8" above?
         md.update(arrayKey, 0, arrayKey.length);
