@@ -292,7 +292,8 @@ public class CryptoUtils {
                                                                                        MESSAGE_DIGEST_ALGORITHM_SHA512);
 
     public static String getMessageDigestAlgorithm() {
-        return MESSAGE_DIGEST_ALGORITHM_SHA256;
+//        return MESSAGE_DIGEST_ALGORITHM_SHA256;
+        return MESSAGE_DIGEST_ALGORITHM;
     }
 
     public static MessageDigest getMessageDigest() throws NoSuchAlgorithmException {

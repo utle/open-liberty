@@ -179,9 +179,13 @@ public class PromptX509TrustManager implements X509TrustManager {
             stdout.println(getMessage("sslTrust.certIssueDN", chain[i].getIssuerDN()));
             stdout.println(getMessage("sslTrust.certSerial", chain[i].getSerialNumber()));
             stdout.println(getMessage("sslTrust.certExpires", chain[i].getNotAfter()));
-            stdout.println(getMessage("sslTrust.certSHADigest", generateDigest("SHA-1", chain[i])));
-            stdout.println(getMessage("sslTrust.certMD5Digest", generateDigest("MD5", chain[i])));
+//            stdout.println(getMessage("sslTrust.certSHADigest", generateDigest("SHA-1", chain[i])));
+//            stdout.println(getMessage("sslTrust.certMD5Digest", generateDigest("MD5", chain[i])));
+            stdout.println(getMessage("sslTrust.certSHADigest", generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM, chain[i])));
+            //TODO: UTLE - MD5 instead of SHA-1
+            stdout.println(getMessage("sslTrust.certMD5Digest", generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM, chain[i])));
             stdout.println();
+            
         }
 
         String read = stdin.readText(getMessage("sslTrust.promptToAcceptTrust"));

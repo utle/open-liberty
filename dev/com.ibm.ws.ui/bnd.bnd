@@ -30,6 +30,7 @@ instrument.disabled: true
 	com.ibm.websphere.security;version=latest,\
 	com.ibm.ws.kernel.service;version=latest,\
 	com.ibm.ws.kernel.boot;version=latest,\
+	com.ibm.ws.kernel.boot.core;version=latest,\
 	com.ibm.ws.kernel.feature;version=latest,\
 	com.ibm.ws.org.apache.aries.util;version=latest,\
 	com.ibm.ws.org.apache.commons.io;version=latest,\

@@ -22,11 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.InvalidTransactionException;
-import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
-import javax.transaction.Status;
 import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.TransactionRolledbackException;
@@ -55,9 +52,11 @@ import com.ibm.ws.Transaction.UOWCoordinator;
 import com.ibm.ws.Transaction.UOWCurrent;
 import com.ibm.ws.Transaction.JTA.Util;
 import com.ibm.ws.Transaction.test.XAFlowCallbackControl;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.tx.embeddable.EmbeddableWebSphereTransactionManager;
 import com.ibm.ws.uow.UOWScopeCallback;
+import com.ibm.ws.uow.embeddable.SystemException;
 import com.ibm.wsspi.kernel.service.location.WsLocationConstants;
 import com.ibm.wsspi.kernel.service.utils.ServerQuiesceListener;
 import com.ibm.wsspi.tx.UOWEventListener;
@@ -516,7 +515,7 @@ public class TransactionManagerService implements ExtendedTransactionManager, Tr
             // On Liberty concatenate the user directory, the server name and the host name. Then add in the time.
             String s = userDir + serverName + hostName + System.currentTimeMillis();
             // Create a 20-byte hash value using a secure one-way hash function
-            result = java.security.MessageDigest.getInstance("SHA").digest(s.getBytes());
+            result = CryptoUtils.getMessageDigest().digest(s.getBytes());
         } catch (Throwable t) {
             FFDCFilter.processException(t, "com.ibm.ws.transaction.createApplicationId", "608", this);
             String tempStr = "j" + (System.currentTimeMillis() % 9997) + ":" + userDir + hostName;
