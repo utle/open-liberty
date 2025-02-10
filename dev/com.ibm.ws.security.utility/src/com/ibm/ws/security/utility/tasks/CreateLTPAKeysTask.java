@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -79,7 +79,7 @@ public class CreateLTPAKeysTask extends BaseCommandTask {
     boolean isKnownArgument(String arg) {
         return arg.equals(ARG_SERVER) || arg.equals(ARG_PASSWORD) ||
                arg.equals(ARG_ENCODING) || arg.equals(ARG_KEY) ||
-               arg.equals(ARG_FILE);
+               arg.equals(ARG_FILE) || arg.equals(ARG_ENABLE_FIPS);
     }
 
     /** {@inheritDoc} */
@@ -139,7 +139,11 @@ public class CreateLTPAKeysTask extends BaseCommandTask {
 
         String path = getArgumentValue(ARG_FILE, args, DEFAULT_LTPA_KEY_FILE);
         String serverName = getArgumentValue(ARG_SERVER, args, null);
-
+        String enableFips = getArgumentValue(ARG_ENABLE_FIPS, args, null);
+        System.out.println("UTLE>>> handleTask: enableFips: " + enableFips);
+        if ("140-3".equals(enableFips)) {
+            setFipsJvmOptions();
+        }
         // Verify the server or client exists, if it does not then exit and do not create the certificate
         // Do this first so we don't prompt for a password we'll not use
         if (serverName != null) {

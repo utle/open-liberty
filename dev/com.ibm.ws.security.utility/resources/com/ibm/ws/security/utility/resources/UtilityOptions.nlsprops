@@ -185,6 +185,11 @@ sslCert.option-key.keySize=\
 sslCert.option-desc.keySize=\
 \tSize of the certificate key.  The default key size is {7}.
 
+sslCert.option-key.enableFips=\
+\ \ \ \ --enableFips=140-3
+sslCert.option-desc.enableFips=\
+\tSpecify the FIPS level.
+
 sslCert.option-key.sigAlg=\
 \ \ \ \ --sigAlg=signature algorithm
 sslCert.option-desc.sigAlg=\
@@ -236,6 +241,10 @@ createLTPAKeys.option-key.server=\
 createLTPAKeys.option-desc.server=\
 \tServer for which to create the LTPA keys.\n\
 \tThis argument can not used if the --file argument is used.
+createLTPAKeys.option-key.enableFips=\
+\ \ \ \ --enableFips=140-3
+createLTPAKeys.option-desc.enableFips=\
+\tSpecify the FIPS level.
 createLTPAKeys.option-key.file=\
 \ \ \ \ --file=name
 createLTPAKeys.option-desc.file=\
@@ -257,7 +266,6 @@ createLTPAKeys.option-desc.password.key=\
 \tprovided to the server by defining the variable\n\
 \twlp.password.encryption.key whose value is the key. If this option is\n\
 \tnot provided a default key shall be used.
-
 # -------- tlsProfiler OPTIONS ------------------------------------------------#
 # List of descriptive text for options. Use "\n\" for line continuations.
 # The code provides no whitespace: begin keys with "\ \ \ \ " for leading
