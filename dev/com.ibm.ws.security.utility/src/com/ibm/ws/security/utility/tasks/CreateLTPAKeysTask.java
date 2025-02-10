@@ -17,6 +17,7 @@ import java.io.PrintStream;
 import java.util.Arrays;
 
 import com.ibm.websphere.crypto.PasswordUtil;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAKeyFileUtility;
 import com.ibm.ws.security.utility.IFileUtility;
 import com.ibm.ws.security.utility.SecurityUtilityReturnCodes;
@@ -140,10 +141,15 @@ public class CreateLTPAKeysTask extends BaseCommandTask {
         String path = getArgumentValue(ARG_FILE, args, DEFAULT_LTPA_KEY_FILE);
         String serverName = getArgumentValue(ARG_SERVER, args, null);
         String enableFips = getArgumentValue(ARG_ENABLE_FIPS, args, null);
-        System.out.println("UTLE>>> handleTask: enableFips: " + enableFips);
         if ("140-3".equals(enableFips)) {
-            setFipsJvmOptions();
+            boolean result = CryptoUtils.setFipsJvmOptions();
+            if (!result) {
+                stdout.println(getMessage("createLTPAKeys.abort"));
+                stdout.println(getMessage("fips.providerNotAvailable"));
+                return SecurityUtilityReturnCodes.ERR_FIPS_PROVIDER_NOT_FOUND;
+            }
         }
+
         // Verify the server or client exists, if it does not then exit and do not create the certificate
         // Do this first so we don't prompt for a password we'll not use
         if (serverName != null) {

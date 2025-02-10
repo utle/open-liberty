@@ -310,17 +310,19 @@ public abstract class BaseCommandTask implements SecurityUtilityTask {
         }
     }
 
-    public void setFipsJvmOptions() {
-        System.out.print("UTLE>>> setFIpsJvmOPtions");
-        //TODO -check provider ...etc before setting the options
-        System.setProperty("com.ibm.jsse2.usefipsprovider", "true");
-        System.setProperty("com.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
-        System.setProperty("Xenablefips140-3", "");
-        System.setProperty(CryptoUtils.IBMJCE_PLUS_FIPS_PROVIDER, "true");
+    public void setFipsJvmOptions(String enableFips) {
+        System.out.print("UTLE>>> setFIpsJvmOPtions: " + enableFips);
+        if ("140-3".equals(enableFips)) {
+            //TODO -check provider ...etc before setting the options
+            System.setProperty("com.ibm.jsse2.usefipsprovider", "true");
+            System.setProperty("com.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
+            System.setProperty("Xenablefips140-3", "");
+            System.setProperty(CryptoUtils.IBMJCE_PLUS_FIPS_PROVIDER, "true");
 //        Properties opts = new Properties();
 //        opts.put(CryptoUtils.IBMJCE_PLUS_FIPS_PROVIDER, "true");
 //        opts.put(CryptoUtils.USE_FIPS_PROVIDER_NAME, CryptoUtils.IBMJCE_PLUS_FIPS_NAME);
 //        opts.put("Xenablefips140-3", "");
 //        System.setProperties(opts);
+        }
     }
 }
