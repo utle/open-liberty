@@ -114,10 +114,7 @@ public class CreateSSLCertificateTask extends BaseCommandTask {
         this.stderr = stderr;
 
         validateArgumentList(args, Arrays.asList(new String[] { ARG_PASSWORD }));
-        String enableFips = getArgumentValue(ARG_ENABLE_FIPS, args, null);
-        if (enableFips != null && enableFips.equals("104-3")) {
-            setFipsJvmOptions();
-        }
+        setFipsJvmOptions(getArgumentValue(ARG_ENABLE_FIPS, args, null));
         String serverName = getArgumentValue(ARG_SERVER, args, null);
         String clientName = getArgumentValue(ARG_CLIENT, args, null);
         String ou_name = null;

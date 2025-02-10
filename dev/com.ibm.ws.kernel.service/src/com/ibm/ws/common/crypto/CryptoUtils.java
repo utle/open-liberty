@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
@@ -85,6 +86,8 @@ public class CryptoUtils {
 
     public static final String ENABLE_FIPS_140_3 = "enablefips140-3"; // IBM JDK 8
     public static final String SEMERU_FIPS = "semeru.fips"; // Semeru
+    public static final String SEMERU_CUSTOM_PROFILE = "semeru.customprofile";
+    public static String OPEN_JCE_PLUS_FIPS_FIPS140_3 = "OpenJCEPlusFIPS.FIPS140-3";
 
     private static boolean fipsEnabled = isFIPSEnabled();
 
@@ -415,5 +418,25 @@ public class CryptoUtils {
             }
             return true;
         }
+    }
+
+    public static boolean setFipsJvmOptions() {
+        boolean foundProvider = false;
+        Properties opts = new Properties();
+        System.out.println("setFipsJvmOptions: entry");
+        if (isIBMJCEPlusFIPSAvailable()) {
+            opts.put(USE_FIPS_PROVIDER, "true");
+            opts.put(USE_FIPS_PROVIDER_NAME, IBMJCE_PLUS_FIPS_NAME);
+            opts.put("Xenablefips140-3", "");
+            System.setProperties(opts);
+            foundProvider = true;
+        } else if (isOpenJCEPlusAvailable()) {
+            opts.put(SEMERU_FIPS, true);
+            opts.put(SEMERU_CUSTOM_PROFILE, OPEN_JCE_PLUS_FIPS_FIPS140_3);
+
+            foundProvider = true;
+        }
+        System.out.println("setFipsJvmOptions: foundProvider: " + foundProvider);
+        return foundProvider;
     }
 }

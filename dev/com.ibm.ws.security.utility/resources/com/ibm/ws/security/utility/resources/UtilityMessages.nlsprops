@@ -73,7 +73,7 @@ fileUtility.failedDirCreate=Failed to create directory {0}
 file.exists=The {0} keystore file already exists.  Unable to create a keystore file in that location.
 file.requiredDirNotCreated=Could not create required directory structure for {0}
 
-
+fips.providerNotAvailable=The FIPS provider IBMJCEPlusFIPS or OpenJCEPlusFIPS is not available;
 #------------------------------\n at 72 chars -- leading tab-----------\n\#
 # The following string will be appended after encode.option-desc.encoding
 # message in UtilityOptions.nlsprops file.
