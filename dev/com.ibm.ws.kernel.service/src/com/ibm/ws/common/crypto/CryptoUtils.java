@@ -431,13 +431,13 @@ public class CryptoUtils {
         Properties opts = new Properties();
         System.out.println("setFipsJvmOptions: entry");
         System.setProperty("com.ibm.ws.beta.edition", "true");
-        if (isIBMJCEPlusFIPSAvailable()) {
+        if (JavaInfo.isSystemClassAvailable(IBMJCE_PLUS_FIPS_PROVIDER)) {
             opts.put(USE_FIPS_PROVIDER, "true");
             opts.put(USE_FIPS_PROVIDER_NAME, IBMJCE_PLUS_FIPS_NAME);
             opts.put("Xenablefips140-3", "");
             System.setProperties(opts);
             foundProvider = true;
-        } else if (isOpenJCEPlusFIPSAvailable()) {
+        } else if (JavaInfo.isSystemClassAvailable(OPENJCE_PLUS_FIPS_PROVIDER)) {
             opts.put(SEMERU_FIPS, "true");
             opts.put(SEMERU_CUSTOM_PROFILE, OPEN_JCE_PLUS_FIPS_FIPS140_3);
 
