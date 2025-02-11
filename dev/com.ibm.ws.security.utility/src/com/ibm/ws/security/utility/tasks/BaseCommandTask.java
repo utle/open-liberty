@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.security.utility.SecurityUtilityTask;
 import com.ibm.ws.security.utility.utils.CommandUtils;
 import com.ibm.ws.security.utility.utils.ConsoleWrapper;
@@ -307,22 +306,6 @@ public abstract class BaseCommandTask implements SecurityUtilityTask {
                     throw new IllegalArgumentException(getMessage("missingValue", arg));
                 }
             }
-        }
-    }
-
-    public void setFipsJvmOptions(String enableFips) {
-        System.out.print("UTLE>>> setFIpsJvmOPtions: " + enableFips);
-        if ("140-3".equals(enableFips)) {
-            //TODO -check provider ...etc before setting the options
-            System.setProperty("com.ibm.jsse2.usefipsprovider", "true");
-            System.setProperty("com.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
-            System.setProperty("Xenablefips140-3", "");
-            System.setProperty(CryptoUtils.IBMJCE_PLUS_FIPS_PROVIDER, "true");
-//        Properties opts = new Properties();
-//        opts.put(CryptoUtils.IBMJCE_PLUS_FIPS_PROVIDER, "true");
-//        opts.put(CryptoUtils.USE_FIPS_PROVIDER_NAME, CryptoUtils.IBMJCE_PLUS_FIPS_NAME);
-//        opts.put("Xenablefips140-3", "");
-//        System.setProperties(opts);
         }
     }
 }

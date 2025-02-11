@@ -196,10 +196,14 @@ public class CryptoUtils {
             return ibmJCEPlusFIPSAvailable;
         } else {
             boolean ibmJCEPlusFIPSProviderAvailable = JavaInfo.isSystemClassAvailable(IBMJCE_PLUS_FIPS_PROVIDER);
+
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "ibmJCEPlusFIPSProvider: " + IBMJCE_PLUS_FIPS_PROVIDER);
                 Tr.debug(tc, "ibmJCEPlusFIPSProviderAvailable: " + ibmJCEPlusFIPSProviderAvailable);
             }
+
+            System.out.println("ibmJCEPlusFIPSProvider: " + IBMJCE_PLUS_FIPS_PROVIDER);
+            System.out.println("ibmJCEPlusFIPSProviderAvailable: " + ibmJCEPlusFIPSProviderAvailable);
 
             if (ibmJCEPlusFIPSProviderAvailable) {
                 if (!fipsEnabled) {
@@ -236,6 +240,8 @@ public class CryptoUtils {
                 Tr.debug(tc, "openJCEPlusFIPSProvider: " + OPENJCE_PLUS_FIPS_PROVIDER);
                 Tr.debug(tc, "openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
             }
+            System.out.println("openJCEPlusFIPSProvider: " + OPENJCE_PLUS_FIPS_PROVIDER);
+            System.out.println("openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
 
             if (openJCEPlusFIPSProviderAvailable) {
                 if (!fipsEnabled || !isSemeruFips()) {
@@ -439,14 +445,15 @@ public class CryptoUtils {
         boolean foundProvider = false;
         Properties opts = new Properties();
         System.out.println("setFipsJvmOptions: entry");
+        System.setProperty("com.ibm.ws.beta.edition", "true");
         if (isIBMJCEPlusFIPSAvailable()) {
             opts.put(USE_FIPS_PROVIDER, "true");
             opts.put(USE_FIPS_PROVIDER_NAME, IBMJCE_PLUS_FIPS_NAME);
             opts.put("Xenablefips140-3", "");
             System.setProperties(opts);
             foundProvider = true;
-        } else if (isOpenJCEPlusAvailable()) {
-            opts.put(SEMERU_FIPS, true);
+        } else if (isOpenJCEPlusFIPSAvailable()) {
+            opts.put(SEMERU_FIPS, "true");
             opts.put(SEMERU_CUSTOM_PROFILE, OPEN_JCE_PLUS_FIPS_FIPS140_3);
 
             foundProvider = true;
