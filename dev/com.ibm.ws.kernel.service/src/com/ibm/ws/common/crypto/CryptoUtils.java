@@ -435,15 +435,15 @@ public class CryptoUtils {
             opts.put(USE_FIPS_PROVIDER, "true");
             opts.put(USE_FIPS_PROVIDER_NAME, IBMJCE_PLUS_FIPS_NAME);
             opts.put("Xenablefips140-3", "");
-            System.setProperties(opts);
             foundProvider = true;
         } else if (JavaInfo.isSystemClassAvailable(OPENJCE_PLUS_FIPS_PROVIDER)) {
             opts.put(SEMERU_FIPS, "true");
             opts.put(SEMERU_CUSTOM_PROFILE, OPEN_JCE_PLUS_FIPS_FIPS140_3);
-
             foundProvider = true;
         }
-        System.out.println("setFipsJvmOptions: foundProvider: " + foundProvider);
+        if (opts.size() > 1)
+            System.setProperties(opts);
+        System.out.println("setFipsJvmOptions: found the provider: " + foundProvider);
         return foundProvider;
     }
 }
