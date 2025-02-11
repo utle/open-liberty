@@ -28,6 +28,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.ibm.websphere.crypto.InvalidPasswordEncodingException;
 import com.ibm.websphere.crypto.PasswordUtil;
 import com.ibm.websphere.crypto.UnsupportedCryptoAlgorithmException;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.crypto.certificateutil.DefaultSSLCertificateCreator;
 import com.ibm.ws.crypto.certificateutil.DefaultSubjectDN;
 import com.ibm.ws.security.utility.IFileUtility;
@@ -114,7 +115,16 @@ public class CreateSSLCertificateTask extends BaseCommandTask {
         this.stderr = stderr;
 
         validateArgumentList(args, Arrays.asList(new String[] { ARG_PASSWORD }));
-        setFipsJvmOptions(getArgumentValue(ARG_ENABLE_FIPS, args, null));
+        //setFipsJvmOptions(getArgumentValue(ARG_ENABLE_FIPS, args, null));
+        String enableFips = getArgumentValue(ARG_ENABLE_FIPS, args, null);
+        if ("140-3".equals(enableFips)) {
+            boolean result = CryptoUtils.setFipsJvmOptions();
+            if (!result) {
+                stdout.println(getMessage("sslCert.abort"));
+                stdout.println(getMessage("fips.providerNotAvailable"));
+                return SecurityUtilityReturnCodes.ERR_FIPS_PROVIDER_NOT_FOUND;
+            }
+        }
         String serverName = getArgumentValue(ARG_SERVER, args, null);
         String clientName = getArgumentValue(ARG_CLIENT, args, null);
         String ou_name = null;
