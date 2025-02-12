@@ -2029,6 +2029,10 @@ final class AuditCrypto {
             Tr.debug(tc, "Cipher used to decrypt: " + cipher);
             Tr.debug(tc, "key size: " + key.length);
         }
+        System.out.println("mesg: " + mesg.toString());
+        System.out.println("mesg: " + mesg.length);
+        System.out.println("Cipher used to decrypt: " + cipher);
+        System.out.println("key size: " + key.length);
 
         byte[] tmpMesg = null;
         try {
@@ -2041,6 +2045,8 @@ final class AuditCrypto {
 
             if (tc.isDebugEnabled())
                 Tr.debug(tc, "decrypt() Cipher.doFinal()\n   tmpMesg: " + new String(tmpMesg));
+
+                System.out.println("decrypt() Cipher.doFinal()\n   tmpMesg: " + new String(tmpMesg));
 
         } catch (java.security.NoSuchAlgorithmException e) {
             Tr.error(tc, "no such algorithm exception", new Object[] { e });
