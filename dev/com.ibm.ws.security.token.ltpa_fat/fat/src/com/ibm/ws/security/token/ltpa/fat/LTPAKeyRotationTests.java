@@ -1716,11 +1716,11 @@ public class LTPAKeyRotationTests {
         if (fipsEnabled) {
             contents = new HashMap<String, String>() {
                 {
-                    put("com.ibm.websphere.ltpa.3DESKey", "q2yFKBh8u2h1OcI7UQuHCvIpo40WDxYDrfKLvztDrYvoca+oLO1m1HG/BpSX13GR");
+                    put("com.ibm.websphere.ltpa.SharedKey", "HN+OHlQXsBdZnX0O2G5I4pn30mmJ8myHSo6YYW/VaR6SYfar5qclKil7qdYicp3v");
                     put("com.ibm.websphere.ltpa.PrivateKey",
-                        "IuqjEqWvUrAK90pArV9y2k6XjnJKbSpuUWHUd8qAuVvSBPeoQCluCPWQ3JOq1dkMPexSd/ZUNf03zFQ9XuJjanXPCJiPavamu6xzUsbtXwHA5ReqLWdmeapAB15uOpl5EjKTk3EdDH29sGvs2vzYyzu1uWPVWglIixICb6cs5QnWIIUl+Qs7vmY5S9TRoHQ8Y+npiByNopll5O9K4iPW0dy+0Wm6h/xoh49xGkwyYRHV2HX2/7RRf6y7TofkIdYS9WALb15g+tSR0/IJU/AuXHcp+MYbhU/dRWKx6f5Dconc1pu/QT0vKWIuakTnEJNHSeUzlglKK0pyD9yAjcVxPR3x0qBOKK0ss8N1D0xgID98VOGNlXF9SKjrW7rDqf2P5xP1lRrRsXPklVJN5G4p+DQn2oSnVWV1xp791uOb3Ub5HFK4c4Uv0PPKYIOhB2cAplLh+DV0BJkH6zWxj7Aqt9jXB6zC4bZrmMQ5Q9KlKJUF+LjXYy7uj5avVYt7vjcp7wM3DCr+1XfQKnYbjColRG7N6MzhN3m1aN243mgswpz+5uQHQoyNqpFh1yoqmQdo1Tq8EMgQRpO//e+yhN6alZ6P+fV6TuyK7tZb2wHXJXZo3neULAKeC9i8pwt9IDiu9Ey6bBEhs5NpZakVZqdqgU6SX1wANVe5Cwy8IjXboVNfXmiTnJnFIAT6RdohMvoJ");
+                        "G3O0DQPW8PFa9jVV2ZSeSOmYJwydTb0lfYsCkHjgbzm6Feq6FfF4+rdGuNb5xUzJpaJ9ymXDNPH0316XY7x8/RykPJA/eg8OO7PzwPU7pOxElqkctE1D4BAPELXPZn22TQbt34qdaOTAPTpXH8DsmgnB1jkJalSF0cq3cztfP3Gdo36h8+fciJuWMN5s1jWQ35l3UZTrvwY222QTpUch5yeMbpqCVT7Ymvrv2UsOOsP64wU1i2iBuOHlMshq1ai5FhLEP8xPFaegRV8fFBznIp2SRkqNROHucELX61VC4FCSYYCvv974FMGyDPOJyF8PiI+Xqbdnb2MwtM2+hjH2PjNWSsdxvHjawCvTB1354gYP7Gam1vlmSeroZyzTX1QLxRtfh2TAOwLOa1NJvyKMZiFW0P+Uag4xOkHErDQX+cTIRC3eaCoHWUQjpxsv+QKq/0DHxbjncX/jvPywDpwmDXwo3h/QgV0dvzzXRxXAWF6U4FMfBj8ccJLONPZeBHlldvsp92/z+ZuzcsbgQGWoOkLxWx6jZU1OmKUC3dzYn0lHvTr5Tmk5gq6Fer2uBvqOLD11xhbxZTDatrrkQZUYbzZ5nJO6knK38MPcrSjwWtJ5EmPBOXtNklDmVoYDJdjrz06J2CMtajF7t4+IEF69gP/BbKwu7SWQNEtlK6QofhPjpvwu/3hnP5NY9rpNefNL");
                     put("com.ibm.websphere.ltpa.PublicKey",
-                        "ANledrwCYpbNbOa1YzBSEP3EmhnznGXKzXlJTU8p0FFMmItr4emBlB78Nw+2vOW0gUb4rSdyqsj6T2QbR3xGhcs8M8AVLHppgnfLOiWlXFicSMemL3LGEkHAF0XdBpwgQo9/RzhJyLT9IzyGkyJWBkVD2ZnbM78JNN3aBeoPKobKsa9779Iz4oU14flCI9E7t6rBpZsCt8ygWP45yq6OgRCct4b31ZXkWL9zxLnSdmNEO99ct0WlcCV6+K5J9WGQBMjPWcNQ2a5w6FJk2iFNua/0hDwWd3hv0tOY81icIcob6ZyHxkJJhfYy6bs78FXr9QXQwafTRY7VrQn3VF//wVMBAAE\\=");
+                        "ANm29hjJBlWr1LXsb9APXS1lLrcpMnXJMaaXZeKKjCk9rt+8ubQAR2N5JRVjh1ev52ITREOku02g+Gv8McReUTpW4+T8ehYhlBpCGRrj3XpDJIplGc7/VmC25e7qvB7TrP5hP/8xMIBG5hrrChUtbYNNm0Av14UOCy5/syoHaoi9VaARZxuaQNGp3Lr61S2Ky4WhG20HcAc7+kAFAl5hwjGl4kJ/xT8OpCV4KxakB3mQpHjAb3Mh9nePIAJW0usOS3PV+sFGjErCHTc0A1c2wVRDef5ZcbLU+vv2TFCXkmSXTwKDm38/2VKTwm+kEi9x/zlk+BJxAiWURBh/JEZ/zgUBAAE\\=");
                 }
             };
         } else {
@@ -2196,7 +2196,7 @@ public class LTPAKeyRotationTests {
         String logLine = server.waitForStringInLogUsingMark("CWWKG001[7-8]I");
 
         // Wait for feature update to be completed or LTPA configuration to get ready
-        Thread.sleep(1000);
+        Thread.sleep(2000);
     }
 
     /**

@@ -513,7 +513,7 @@ public class AuditLogReader {
                         } else if (!signedLog && encryptedLog) {
 
                             // Recreate the shared key
-                            String algorithm = CryptoUtils.getEncryptionAlgorithm();
+                            String algorithm = CryptoUtils.getEncryptionAlgorithmForAudit();
 
                             if (debugEnabled) {
                                 theLogger.fine("processRecord: recreate shared key with algoritm: " + algorithm);
@@ -536,7 +536,7 @@ public class AuditLogReader {
                                     break;
                                 }
                             }
-                            String algorithm = CryptoUtils.getEncryptionAlgorithm();
+                            String algorithm = CryptoUtils.getEncryptionAlgorithmForAudit();
 
                             if (debugEnabled)
                                 theLogger.fine("processRecord: recreate shared key with algorithm: " + algorithm);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2024 IBM Corporation and others.
+ * Copyright (c) 2018, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -52,7 +52,6 @@ public class AuditEncryptionImpl implements AuditEncrypting {
     private static String subjectDN = "CN=auditsigner, OU=SWG, O=IBM, C=US";
     private static String keyStoreName = "auditSignerKeyStore_";
     private static String certLabelPrefix = "auditcert";
-    private static String CRYPTO_ALGORITHM = "SHA256withRSA";
     private final int signerKeyStoreIncrement = 1;
     private final ObjectName mgmScopeObjName = null;
     AuditKeyEncryptor encryptor = null;
@@ -172,9 +171,9 @@ public class AuditEncryptionImpl implements AuditEncrypting {
             if (crypto != null) {
                 try {
                     if (CryptoUtils.isFips140_3Enabled())
-                        sharedKey = new javax.crypto.spec.SecretKeySpec(crypto.generateSharedKey(), 0, 32, CryptoUtils.CRYPTO_ALGORITHM_RSA);
+                        sharedKey = new javax.crypto.spec.SecretKeySpec(crypto.generateSharedKey(), 0, CryptoUtils.AES_256_KEY_LENGTH_BYTES, CryptoUtils.ENCRYPT_ALGORITHM_AES);
                     else
-                        sharedKey = new javax.crypto.spec.SecretKeySpec(crypto.generateSharedKey(), 0, 24, CryptoUtils.ENCRYPT_ALGORITHM_DESEDE);
+                        sharedKey = new javax.crypto.spec.SecretKeySpec(crypto.generateSharedKey(), 0, CryptoUtils.DESEDE_KEY_LENGTH_BYTES, CryptoUtils.ENCRYPT_ALGORITHM_DESEDE);
                 } catch (Exception me) {
                     if (tc.isDebugEnabled())
                         Tr.debug(tc, "me.getMessage: " + me.getMessage());
