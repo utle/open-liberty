@@ -340,7 +340,7 @@ public class AuditEncryptionImpl implements AuditEncrypting {
 
         decryptedSharedKey = encryptor.decrypt(sharedKey);
 
-        System.out.println("AuditEncryption - decryptSharedKey: " + decryptedSharedKey.toString());
+        System.out.println("AuditEncryption - decryptSharedKey: " + (decryptedSharedKey != null ? decryptedSharedKey.toString() : "NULL"));
 
         return decryptedSharedKey;
     }

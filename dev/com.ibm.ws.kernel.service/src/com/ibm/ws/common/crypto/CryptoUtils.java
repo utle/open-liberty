@@ -88,7 +88,6 @@ public class CryptoUtils {
     public static final String DES_ECB_CIPHER = "DESede/ECB/PKCS5Padding"; //Audit
     public static final String AES_CBC_CIPHER = "AES/CBC/PKCS5Padding"; //LTPA
 
-
     public static final int AES_128_KEY_LENGTH_BYTES = 16;
     public static final int AES_256_KEY_LENGTH_BYTES = 32;
 
@@ -130,14 +129,16 @@ public class CryptoUtils {
     }
 
     public static String getSignatureAlgorithm() {
-        if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
+//        if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
+        if (fipsEnabled)
             return SIGNATURE_ALGORITHM_SHA512WITHRSA;
         else
             return SIGNATURE_ALGORITHM_SHA1WITHRSA;
     }
 
     public static String getEncryptionAlgorithm() {
-        if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
+        //if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
+        if (fipsEnabled)
             return ENCRYPT_ALGORITHM_RSA;
         else
             return ENCRYPT_ALGORITHM_DESEDE;
@@ -145,9 +146,10 @@ public class CryptoUtils {
 
     public static String getEncryptionAlgorithmForAudit() {
         // if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
+        if (fipsEnabled)
             return ENCRYPT_ALGORITHM_AES;
-        // else
-            // return ENCRYPT_ALGORITHM_DESEDE;
+        else
+            return ENCRYPT_ALGORITHM_DESEDE;
     }
 
     public static String getCipher() {
@@ -205,7 +207,6 @@ public class CryptoUtils {
 
             System.out.println("ibmJCEPlusFIPSProvider: " + IBMJCE_PLUS_FIPS_PROVIDER);
             System.out.println("ibmJCEPlusFIPSProviderAvailable: " + ibmJCEPlusFIPSProviderAvailable);
-          
 
             if (ibmJCEPlusFIPSProviderAvailable) {
                 if (!fipsEnabled) {
@@ -244,7 +245,6 @@ public class CryptoUtils {
             }
             System.out.println("openJCEPlusFIPSProvider: " + OPENJCE_PLUS_FIPS_PROVIDER);
             System.out.println("openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
-           
 
             if (openJCEPlusFIPSProviderAvailable) {
                 if (!fipsEnabled || !isSemeruFips()) {

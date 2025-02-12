@@ -430,11 +430,11 @@ public class AuditLogReader {
             throw fnf;
         } catch (IOException ioe) {
             ioe.printStackTrace();
-           
+
             throw ioe;
         } catch (Exception e) {
             e.printStackTrace();
-            
+
             throw e;
         }
     }
@@ -449,15 +449,16 @@ public class AuditLogReader {
         int num_captured_records = 0;
         String rec = null;
         if (debugEnabled) {
-            theLogger.fine("processRecord: decryptedSharedKey: " + decryptedSharedKey.toString());
+            theLogger.fine("processRecord: decryptedSharedKey: " + (decryptedSharedKey != null ? decryptedSharedKey.toString() : "NULL"));
             theLogger.fine("processRecord: file_reader: " + file_reader.toString());
         }
         try {
             do {
                 inByte = file_reader.read();
                 if (inByte != -1) {
-                    if (debugEnabled)
-                        theLogger.fine("processRecord: inByte: " + inByte);
+                    //TODO: uncommnent it
+                    //         if (debugEnabled)
+                    //             theLogger.fine("processRecord: inByte: " + inByte);
 
                     auditRecord = auditRecord.concat(Character.toString((char) inByte));
 
@@ -520,11 +521,12 @@ public class AuditLogReader {
                             String algorithm = CryptoUtils.getEncryptionAlgorithmForAudit();
 
                             if (debugEnabled) {
-                                theLogger.fine("processRecord for signed log: recreate shared key with algoritm: " + algorithm);
+                                theLogger.fine("processRecord for signed log: recreate shared key with algoritm: " + algorithm + " decryptedSharedKey: "
+                                               + (decryptedSharedKey != null ? decryptedSharedKey.toString() : "NULL"));
                             }
                             javax.crypto.spec.SecretKeySpec recreatedSharedKey = new javax.crypto.spec.SecretKeySpec(decryptedSharedKey, algorithm);
                             if (debugEnabled) {
-                                theLogger.fine("processRecord for signed log: decrypt the record: " + recreatedSharedKey);
+                                theLogger.fine("processRecord for signed log: decrypt the record: " + (recreatedSharedKey != null ? recreatedSharedKey.toString() : "NULL"));
                             }
                             byte[] decryptedRecord = ae.decrypt(decodedRecord, recreatedSharedKey);
                             if (decryptedRecord != null) {
@@ -545,8 +547,8 @@ public class AuditLogReader {
                             String algorithm = CryptoUtils.getEncryptionAlgorithmForAudit();
 
                             if (debugEnabled)
-                                theLogger.fine("processRecord for signed and encrypted: recreate shared key with algoritm: " + algorithm + " "+ decryptedSharedKey.toString());
-                               
+                                theLogger.fine("processRecord for signed and encrypted: recreate shared key with algoritm: " + algorithm + " decryptedSharedKey: "
+                                               + (decryptedSharedKey != null ? decryptedSharedKey.toString() : "NULL"));
 
                             // Recreate the shared key
                             javax.crypto.spec.SecretKeySpec recreatedSharedKey = new javax.crypto.spec.SecretKeySpec(decryptedSharedKey, algorithm);
@@ -556,7 +558,7 @@ public class AuditLogReader {
                                 byte[] rkey = ((java.security.Key) recreatedSharedKey).getEncoded();
                             }
                             if (debugEnabled)
-                                theLogger.fine("processRecord decrypt: "+strippedRecord.toString());
+                                theLogger.fine("processRecord decrypt: " + strippedRecord.toString());
 
                             byte[] decryptedRecord = ae.decrypt(strippedRecord, recreatedSharedKey);
                             rec = new String(decryptedRecord);
@@ -570,11 +572,11 @@ public class AuditLogReader {
             } while (inByte != -1);
         } catch (IOException ioe) {
             ioe.printStackTrace();
-            
+
             throw ioe;
         } catch (Exception e) {
             e.printStackTrace();
-          
+
             throw e;
         }
     }
