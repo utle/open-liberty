@@ -445,7 +445,7 @@ public class AuditLogReader {
         int num_captured_records = 0;
         String rec = null;
         if (debugEnabled) {
-            theLogger.fine("processRecord: decryptedSharedKey: " + decryptedSharedKey);
+            theLogger.fine("processRecord: decryptedSharedKey: " + decryptedSharedKey.toString());
             theLogger.fine("processRecord: file_reader: " + file_reader.toString());
         }
         try {

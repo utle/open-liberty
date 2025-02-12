@@ -205,6 +205,8 @@ public class CryptoUtils {
 
             System.out.println("ibmJCEPlusFIPSProvider: " + IBMJCE_PLUS_FIPS_PROVIDER);
             System.out.println("ibmJCEPlusFIPSProviderAvailable: " + ibmJCEPlusFIPSProviderAvailable);
+            System.out.println("fipsEnabled: " + fipsEnabled);
+            System.out.println("isSemeruFips: " + isSemeruFips());
 
             if (ibmJCEPlusFIPSProviderAvailable) {
                 if (!fipsEnabled) {
@@ -243,6 +245,8 @@ public class CryptoUtils {
             }
             System.out.println("openJCEPlusFIPSProvider: " + OPENJCE_PLUS_FIPS_PROVIDER);
             System.out.println("openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
+            System.out.println("fipsEnabled: " + fipsEnabled);
+            System.out.println("isSemeruFips: " + isSemeruFips());
 
             if (openJCEPlusFIPSProviderAvailable) {
                 if (!fipsEnabled || !isSemeruFips()) {
@@ -256,6 +260,8 @@ public class CryptoUtils {
                 }
             }
             openJCEPlusFIPSProviderChecked = true;
+            Tr.debug(tc, "openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
+            System.out.println("openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
             return openJCEPlusFIPSAvailable;
         }
     }
