@@ -210,7 +210,7 @@ public class AuditSigningImpl implements AuditSigning {
         byte[] encodedPublicKey = pKey.getEncoded();
 
         decryptedSharedKey = encryptor.decrypt(sharedKey);
-        System.out.println("AuditSigning - decryptSharedKey: " + decryptedSharedKey.toString());
+        System.out.println("AuditSigningImpl - decryptSharedKey: " + decryptedSharedKey.toString());
 
         return decryptedSharedKey;
     }
@@ -409,6 +409,8 @@ public class AuditSigningImpl implements AuditSigning {
         byte[] unsignedData = null;
         if (data != null) {
             try {
+                System.out.println("AuditSigningImpl, unsign: data " + data.length);
+                System.out.println("AuditSigningImpl, unsign: key:" + key.toString());
                 unsignedData = decrypt(data, key);
             } catch (AuditDecryptionException ade) {
                 throw new AuditSigningException(ade);
@@ -455,6 +457,10 @@ public class AuditSigningImpl implements AuditSigning {
 
         if (messageDigest != null) {
             try {
+                System.out.println("AuditSigningImpl, sign: messageDigest " + messageDigest.toString());
+                System.out.println("AuditSigningImpl, sign: key:" + key.toString());
+                System.out.println("AuditSigningImpl, sign: but call encrypt method");
+
                 signedData = encrypt(messageDigest, key);
             } catch (AuditEncryptingException aee) {
                 throw new AuditSigningException(aee);

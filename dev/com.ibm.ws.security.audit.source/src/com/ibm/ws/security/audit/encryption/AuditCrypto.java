@@ -1958,18 +1958,23 @@ final class AuditCrypto {
         // determine key length from the key which specifies whether it is 3DES or DES
         long start_time = 0;
 
+        if (null == data) {
+            if (tc.isDebugEnabled())
+                Tr.debug(tc, "Array was null");
+            System.out.println("AuditCrypto,encrypt: data was null");
+            return null;
+        }
+
         if (tc.isDebugEnabled()) {
             start_time = System.currentTimeMillis();
             Tr.debug(tc, "Cipher used to encrypt: " + cipher);
             Tr.debug(tc, "Data size: " + data.length);
             Tr.debug(tc, "Key size: " + key.length);
         }
-
-        if (null == data) {
-            if (tc.isDebugEnabled())
-                Tr.debug(tc, "Array was null");
-            return null;
-        }
+        System.out.println("AuditCrypto,encrypt: data: " + data.toString());
+        System.out.println("AuditCrypto,encrypt: data: " + data.length);
+        System.out.println("AuditCrypto,encrypt: Cipher used to decrypt: " + cipher);
+        System.out.println("AuditCrypto,encrypt: key size: " + key.length);
 
         byte[] mesg = null;
         try {
@@ -2029,10 +2034,11 @@ final class AuditCrypto {
             Tr.debug(tc, "Cipher used to decrypt: " + cipher);
             Tr.debug(tc, "key size: " + key.length);
         }
-        System.out.println("mesg: " + mesg.toString());
-        System.out.println("mesg: " + mesg.length);
-        System.out.println("Cipher used to decrypt: " + cipher);
-        System.out.println("key size: " + key.length);
+
+        System.out.println("AuditCrypto,decrypt: mesg: " + mesg.toString());
+        System.out.println("AuditCrypto,decrypt: mesg: " + mesg.length);
+        System.out.println("AuditCrypto,decrypt: Cipher used to decrypt: " + cipher);
+        System.out.println("AuditCrypto,decrypt: key size: " + key.length);
 
         byte[] tmpMesg = null;
         try {
@@ -2046,7 +2052,7 @@ final class AuditCrypto {
             if (tc.isDebugEnabled())
                 Tr.debug(tc, "decrypt() Cipher.doFinal()\n   tmpMesg: " + new String(tmpMesg));
 
-                System.out.println("decrypt() Cipher.doFinal()\n   tmpMesg: " + new String(tmpMesg));
+            System.out.println("decrypt() Cipher.doFinal()\n   tmpMesg: " + new String(tmpMesg));
 
         } catch (java.security.NoSuchAlgorithmException e) {
             Tr.error(tc, "no such algorithm exception", new Object[] { e });
