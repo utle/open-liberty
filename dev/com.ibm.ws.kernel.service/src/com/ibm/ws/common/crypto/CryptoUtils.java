@@ -397,10 +397,13 @@ public class CryptoUtils {
                          && isRunningBetaMode();
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(tc, "isFips140_3Enabled: " + result);
+
         }
+        System.out.println("isFips140_3Enabled: " + result);
         if (result) {
             if (isIBMJCEPlusFIPSAvailable() || isOpenJCEPlusFIPSAvailable()) {
                 Tr.info(tc, "FIPS_140_3ENABLED", getProvider());
+                System.out.println("FIPS_140_3ENABLED: " + getProvider());
             } else {
                 Tr.error(tc, "TODO ERROR MSG");
             }
@@ -441,6 +444,7 @@ public class CryptoUtils {
             // Running beta exception, issue message if we haven't already issued one for this class
             if (!issuedBetaMessage) {
                 Tr.info(tc, "BETA: A beta method has been invoked for the class CryptoUtils for the first time.");
+                System.out.println("BETA: A beta method has been invoked for the class CryptoUtils for the first time.");
                 issuedBetaMessage = true;
             }
             return true;
