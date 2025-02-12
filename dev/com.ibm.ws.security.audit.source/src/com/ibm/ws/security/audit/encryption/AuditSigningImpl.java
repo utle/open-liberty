@@ -210,6 +210,7 @@ public class AuditSigningImpl implements AuditSigning {
         byte[] encodedPublicKey = pKey.getEncoded();
 
         decryptedSharedKey = encryptor.decrypt(sharedKey);
+        System.out.println("AuditSigning - decryptSharedKey: " + decryptedSharedKey.toString());
 
         return decryptedSharedKey;
     }
