@@ -91,6 +91,8 @@ public class CryptoUtils {
     public static final int AES_256_KEY_LENGTH_BYTES = 32;
 
     public static final int DESEDE_KEY_LENGTH_BYTES = 24;
+    public static final String ENABLE_FIPS_140_3 = "enablefips140-3"; // IBM JDK 8
+    public static final String SEMERU_FIPS = "semeru.fips"; // Semeru
 
     private static boolean fipsEnabled = isFIPSEnabled();
 
@@ -371,7 +373,7 @@ public class CryptoUtils {
     }
 
     public static boolean isSemeruFips() {
-        return "true".equals(getPropertyLowerCase("semeru.fips", "false"));
+        return "true".equals(getPropertyLowerCase(SEMERU_FIPS, "false"));
     }
 
     public static boolean isFips140_3Enabled() {
@@ -380,6 +382,13 @@ public class CryptoUtils {
                          && isRunningBetaMode();
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(tc, "isFips140_3Enabled: " + result);
+        }
+        if (result) {
+            if (isIBMJCEPlusFIPSAvailable() || isOpenJCEPlusFIPSAvailable()) {
+                Tr.info(tc, "FIPS_140_3ENABLED", getProvider());
+            } else {
+                Tr.error(tc, "TODO ERROR MSG");
+            }
         }
         return result;
     }
