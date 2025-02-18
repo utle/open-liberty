@@ -50,6 +50,7 @@ import com.ibm.wsspi.persistence.DDLGenerationParticipant;
 
 import io.openliberty.data.internal.persistence.DataProvider;
 import io.openliberty.data.internal.persistence.EntityManagerBuilder;
+import io.openliberty.data.internal.persistence.Util;
 import io.openliberty.data.internal.persistence.provider.PUnitEMBuilder;
 import io.openliberty.data.internal.persistence.service.DBStoreEMBuilder;
 import jakarta.data.exceptions.DataException;
@@ -669,10 +670,11 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
      *
      * @param writer writes to the introspection file.
      * @param indent indentation for lines.
+     * @return EntityManagerBuilder if available from this FutureEMBuilder.
      */
     @FFDCIgnore(Throwable.class)
     @Trivial
-    public void introspect(PrintWriter writer, String indent) {
+    public Optional<EntityManagerBuilder> introspect(PrintWriter writer, String indent) {
         writer.println(indent + "FutureEMBuilder@" + Integer.toHexString(hashCode()));
         writer.println(indent + "  dataStore: " + dataStore);
         writer.println(indent + "  namespace: " + namespace);
@@ -699,15 +701,13 @@ public class FutureEMBuilder extends CompletableFuture<EntityManagerBuilder> imp
                 writer.println("completed");
             } catch (Throwable x) {
                 writer.println("failed");
-                x.printStackTrace(writer);
+                Util.printStackTrace(x, writer, indent + "  ", null);
             }
         else
             writer.println("not completed");
 
-        if (builder != null) {
-            writer.println(indent + "  builder: " + builder);
-            // TODO more information from builder
-        }
+        writer.println(indent + "  builder: " + builder);
+        return Optional.ofNullable(builder);
     }
 
     @Override

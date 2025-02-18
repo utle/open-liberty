@@ -25,6 +25,8 @@ import org.testcontainers.utility.MountableFile;
 
 import com.ibm.websphere.simplicity.log.Log;
 
+import componenttest.containers.substitution.ImageBuilderSubstitutor;
+
 /**
  * This builder class is an extension of {@link org.testcontainers.images.builder.ImageFromDockerfile}
  * and is intended to allow developers of Open Liberty the ability to create custom images from a Dockerfile.
@@ -198,54 +200,5 @@ class ImageBuilder {
 
         // NOTE: this is NOT the ImageBuilderSubstitutor
         return ImageNameSubstitutor.instance().apply(DockerImageName.parse(baseImageName));
-    }
-
-    /**
-     * An ImageNameSubstitutor for images built by this outer class.
-     * Built images are not kept in a public registry and are typically cached locally
-     * or within an internal registry on the network.
-     */
-    private static class ImageBuilderSubstitutor extends ImageNameSubstitutor {
-
-        private static final String INTERNAL_REGISTRY_PROP = "docker_registry.server";
-
-        // Ensures when we look for cached images Docker only attempt to find images
-        // locally or from an internally configured registry.
-        private static final String REGISTRY = System.getProperty(INTERNAL_REGISTRY_PROP, "localhost");
-
-        // The repository where all Open Liberty images are located
-        private static final String REPOSITORY_PREFIX = "openliberty/testcontainers/";
-
-        @Override
-        public DockerImageName apply(final DockerImageName original) {
-            Objects.requireNonNull(original);
-
-            if (!original.getRegistry().isEmpty()) {
-                throw new IllegalArgumentException("DockerImageName with the registry " + original.getRegistry() +
-                                                   " cannot be substituted with registry " + REGISTRY);
-            }
-
-            if (original.getRepository().startsWith(REPOSITORY_PREFIX)) {
-                return original.withRegistry(REGISTRY);
-            } else {
-                return original.withRepository(REPOSITORY_PREFIX + original.getRepository()).withRegistry(REGISTRY);
-            }
-        }
-
-        @Override
-        protected String getDescription() {
-            return "ImageBuilderSubstitutor with registry " + REGISTRY;
-        }
-
-        // Hide instance method from parent class
-        // which will choose the ImageNameSubstitutor based on environment.
-        private static ImageBuilderSubstitutor instance;
-
-        public static synchronized ImageNameSubstitutor instance() {
-            if (Objects.isNull(instance)) {
-                instance = new ImageBuilderSubstitutor();
-            }
-            return instance;
-        }
     }
 }

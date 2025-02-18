@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivilegedAction;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ public class CryptoUtils {
 
     public static boolean unitTest = false;
     public static boolean fipsChecked = false;
+    public static boolean fips140_3Checked = false;
 
     public static boolean javaVersionChecked = false;
     public static boolean isJava11orHigher = false;
@@ -73,17 +75,31 @@ public class CryptoUtils {
 
     public static final String SIGNATURE_ALGORITHM_SHA1WITHRSA = "SHA1withRSA";
     public static final String SIGNATURE_ALGORITHM_SHA256WITHRSA = "SHA256withRSA";
+    public static final String SIGNATURE_ALGORITHM_SHA512WITHRSA = "SHA512withRSA";
 
     public static final String CRYPTO_ALGORITHM_RSA = "RSA";
 
     public static final String ENCRYPT_ALGORITHM_DESEDE = "DESede";
-    public static final String ENCRYPT_ALGORITHM_RSA = "RSA";
+    public static final String ENCRYPT_ALGORITHM_AES = "AES";
+
+    public static final String ENCRYPT_MODE_ECB = "ECB";
 
     public static final String AES_GCM_CIPHER = "AES/GCM/NoPadding";
-    public static final String DES_ECB_CIPHER = "DESede/ECB/PKCS5Padding"; //Audit
-    public static final String AES_CBC_CIPHER = "AES/CBC/PKCS5Padding"; //LTPA
+    /** Cipher used for LTPA Password */
+    public static final String DES_ECB_CIPHER = "DESede/ECB/PKCS5Padding";
+    /** Cipher used for LTPA tokens and audit. */
+    public static final String AES_CBC_CIPHER = "AES/CBC/PKCS5Padding";
 
-    private static boolean fipsEnabled = isFIPSEnabled();
+    public static final int AES_128_KEY_LENGTH_BYTES = 16;
+    public static final int AES_256_KEY_LENGTH_BYTES = 32;
+
+    public static final int DESEDE_KEY_LENGTH_BYTES = 24;
+
+    private static boolean fips140_3Enabled = isFips140_3Enabled();
+    private static boolean fipsEnabled = fips140_3Enabled;
+
+    /** Algorithm used for encryption in LTPA and audit. */
+    public static final String ENCRYPT_ALGORITHM = ENCRYPT_ALGORITHM_AES;
 
     private static Map<String, String> secureAlternative = new HashMap<>();
     static {
@@ -116,43 +132,35 @@ public class CryptoUtils {
 
     public static String getSignatureAlgorithm() {
         if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
-            return SIGNATURE_ALGORITHM_SHA256WITHRSA;
+            return SIGNATURE_ALGORITHM_SHA512WITHRSA;
         else
             return SIGNATURE_ALGORITHM_SHA1WITHRSA;
-    }
-
-    public static String getEncryptionAlgorithm() {
-        if (fipsEnabled && (isOpenJCEPlusFIPSAvailable() || isIBMJCEPlusFIPSAvailable()))
-            return ENCRYPT_ALGORITHM_RSA;
-        else
-            return ENCRYPT_ALGORITHM_DESEDE;
     }
 
     public static String getCipher() {
         return fipsEnabled ? AES_CBC_CIPHER : DES_ECB_CIPHER;
     }
 
-    public static String getCipherForAudit() {
-        return fipsEnabled ? AES_CBC_CIPHER : DES_ECB_CIPHER;
-    }
-
     public static void logInsecureAlgorithm(String configProperty, String insecureAlgorithm) {
         // TODO remove beta check
-        if (isRunningBetaMode()) {
-            Tr.warning(tc, "CRYPTO_INSECURE", configProperty, insecureAlgorithm);
+        // TODO disabling CRYPTO_INSECURE warnings until full FIPS 140-3 support on Semeru is complete
+        if (false && isRunningBetaMode()) {
+            Tr.warning(tc, "CRYPTO_INSECURE", configProperty, insecureAlgorithm, getSecureAlternative(insecureAlgorithm));
         }
     }
 
     public static void logInsecureAlgorithmReplaced(String configProperty, String insecureAlgorithm, String secureAlgorithm) {
         // TODO remove beta check
-        if (isRunningBetaMode()) {
+        // TODO disabling CRYPTO_INSECURE warnings until full FIPS 140-3 support on Semeru is complete
+        if (false && isRunningBetaMode()) {
             Tr.warning(tc, "CRYPTO_INSECURE_REPLACED", configProperty, insecureAlgorithm, secureAlgorithm);
         }
     }
 
     public static void logInsecureProvider(String provider, String insecureAlgorithm) {
         // TODO remove beta check
-        if (isRunningBetaMode()) {
+        // TODO disabling CRYPTO_INSECURE warnings until full FIPS 140-3 support on Semeru is complete
+        if (false && isRunningBetaMode()) {
             Tr.warning(tc, "CRYPTO_INSECURE_PROVIDER", provider, insecureAlgorithm);
         }
     }
@@ -162,6 +170,9 @@ public class CryptoUtils {
             return ibmJCEAvailable;
         } else {
             ibmJCEAvailable = JavaInfo.isSystemClassAvailable(IBMJCE_PROVIDER);
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "ibmJCEAvailable: " + ibmJCEAvailable);
+            }
             ibmJCEProviderChecked = true;
             return ibmJCEAvailable;
         }
@@ -171,22 +182,9 @@ public class CryptoUtils {
         if (ibmJCEPlusFIPSProviderChecked) {
             return ibmJCEPlusFIPSAvailable;
         } else {
-            boolean ibmJCEPlusFIPSProviderAvailable = JavaInfo.isSystemClassAvailable(IBMJCE_PLUS_FIPS_PROVIDER);
+            ibmJCEPlusFIPSAvailable = JavaInfo.isSystemClassAvailable(IBMJCE_PLUS_FIPS_PROVIDER);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "ibmJCEPlusFIPSProvider: " + IBMJCE_PLUS_FIPS_PROVIDER);
-                Tr.debug(tc, "ibmJCEPlusFIPSProviderAvailable: " + ibmJCEPlusFIPSProviderAvailable);
-            }
-
-            if (ibmJCEPlusFIPSProviderAvailable) {
-                if (!fipsEnabled) {
-                    ibmJCEPlusFIPSProviderAvailable = false;
-                } else {
-                    ibmJCEPlusFIPSAvailable = true;
-                }
-            } else {
-                if (fipsEnabled && !isSemeruFips()) {
-                    Tr.debug(tc, "FIPS is enabled but the " + IBMJCE_PLUS_FIPS_PROVIDER + " provider is not available.");
-                }
+                Tr.debug(tc, "ibmJCEPlusFIPSAvailable: " + ibmJCEPlusFIPSAvailable);
             }
             ibmJCEPlusFIPSProviderChecked = true;
             return ibmJCEPlusFIPSAvailable;
@@ -198,6 +196,9 @@ public class CryptoUtils {
             return openJCEPlusAvailable;
         } else {
             openJCEPlusAvailable = JavaInfo.isSystemClassAvailable(OPENJCE_PLUS_PROVIDER);
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "openJCEPlusAvailable: " + openJCEPlusAvailable);
+            }
             openJCEPlusProviderChecked = true;
             return openJCEPlusAvailable;
         }
@@ -207,22 +208,9 @@ public class CryptoUtils {
         if (openJCEPlusFIPSProviderChecked) {
             return openJCEPlusFIPSAvailable;
         } else {
-            boolean openJCEPlusFIPSProviderAvailable = JavaInfo.isSystemClassAvailable(OPENJCE_PLUS_FIPS_PROVIDER);
+            openJCEPlusFIPSAvailable = JavaInfo.isSystemClassAvailable(OPENJCE_PLUS_FIPS_PROVIDER);
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "openJCEPlusFIPSProvider: " + OPENJCE_PLUS_FIPS_PROVIDER);
-                Tr.debug(tc, "openJCEPlusFIPSAvailable: " + openJCEPlusFIPSProviderAvailable);
-            }
-
-            if (openJCEPlusFIPSProviderAvailable) {
-                if (!fipsEnabled || !isSemeruFips()) {
-                    openJCEPlusFIPSProviderAvailable = false;
-                } else {
-                    openJCEPlusFIPSAvailable = true;
-                }
-            } else {
-                if (fipsEnabled && isSemeruFips()) {
-                    Tr.debug(tc, "Semeru FIPS is enabled but the " + OPENJCE_PLUS_FIPS_PROVIDER + " provider is not available.");
-                }
+                Tr.debug(tc, "openJCEPlusFIPSAvailable: " + openJCEPlusFIPSAvailable);
             }
             openJCEPlusFIPSProviderChecked = true;
             return openJCEPlusFIPSAvailable;
@@ -313,10 +301,10 @@ public class CryptoUtils {
         try {
             if (fipsEnabled) {
                 if (isSemeruFips()) {
-                    md1 = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM_SHA256,
+                    md1 = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM_SHA512,
                                                     OPENJCE_PLUS_FIPS_NAME);
                 } else {
-                    md1 = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM_SHA256,
+                    md1 = MessageDigest.getInstance(MESSAGE_DIGEST_ALGORITHM_SHA512,
                                                     IBMJCE_PLUS_FIPS_NAME);
                 }
             } else if (CryptoUtils.isIBMJCEAvailable()) {
@@ -356,13 +344,34 @@ public class CryptoUtils {
     }
 
     public static boolean isFips140_3Enabled() {
+        if (fips140_3Checked)
+            return fips140_3Enabled;
+        else {
+            boolean enabled = ("140-3".equals(FIPSLevel) || "true".equals(getPropertyLowerCase("global.fips_140-3", "false")) || isSemeruFips())
+                              && isRunningBetaMode();
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "isFips140_3Enabled: " + enabled);
+            }
 
-        boolean result = ("140-3".equals(FIPSLevel) || "true".equals(getPropertyLowerCase("global.fips_140-3", "false")) || isSemeruFips())
-                         && isRunningBetaMode();
-        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(tc, "isFips140_3Enabled: " + result);
+            if (enabled) { // Check for FIPS 140-3 available
+                if (isIBMJCEPlusFIPSAvailable() || isOpenJCEPlusFIPSAvailable() || isFIPSProviderAvailable()) {
+                    fips140_3Enabled = true;
+                    Tr.info(tc, "FIPS_140_3ENABLED", (ibmJCEPlusFIPSAvailable ? IBMJCE_PLUS_FIPS_NAME : OPENJCE_PLUS_FIPS_NAME));
+                } else {
+                    Tr.error(tc, "FIPS_140_3ENABLED_ERROR");
+                }
+            }
+            fips140_3Checked = true;
+            return fips140_3Enabled;
         }
-        return result;
+    }
+
+    /**
+     * Check the provider names exist instead of the provider class for securityUtility command.
+     *
+     */
+    private static boolean isFIPSProviderAvailable() {
+        return (Security.getProvider(IBMJCE_PLUS_FIPS_NAME) != null || Security.getProvider(OPENJCE_PLUS_FIPS_NAME) != null);
     }
 
     public static boolean isFips140_2Enabled() {
@@ -402,5 +411,21 @@ public class CryptoUtils {
             }
             return true;
         }
+    }
+
+    /** generate random bytes using SecureRandom */
+    public static byte[] generateRandomBytes(int length) {
+        byte[] seed = null;
+        SecureRandom rand = new SecureRandom();
+
+        // TODO: Investigate hardware Crypto
+        //String hardwareCryptoProvider = "IBMJCECCA";
+        //Provider provider = rand.getProvider();
+        //if (hardwareCryptoProvider.equals(provider.getName())) {
+        //    seed = new byte[length];
+        //    rand.nextBytes(seed);
+        //} else {
+        seed = rand.generateSeed(length);
+        return seed;
     }
 }

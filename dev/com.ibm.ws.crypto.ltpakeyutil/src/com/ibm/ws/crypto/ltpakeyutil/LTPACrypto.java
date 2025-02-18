@@ -52,8 +52,6 @@ final class LTPACrypto {
 
     private static final String signatureAlgorithm = CryptoUtils.getSignatureAlgorithm();
 
-    private static final String encryptAlgorithm = CryptoUtils.getEncryptionAlgorithm();
-
     private static int MAX_CACHE = 500;
     private static IvParameterSpec ivs8 = null;
     private static IvParameterSpec ivs16 = null;
@@ -594,15 +592,15 @@ final class LTPACrypto {
     private static SecretKey constructSecretKey(byte[] key, String cipher)
             throws InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         SecretKey sKey = null;
-        if (cipher.indexOf("AES") != -1) {
-            // 16 bytes = 128 bit key
-            sKey = new SecretKeySpec(key, 0, 16, "AES");
+        if (cipher.indexOf(CryptoUtils.ENCRYPT_ALGORITHM_AES) != -1) {
+            int keyLength = fipsEnabled ? CryptoUtils.AES_256_KEY_LENGTH_BYTES : CryptoUtils.AES_128_KEY_LENGTH_BYTES;
+            sKey = new SecretKeySpec(key, 0, keyLength, CryptoUtils.ENCRYPT_ALGORITHM_AES);
         } else {
             DESedeKeySpec kSpec = new DESedeKeySpec(key);
             SecretKeyFactory kFact = null;
 
-            kFact = (provider == null) ? SecretKeyFactory.getInstance(encryptAlgorithm)
-                    : SecretKeyFactory.getInstance(encryptAlgorithm, provider);
+            kFact = (provider == null) ? SecretKeyFactory.getInstance(CryptoUtils.ENCRYPT_ALGORITHM_DESEDE)
+                    : SecretKeyFactory.getInstance(CryptoUtils.ENCRYPT_ALGORITHM_DESEDE, provider);
 
             sKey = kFact.generateSecret(kSpec);
         }
@@ -627,8 +625,8 @@ final class LTPACrypto {
         Cipher ci = null;
         ci = (provider == null) ? Cipher.getInstance(cipher) : Cipher.getInstance(cipher, provider);
 
-        if (cipher.indexOf("ECB") == -1) {
-            if (cipher.indexOf("AES") != -1) {
+        if (cipher.indexOf(CryptoUtils.ENCRYPT_MODE_ECB) == -1) {
+            if (cipher.indexOf(CryptoUtils.ENCRYPT_ALGORITHM_AES) != -1) {
                 if (ivs16 == null) {
                     setIVS16(key);
                 }
@@ -1037,11 +1035,8 @@ final class LTPACrypto {
 
     @Trivial
     static final byte[] generateSharedKey() {
-        byte[] rndSeed = null;
-        int len = (fipsEnabled) ? 32 : 24;
-        rndSeed = new byte[len];
-        random(rndSeed, 0, len);
-        return rndSeed;
+        return (fipsEnabled) ? CryptoUtils.generateRandomBytes(CryptoUtils.AES_256_KEY_LENGTH_BYTES)
+                : CryptoUtils.generateRandomBytes(CryptoUtils.DESEDE_KEY_LENGTH_BYTES);
     }
 
     @Trivial

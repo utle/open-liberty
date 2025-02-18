@@ -62,3 +62,5 @@ tested.features:\
   com.ibm.ws.kernel.security.thread;version=latest,\
   com.ibm.websphere.javaee.cdi.1.0;version=latest
 
+# Copy in FIPS keys
+ltpa.fips.enabled: true

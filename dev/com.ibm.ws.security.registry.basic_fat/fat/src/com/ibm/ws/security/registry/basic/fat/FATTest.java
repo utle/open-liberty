@@ -18,6 +18,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +41,8 @@ import componenttest.vulnerability.LeakedPasswordChecker;
 @RunWith(FATRunner.class)
 @CheckpointTest(alwaysRun = true)
 public class FATTest {
+    /**  */
+    private static final String CWWKS1860E_FIPS_128BIT_AES_SECRET_NOT_ALLOWED = "CWWKS1860E";
     private static final String DEFAULT_CONFIG_FILE = "basic.server.xml.orig";
     private static final String ALTERNATE_BASIC_REGISTRY_CONFIG = "alternateBasicRegistry.xml";
     private static final String DEFAULT_AES_CONFIG_FILE = "defaultAESBasicRegistry.xml";
@@ -47,6 +53,7 @@ public class FATTest {
     private static final Class<?> c = FATTest.class;
     private static UserRegistryServletConnection servlet;
     private final LeakedPasswordChecker passwordChecker = new LeakedPasswordChecker(server);
+    private static final List<String> expectedErrors = new ArrayList();
 
     @ClassRule
     public static CheckpointRule checkpointRule = new CheckpointRule()
@@ -87,7 +94,7 @@ public class FATTest {
 
     public static void serverTearDown(ServerMode mode, LibertyServer server) throws Exception {
         Log.info(c, "serverTearDown", "Stopping the server...");
-        server.stopServer();
+        stopServer();
     }
 
     /**
@@ -148,17 +155,24 @@ public class FATTest {
         setServerConfiguration(server, DEFAULT_AES_CONFIG_FILE);
 
         String password = "alternatepwd";
-        assertEquals("Authentication should succeed.",
-                     "defaultUser", servlet.checkPassword("defaultUser", password));
 
-        passwordChecker.checkForPasswordInAnyFormat(password);
+        if (server.isFIPS140_3EnabledAndSupported()) {
+            assertNotNull("FIPS 140-3 should not tolerate AES-128bit secrets",
+                          server.waitForStringInLog(CWWKS1860E_FIPS_128BIT_AES_SECRET_NOT_ALLOWED));
+            expectedErrors.add(CWWKS1860E_FIPS_128BIT_AES_SECRET_NOT_ALLOWED);
+        } else {
+            assertEquals("Authentication should succeed.",
+                         "defaultUser", servlet.checkPassword("defaultUser", password));
 
-        setServerConfiguration(server, CUSTOM_AES_CONFIG_FILE);
+            passwordChecker.checkForPasswordInAnyFormat(password);
 
-        assertEquals("Authentication should succeed.",
-                     "customUser", servlet.checkPassword("customUser", password));
+            setServerConfiguration(server, CUSTOM_AES_CONFIG_FILE);
 
-        passwordChecker.checkForPasswordInAnyFormat(password);
+            assertEquals("Authentication should succeed.",
+                         "customUser", servlet.checkPassword("customUser", password));
+
+            passwordChecker.checkForPasswordInAnyFormat(password);
+        }
     }
 
     /**
@@ -259,7 +273,9 @@ public class FATTest {
         if (!serverConfigurationFile.equals(serverXML)) {
             // Update server.xml
             Log.info(c, "setServerConfiguration", "setServerConfigurationFile to : " + serverXML);
-            server.stopServer();
+
+            stopServer();
+
             server.setServerConfigurationFile(serverXML);
             if (CheckpointRule.isActive()) {
                 server.checkpointRestore();
@@ -268,6 +284,13 @@ public class FATTest {
             }
             serverConfigurationFile = serverXML;
         }
+    }
+
+    /**
+     * Stops the server providing the expectedErrors list as input
+     */
+    private static void stopServer() throws IOException, Exception {
+        server.stopServer(expectedErrors.toArray(new String[0]));
     }
 
     /**

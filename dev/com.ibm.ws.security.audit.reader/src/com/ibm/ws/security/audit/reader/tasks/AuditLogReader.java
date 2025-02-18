@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2022 IBM Corporation and others.
+ * Copyright (c) 2018, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -513,7 +513,7 @@ public class AuditLogReader {
                         } else if (!signedLog && encryptedLog) {
 
                             // Recreate the shared key
-                            String algorithm = CryptoUtils.getEncryptionAlgorithm();
+                            String algorithm = CryptoUtils.ENCRYPT_ALGORITHM;
 
                             if (debugEnabled) {
                                 theLogger.fine("processRecord: recreate shared key with algoritm: " + algorithm);
@@ -536,7 +536,7 @@ public class AuditLogReader {
                                     break;
                                 }
                             }
-                            String algorithm = CryptoUtils.getEncryptionAlgorithm();
+                            String algorithm = CryptoUtils.ENCRYPT_ALGORITHM;
 
                             if (debugEnabled)
                                 theLogger.fine("processRecord: recreate shared key with algorithm: " + algorithm);

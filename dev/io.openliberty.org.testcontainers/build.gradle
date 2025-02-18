@@ -49,13 +49,13 @@ task assembleTestContainerData(type: JavaExec) {
 task generateCustomImages(type: JavaExec) {
     // If artifactory is available then use it for BASE_NAME substitution
     if ( gradle.userProps.containsKey("artifactory.docker.server") ) {
-        environment "TESTCONTAINERS_IMAGE_SUBSTITUTOR", "componenttest.containers.ArtifactoryMirrorSubstitutor"
-        environment "ARTIFACTORY_REGISTRY", gradle.userProps.getProperty("artifactory.docker.server")
+        environment "TESTCONTAINERS_IMAGE_SUBSTITUTOR", "componenttest.containers.substitution.LibertyImageNameSubstitutor"
+        environment "ARTIFACTORY_DOCKER_SERVER", gradle.userProps.getProperty("artifactory.docker.server")
     }
     
     // If internal registry is available then use it for caching image
     if ( gradle.userProps.containsKey("docker_registry.server") ) {
-        environment "INTERNAL_REGISTRY", gradle.userProps.getProperty("docker_registry.server")
+        environment "DOCKER_REGISTRY_SERVER", gradle.userProps.getProperty("docker_registry.server")
     }
     
     // Run main method of CustomImages class

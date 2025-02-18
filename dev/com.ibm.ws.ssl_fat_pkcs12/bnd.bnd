@@ -43,3 +43,5 @@ fat.project: true
 	com.ibm.ws.kernel.security.thread;version=latest,\
 	org.hamcrest:hamcrest-all;version=1.3
 
+# Copy in FIPS keys
+ltpa.fips.enabled: true

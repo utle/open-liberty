@@ -196,11 +196,7 @@ public class LTPAKeyRotationTests {
     @BeforeClass
     public static void setUp() throws Exception {
         // Copy validation key file (validation1.keys) to the server
-        if (fipsEnabled) {
-            copyFileToServerResourcesSecurityDir(ALT_CONFIGVALIDATION_KEY1_PATH);
-        } else {
-            copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH);
-        }
+        copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH);
 
         server.setupForRestConnectorAccess();
         if (fipsEnabled) {
@@ -391,7 +387,7 @@ public class LTPAKeyRotationTests {
      */
     @Test
     @CheckForLeakedPasswords({ validPassword })
-    @AllowedFFDC({ "javax.crypto.BadPaddingException", "javax.crypto.AEADBadTagException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
+    @AllowedFFDC({ "javax.crypto.BadPaddingException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
     public void testLTPAFileReplacement_invalidSharedKey_monitorValidationKeysDir_true_monitorInterval_10() throws Exception {
         // Configure the server
         configureServer("true", "10", true);
@@ -489,7 +485,7 @@ public class LTPAKeyRotationTests {
      */
     @Test
     @CheckForLeakedPasswords({ validPassword })
-    @AllowedFFDC({ "javax.crypto.BadPaddingException", "javax.crypto.AEADBadTagException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
+    @AllowedFFDC({ "javax.crypto.BadPaddingException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
     public void testLTPAFileReplacement_invalidPrivateKey_monitorValidationKeysDir_true_monitorInterval_10() throws Exception {
         // Configure the server
         configureServer("true", "10", true);
@@ -587,7 +583,7 @@ public class LTPAKeyRotationTests {
      */
     @Test
     @CheckForLeakedPasswords({ validPassword })
-    @AllowedFFDC({ "javax.crypto.BadPaddingException", "javax.crypto.AEADBadTagException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
+    @AllowedFFDC({ "javax.crypto.BadPaddingException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
     public void testLTPAFileReplacement_invalidPublicKey_monitorValidationKeysDir_true_monitorInterval_10() throws Exception {
         // Configure the server
         configureServer("true", "10", true);
@@ -1014,7 +1010,7 @@ public class LTPAKeyRotationTests {
      */
     @Test
     @CheckForLeakedPasswords({ validPassword })
-    @AllowedFFDC({ "javax.crypto.AEADBadTagException", "java.lang.IllegalArgumentException" })
+    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
     public void testValidationKeys_fileNameAttribute() throws Exception {
         // Configure the server
         configureServer("true", "10", true);
@@ -1126,7 +1122,7 @@ public class LTPAKeyRotationTests {
      */
     @Test
     @CheckForLeakedPasswords({ validPassword })
-    @AllowedFFDC({ "javax.crypto.BadPaddingException", "javax.crypto.AEADBadTagException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
+    @AllowedFFDC({ "javax.crypto.BadPaddingException", "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
     public void testValidationKeys_passwordAttribute() throws Exception {
         // Configure the server
         configureServer("true", "10", true);
@@ -1720,11 +1716,11 @@ public class LTPAKeyRotationTests {
         if (fipsEnabled) {
             contents = new HashMap<String, String>() {
                 {
-                    put("com.ibm.websphere.ltpa.3DESKey", "KKHokqY906qqUO5sK4cVGmgR6zphI2Fl3++fOpgDvPorRcB+//TEzU/64wRERf0V");
+                    put("com.ibm.websphere.ltpa.SharedKey", "HN+OHlQXsBdZnX0O2G5I4pn30mmJ8myHSo6YYW/VaR6SYfar5qclKil7qdYicp3v");
                     put("com.ibm.websphere.ltpa.PrivateKey",
-                        "NweYl5w2UXErSGNMlRK6SXrfG//vWE+IBTO+YOEXFz/PDpnvpQU7lC3DImi2QH2DX8jr1e7LqsQ7Y8ZxDxNjnQQR7Amxuh1EuxQlU49zAPlKCd2jdj6mRRXwsTy8bpvJJHqLZDXi/qWE/gEuuwBPJAowYMdmxBIFNhyhJ3NSnekV3ZUlxaCUee3DbCiDftwtsXsGVLPcJDUprLx4FZd4znu+2SUkwUwk9lks2TuuKJ36J4DhFqQjeHcM9NypKfJvTFi4mjqMYN+AedrKVUAZzWEnHY0tsWvFTiaD/XebI3jSn6zCVmS1QX2BPxdDw84bNxm983a/qKU/qjgYpR0UbjfsMg6L8r6+d9B45zmqSctZEGMGXTHZl/dNfgp1l4iKX/bxZjew9eAoIvMZ81vS0I8lHe+9cUcx6/pDL4fiF+sjzKQvGqVSycfgfw0DwscjHTVTFi3IDv5OLLaffLqmyR3JELkALPgCQofbMgRfJLuEyq4uCpay223e6vmsGcC6aX2MJFgmreS9godnopTzuraitMJyPqIX8mt15keDd8YtQxwxlZMIOpDZ9bbxtSNcIEvbortjZyDLPEe/QAzmw0j6phwiUwjRHqM6Dk7vj1s1LcXl7EHvaFHK+wZAI+cIrkycH4oW+ZdrSBg9SuIvQPkskbntVBDNmMzk8ladQK4MWc7JOk+Wy/BnfTQw8JcIpefEKHQkCY6Q");
+                        "G3O0DQPW8PFa9jVV2ZSeSOmYJwydTb0lfYsCkHjgbzm6Feq6FfF4+rdGuNb5xUzJpaJ9ymXDNPH0316XY7x8/RykPJA/eg8OO7PzwPU7pOxElqkctE1D4BAPELXPZn22TQbt34qdaOTAPTpXH8DsmgnB1jkJalSF0cq3cztfP3Gdo36h8+fciJuWMN5s1jWQ35l3UZTrvwY222QTpUch5yeMbpqCVT7Ymvrv2UsOOsP64wU1i2iBuOHlMshq1ai5FhLEP8xPFaegRV8fFBznIp2SRkqNROHucELX61VC4FCSYYCvv974FMGyDPOJyF8PiI+Xqbdnb2MwtM2+hjH2PjNWSsdxvHjawCvTB1354gYP7Gam1vlmSeroZyzTX1QLxRtfh2TAOwLOa1NJvyKMZiFW0P+Uag4xOkHErDQX+cTIRC3eaCoHWUQjpxsv+QKq/0DHxbjncX/jvPywDpwmDXwo3h/QgV0dvzzXRxXAWF6U4FMfBj8ccJLONPZeBHlldvsp92/z+ZuzcsbgQGWoOkLxWx6jZU1OmKUC3dzYn0lHvTr5Tmk5gq6Fer2uBvqOLD11xhbxZTDatrrkQZUYbzZ5nJO6knK38MPcrSjwWtJ5EmPBOXtNklDmVoYDJdjrz06J2CMtajF7t4+IEF69gP/BbKwu7SWQNEtlK6QofhPjpvwu/3hnP5NY9rpNefNL");
                     put("com.ibm.websphere.ltpa.PublicKey",
-                        "AMFGzlz1B/CIWiHvdhiaUFPt5eTXo8/Y+ki7ksDohafQTW6YnWw9QbDq1JmfMB91j75sjIEmzFJhKA9F8UarHQrgspcsgw65kgtPDFBDSCJRGJ2f0RJxGTFnxuzZfihKfVpzKi6XcvvpJdnXXfwdejot68opbeB+MC0gasuPKv4Euw/uIniV7nd0HQI4dEmqL1VpaAdwZj8mHDKuXBHdJtgeNWEL5xgy9lM0YqBgB2wlav7m6tw5JyfTtDNjEF3tcB98A82DenxrIc5D6nIbAI7MWSBCBYfIrig1p+Uq4iWq15H20wlWu1z127bz69TW2Oc37Fgswl2EVWjKub347xEBAAE\\=");
+                        "ANm29hjJBlWr1LXsb9APXS1lLrcpMnXJMaaXZeKKjCk9rt+8ubQAR2N5JRVjh1ev52ITREOku02g+Gv8McReUTpW4+T8ehYhlBpCGRrj3XpDJIplGc7/VmC25e7qvB7TrP5hP/8xMIBG5hrrChUtbYNNm0Av14UOCy5/syoHaoi9VaARZxuaQNGp3Lr61S2Ky4WhG20HcAc7+kAFAl5hwjGl4kJ/xT8OpCV4KxakB3mQpHjAb3Mh9nePIAJW0usOS3PV+sFGjErCHTc0A1c2wVRDef5ZcbLU+vv2TFCXkmSXTwKDm38/2VKTwm+kEi9x/zlk+BJxAiWURBh/JEZ/zgUBAAE\\=");
                 }
             };
         } else {
@@ -2200,7 +2196,7 @@ public class LTPAKeyRotationTests {
         String logLine = server.waitForStringInLogUsingMark("CWWKG001[7-8]I");
 
         // Wait for feature update to be completed or LTPA configuration to get ready
-        Thread.sleep(1000);
+        Thread.sleep(2000);
     }
 
     /**

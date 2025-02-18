@@ -60,7 +60,8 @@ public class FATTest {
     private static String ALTERNATE_KEY_PATH_FIPS = "resources/security/alternateFIPS/testLtpa.keys";
     private static String REPLACEMENT_LTPA_KEYS_PATH = "alternate/ltpa.keys";
     private static String REPLACEMENT_FIPS_LTPA_KEYS_PATH = "alternateFIPS/ltpa.keys";
-    private static final String CORRUPTED_LTPA_KEYS_PATH = "corrupted/ltpa.keys";
+    private static String CORRUPTED_LTPA_KEYS_PATH = "corrupted/ltpa.keys";
+    private static String CORRUPTED_LTPA_KEYS_PATH_FIPS = "corruptedFIPS/ltpa.keys";
     private static final String DEFAULT_SERVER_XML = "server.xml";
     private static String ALTERNATE_SERVER_XML = "alternate/server.xml";
     private static String ALTERNATE_SERVER_XML_FIPS = "alternateFIPS/server.xml";
@@ -78,7 +79,6 @@ public class FATTest {
     private static final Class<?> thisClass = FATTest.class;
 
     private static final String EXPECTED_EXCEPTION_BAD_PADDING = "javax.crypto.BadPaddingException";
-    private static final String EXPECTED_EXCEPTION_AEAD_BAD_TAG = "javax.crypto.AEADBadTagException";
     private static final boolean fipsEnabled;
 
     static {
@@ -100,6 +100,7 @@ public class FATTest {
         fipsEnabled = isFipsEnabled;
 
         if (fipsEnabled) {
+            CORRUPTED_LTPA_KEYS_PATH = CORRUPTED_LTPA_KEYS_PATH_FIPS;
             ALTERNATE_KEY_PATH = ALTERNATE_KEY_PATH_FIPS;
             REPLACEMENT_LTPA_KEYS_PATH = REPLACEMENT_FIPS_LTPA_KEYS_PATH;
             ALTERNATE_SERVER_XML = ALTERNATE_SERVER_XML_FIPS;
@@ -225,11 +226,11 @@ public class FATTest {
     /**
      * Validate that the LTPA keys are not reloaded after modifying the LTPA keys file
      * if the server.xml has the wrong password.
-     * The FFDCs for javax.crypto.BadPaddingException or javax.crypto.AEADBadTagException exception are expected since
+     * The FFDC for javax.crypto.BadPaddingException exception is expected since
      * the code will fail to properly decrypt the LTPA keys with the wrong password.
      */
     @CheckForLeakedPasswords({ PWD_WRONG, PWD_ANY_ENCODED })
-    @AllowedFFDC({ EXPECTED_EXCEPTION_AEAD_BAD_TAG, EXPECTED_EXCEPTION_BAD_PADDING })
+    @AllowedFFDC({ EXPECTED_EXCEPTION_BAD_PADDING })
     @Test
     public void validateKeysNotReloadedAfterModificationWithWrongPassword() throws Exception {
         try {
@@ -242,15 +243,10 @@ public class FATTest {
             assertNotNull("The LTPA configuration must not be reloaded.",
                         server.waitForStringInLog("CWWKS4106E:.*"));
 
-            if (!fipsEnabled){
-                // Verify EXPECTED_EXCEPTION_BAD_PADDING is thrown
-                assertNotNull("The expected exception " + EXPECTED_EXCEPTION_BAD_PADDING + " was not thrown.",
-                            server.waitForStringInTrace(EXPECTED_EXCEPTION_BAD_PADDING));
-            } else {
-                // Verify EXPECTED_EXCEPTION_AEAD_BAD_TAG is thrown
-                assertNotNull("The expected exception " + EXPECTED_EXCEPTION_AEAD_BAD_TAG + " was not thrown.",
-                            server.waitForStringInTrace(EXPECTED_EXCEPTION_AEAD_BAD_TAG));
-            }
+
+            // Verify EXPECTED_EXCEPTION_BAD_PADDING is thrown
+            assertNotNull("The expected exception " + EXPECTED_EXCEPTION_BAD_PADDING + " was not thrown.",
+                        server.waitForStringInTrace(EXPECTED_EXCEPTION_BAD_PADDING));
 
             // Assert token can be created with old keys
             assertTokenCanBeCreated();

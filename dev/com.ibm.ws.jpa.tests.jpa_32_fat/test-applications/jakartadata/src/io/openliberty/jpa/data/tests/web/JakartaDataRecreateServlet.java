@@ -72,6 +72,7 @@ import io.openliberty.jpa.data.tests.models.Rating;
 import io.openliberty.jpa.data.tests.models.Rebate;
 import io.openliberty.jpa.data.tests.models.Rebate.Status;
 import io.openliberty.jpa.data.tests.models.Reciept;
+import io.openliberty.jpa.data.tests.models.RomanNumeral;
 import io.openliberty.jpa.data.tests.models.Segment;
 import io.openliberty.jpa.data.tests.models.Store;
 import io.openliberty.jpa.data.tests.models.Triangle;
@@ -1741,6 +1742,34 @@ public class JakartaDataRecreateServlet extends FATServlet {
         assertEquals("Toyota Corolla", result.getModel());
         assertEquals("Blue", result.getColor());
     }
+
+    @Test
+    @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/30501")
+    public void testOLGH30501() throws Exception{
+        deleteAllEntities(Prime.class); 
+
+        List<RomanNumeral> result;
+        Prime two = Prime.of(2, "II", "two");
+        Prime three = Prime.of(3, "III", "three");
+        Prime five = Prime.of(5, "V", "five");
+        Prime seven = Prime.of(7, "VII", "seven");
+
+        tx.begin();
+        em.persist(two);
+        em.persist(three);
+        em.persist(five);
+        em.persist(seven);
+        tx.commit();
+
+        result = em.createQuery("SELECT NEW io.openliberty.jpa.data.tests.models.RomanNumeral( "
+        + " name, romanNumeral, romanNumeralSymbols) "
+        + "FROM Prime WHERE numberId <= ?1 "
+        + "ORDER BY name", RomanNumeral.class)
+        .setParameter(1, 7) // Positional parameter starts at 1
+        .getResultList();
+
+
+    }   
 
     @Test
     @Ignore("Reference issue: https://github.com/OpenLiberty/open-liberty/issues/29475")

@@ -36,7 +36,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.AccessController;
@@ -138,6 +137,7 @@ public class LibertyServer implements LogMonitorClient {
 
     /** How frequently we poll the logs when waiting for something to happen */
     protected static final int WAIT_INCREMENT = 300;
+    private static final String SPECIAL_CHARS = "\\`$\"'!&|;()<>*?[]{} ";
 
     boolean runAsAWindowService = false;
 
@@ -1730,16 +1730,12 @@ public class LibertyServer implements LogMonitorClient {
         //FIPS 140-3
         // if we have FIPS 140-3 enabled, and the matched java/platform, add JVM Arg
         if (isFIPS140_3EnabledAndSupported(info)) {
-            Map<String, String> fipsOpts = getFipsJvmOptions(info, false);
-            StringJoiner joiner = new StringJoiner(" ", " ", "");
-            for (String key : fipsOpts.keySet()) {
-                if (fipsOpts.get(key) != null) {
-                    joiner.add(String.format("%s=%s", key, fipsOpts.get(key)));
-                } else {
-                    joiner.add(key);
-                }
-            }
-            JVM_ARGS += joiner.toString();
+            // TODO: `getJvmOptionsAsMap()` should be added to JVM_ARGS outside of this if-block so that we always run it.
+            // During FIPS 140-3 development, we found test scenarios where jvm.options is set before server start and the file is ignored.
+            // So that we can test FIPS 140-3 without causing issues unrelated to FIPS, we have put it inside this if-block, for now.
+            Map<String, String> combined = this.getJvmOptionsAsMap();
+            combined.putAll(this.getFipsJvmOptions(info, false));
+            JVM_ARGS += getJvmArgString(combined);
         }
 
         Properties bootstrapProperties = getBootstrapProperties();
@@ -1989,6 +1985,34 @@ public class LibertyServer implements LogMonitorClient {
 
         Log.exiting(c, method);
         return output;
+    }
+
+    /**
+     * @param  fipsOpts, a Map containing jvm argument name/value pairs
+     * @return           A string that starts with a space and contains key/value pairs represented by 'key=value' and separated by spaces
+     */
+    private String getJvmArgString(Map<String, String> fipsOpts) {
+        StringJoiner joiner = new StringJoiner(" ", " ", "");
+        for (String key : fipsOpts.keySet()) {
+            String value = fipsOpts.get(key);
+            if (value != null && !value.isEmpty()) {
+                joiner.add(String.format("%s=%s", escapeCharacters(key), escapeCharacters(value)));
+            } else {
+                joiner.add(key);
+            }
+        }
+        return joiner.toString();
+    }
+
+    private String escapeCharacters(String input) {
+        StringBuilder builder = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            if (SPECIAL_CHARS.indexOf(c) > -1) {
+                builder.append("\\");
+            }
+            builder.append(c);
+        }
+        return builder.toString();
     }
 
     private String[] checkpointAdjustParams(List<String> parametersList) {
@@ -3509,14 +3533,6 @@ public class LibertyServer implements LogMonitorClient {
     private static final String[] EXEMPT_SERVERS = {
                                                      "cdi20EEServer", //com.ibm.ws.cdi.1.0_fat_EE
 
-                                                     "com.ibm.ws.security.authorization.jacc.dynamic_fat", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.mergebindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.inwar", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.ejbjar.mc", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.bindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-                                                     "com.ibm.ws.ejbcontainer.security.jacc_fat.mergebindings", //com.ibm.ws.ejbcontainer.security.jacc_fat.2
-
                                                      "EclipseLinkServer", //com.ibm.ws.jpa.tests.eclipselink_jpa_2.1_fat
 
                                                      "com.ibm.ws.jpa.el.defaultds.fat.server", //com.ibm.ws.jpa.tests.jpa_fat
@@ -3575,8 +3591,6 @@ public class LibertyServer implements LogMonitorClient {
                                                      "com.ibm.ws.scaling.member.fat.controller1", //com.ibm.ws.scaling.member_fat
 
                                                      "com.ibm.ws.ui.fat", //com.ibm.ws.ui_rest_fat
-
-                                                     "com.ibm.ws.webcontainer.security.fat.basicauth.audit", //com.ibm.ws.webcontainer.security.jacc.1.5_fat
 
                                                      "com.ibm.ws.jaxrs.fat.exceptionMappingWithOT", //com.ibm.ws.jaxrs.2.0_fat
 
@@ -7820,16 +7834,16 @@ public class LibertyServer implements LogMonitorClient {
         boolean isIBMJVM17 = (serverJavaInfo.majorVersion() == 17) && (serverJavaInfo.VENDOR == Vendor.IBM);
         if (logOutput && GLOBAL_FIPS_140_3) {
             Log.info(c, methodName, "Liberty server is running JDK version: " + serverJavaInfo.majorVersion()
-                    + " and vendor: " + serverJavaInfo.VENDOR);
+                                    + " and vendor: " + serverJavaInfo.VENDOR);
             if (isIBMJVM8) {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
-                        " and IBM java 8 is available to run with FIPS 140-3 enabled.");
+                                        " and IBM java 8 is available to run with FIPS 140-3 enabled.");
             } else if (isIBMJVM17) {
                 Log.info(c, methodName, "global build properties FIPS_140_3 is set for server " + getServerName() +
-                        " and IBM java 17 is available to run with FIPS 140-3 enabled.");
+                                        " and IBM java 17 is available to run with FIPS 140-3 enabled.");
             } else {
                 Log.info(c, methodName, "The global build properties FIPS_140_3 is set for server " + getServerName() +
-                        ",  but no IBM java 8 or java 17 on liberty server to run with FIPS 140-3 enabled.");
+                                        ",  but no IBM java 8 or java 17 on liberty server to run with FIPS 140-3 enabled.");
             }
         }
         return GLOBAL_FIPS_140_3 && (isIBMJVM8 || isIBMJVM17);
@@ -7838,10 +7852,11 @@ public class LibertyServer implements LogMonitorClient {
     public boolean isFIPS140_3EnabledAndSupported() throws IOException {
         return isFIPS140_3EnabledAndSupported(JavaInfo.forServer(this), true);
     }
- 
-     public boolean isFIPS140_3EnabledAndSupported(JavaInfo info) throws IOException {
+
+    public boolean isFIPS140_3EnabledAndSupported(JavaInfo info) throws IOException {
         return isFIPS140_3EnabledAndSupported(info, true);
     }
+
     /**
      * No longer using bootstrap properties to update server config for database rotation.
      * Instead look at using the fattest.databases module
@@ -8040,7 +8055,7 @@ public class LibertyServer implements LogMonitorClient {
 
     public void configureLTPAKeys(JavaInfo info) throws IOException, InterruptedException {
 
-        if (isFIPS140_3EnabledAndSupported()) {
+        if (isFIPS140_3EnabledAndSupported(info)) {
             String serverSecurityDir = serverRoot + File.separator + "resources" + File.separator + "security";
             File ltpaFIPSKeys = new File(serverSecurityDir, "ltpaFIPS.keys");
             File ltpaKeys = new File(serverSecurityDir, "ltpa.keys");
@@ -8049,14 +8064,14 @@ public class LibertyServer implements LogMonitorClient {
 
             if (!ltpaKeys.exists() && !fipsKeyExists) {
                 Log.info(this.getClass(), "configureLTPAKeys",
-                        "FIPS 140-3 global build properties are set for server " + serverName
-                                + ", but neither ltpa.keys nor ltpaFIPS.keys is found in " + serverSecurityDir);
+                         "FIPS 140-3 global build properties are set for server " + serverName
+                                                               + ", but neither ltpa.keys nor ltpaFIPS.keys is found in " + serverSecurityDir);
             } else {
                 Log.info(this.getClass(), "configureLTPAKeys",
-                        "FIPS 140-3 global build properties are set for server " + serverName
-                                + ", swapping ltpaFIPS.keys into ltpa.keys");
+                         "FIPS 140-3 global build properties are set for server " + serverName
+                                                               + ", swapping ltpaFIPS.keys into ltpa.keys");
             }
-            
+
             if (fipsKeyExists) {
                 Files.move(ltpaFIPSKeys.toPath(), ltpaKeys.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 // Log.info(this.getClass(), "configureLTPAKeys",
@@ -8071,25 +8086,25 @@ public class LibertyServer implements LogMonitorClient {
         }
     }
 
-    
-    private void configureLTPAKeys() throws IOException, InterruptedException {
+    public void configureLTPAKeys() throws IOException, InterruptedException {
         configureLTPAKeys(JavaInfo.forServer(this));
     }
 
-    private Map<String, String> getFipsJvmOptions(JavaInfo info, boolean includeGlobalArgs) throws IOException {
+    private Map<String, String> getFipsJvmOptions(JavaInfo info, boolean includeGlobalArgs) throws Exception, IOException {
         Map<String, String> opts = new HashMap<>();
+        opts.putAll(this.getJvmOptionsAsMap()); //Add all current JVM option so we don't unintentionally clear any set by tests.
         if (isFIPS140_3EnabledAndSupported(info, false)) {
             if (info.majorVersion() == 17) {
                 Log.info(c, "getFipsJvmOptions",
-                        "FIPS 140-3 global build properties is set for server " + getServerName()
-                                + " with IBM Java 17, adding required JVM arguments to run with FIPS 140-3 enabled");
+                         "FIPS 140-3 global build properties is set for server " + getServerName()
+                                                 + " with IBM Java 17, adding required JVM arguments to run with FIPS 140-3 enabled");
                 opts.put("-Dsemeru.fips", "true");
                 opts.put("-Dsemeru.customprofile", "OpenJCEPlusFIPS.FIPS140-3-withPKCS12");
                 opts.put("-Dcom.ibm.fips.mode", "140-3");
             } else if (info.majorVersion() == 8) {
                 Log.info(c, "getFipsJvmOptions", "FIPS 140-3 global build properties is set for server "
-                        + getServerName()
-                        + " with IBM Java 8, adding JVM arguments -Xenablefips140-3, ...,  to run with FIPS 140-3 enabled");
+                                                 + getServerName()
+                                                 + " with IBM Java 8, adding JVM arguments -Xenablefips140-3, ...,  to run with FIPS 140-3 enabled");
                 opts.put("-Xenablefips140-3", null);
                 opts.put("-Dcom.ibm.jsse2.usefipsprovider", "true");
                 opts.put("-Dcom.ibm.jsse2.usefipsProviderName", "IBMJCEPlusFIPS");
@@ -8104,12 +8119,11 @@ public class LibertyServer implements LogMonitorClient {
         return opts;
     }
 
-    public void setKeysAndJVMOptsForFips() throws Exception
-    {
+    public void setKeysAndJVMOptsForFips() throws Exception {
         // Enable FIPS on members via jvm.options file. This way when the controller starts / joins members
-        // the appropriate FIPS jvm arguments will be configured. 
+        // the appropriate FIPS jvm arguments will be configured.
         JavaInfo info = JavaInfo.forServer(this);
-        if(isFIPS140_3EnabledAndSupported(info)){
+        if (isFIPS140_3EnabledAndSupported(info)) {
             this.configureLTPAKeys(info);
             Map<String, String> jvm_opts = this.getJvmOptionsAsMap();
             Map<String, String> combined = new HashMap(jvm_opts);

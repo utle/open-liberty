@@ -16,10 +16,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -176,7 +180,9 @@ public class DataProvider implements //
     public volatile boolean dropTables;
 
     /**
-     * EntityManagerBuilder futures per application, to complete once the application starts.
+     * EntityManagerBuilder futures per application, to complete once the
+     * application starts. After the application starts, these are kept around
+     * for the introspector. The map is cleared on application stop.
      */
     private final ConcurrentHashMap<String, Collection<FutureEMBuilder>> futureEMBuilders = //
                     new ConcurrentHashMap<>();
@@ -287,7 +293,7 @@ public class DataProvider implements //
     @Override
     public void applicationStarted(ApplicationInfo appInfo) throws StateChangeException {
         String appName = appInfo.getName();
-        Collection<FutureEMBuilder> futures = futureEMBuilders.remove(appName);
+        Collection<FutureEMBuilder> futures = futureEMBuilders.get(appName);
         if (futures != null) {
             for (FutureEMBuilder futureEMBuilder : futures) {
                 // This delays createEMBuilder until restore.
@@ -306,7 +312,6 @@ public class DataProvider implements //
 
     @Override
     public void applicationStopping(ApplicationInfo appInfo) {
-        futureEMBuilders.remove(appInfo.getName());
     }
 
     @Override
@@ -514,6 +519,9 @@ public class DataProvider implements //
      */
     @Override
     public void introspect(PrintWriter writer) {
+        Set<QueryInfo> queryInfos = new LinkedHashSet<>();
+        Set<EntityManagerBuilder> builders = new LinkedHashSet<>();
+
         writer.println("compatibility: " + compat.getClass().getSimpleName());
         writer.println("createTables? " + createTables);
         writer.println("dropTables? " + dropTables);
@@ -532,11 +540,12 @@ public class DataProvider implements //
         });
 
         writer.println();
-        writer.println("EntityManager builders for unstarted applications:");
+        writer.println("EntityManager builder futures:");
         futureEMBuilders.forEach((appName, futureEMBuilders) -> {
             writer.println("  for application " + appName);
             for (FutureEMBuilder futureEMBuilder : futureEMBuilders) {
-                futureEMBuilder.introspect(writer, "    ");
+                futureEMBuilder.introspect(writer, "    ") //
+                                .ifPresent(builders::add);
                 writer.println();
             }
         });
@@ -546,10 +555,58 @@ public class DataProvider implements //
         repositoryProducers.forEach((appName, producers) -> {
             writer.println("  for application " + appName);
             for (RepositoryProducer<?> producer : producers) {
-                producer.introspect(writer, "    ");
+                queryInfos.addAll(producer.introspect(writer, "    "));
                 writer.println();
             }
         });
+
+        // The null key in this map indicates unknown EntityInfo
+        HashMap<EntityInfo, List<QueryInfo>> queryInfoPerEntity = new HashMap<>();
+        for (QueryInfo queryInfo : queryInfos) {
+            EntityInfo entityInfo = queryInfo.getEntityInfo();
+            List<QueryInfo> list = queryInfoPerEntity.get(entityInfo);
+            if (list == null)
+                queryInfoPerEntity.put(entityInfo, list = new ArrayList<>());
+            list.add(queryInfo);
+        }
+
+        writer.println();
+        writer.println("EntityManager builders:");
+        builders.forEach(builder -> {
+            builder.introspect(writer, "  ");
+            writer.println();
+
+            builder.entityInfoMap.forEach((userEntityClass, entityInfoFuture) -> {
+                writer.println("    entity: " + userEntityClass.getName());
+
+                EntityInfo entityInfo = null;
+                writer.print("      future: ");
+                if (entityInfoFuture.isCancelled())
+                    writer.println("cancelled");
+                else if (entityInfoFuture.isDone())
+                    try {
+                        entityInfo = entityInfoFuture.join();
+                        writer.println("completed");
+                    } catch (Throwable x) {
+                        writer.println("failed");
+                        Util.printStackTrace(x, writer, "    ", null);
+                    }
+                else
+                    writer.println("not completed");
+
+                if (entityInfo != null)
+                    entityInfo.introspect(writer, "      ");
+                writer.println();
+            });
+        });
+
+        writer.println();
+        writer.println("Query Information:");
+        for (List<QueryInfo> queryInfoList : queryInfoPerEntity.values())
+            for (QueryInfo queryInfo : queryInfoList) {
+                queryInfo.introspect(writer, "  ");
+                writer.println();
+            }
     }
 
     /**
