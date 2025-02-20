@@ -493,8 +493,15 @@ public class PasswordCipherUtil {
             length = PasswordHashGenerator.getDefaultOutputLength();
         }
 
+        boolean usingSHA1 = PasswordHashGenerator.getDefaultAlgorithm().equals(algorithm);
+        //Throw error if older algorithm is used when FIPS is enabled
+        if (CryptoUtils.isFips140_3Enabled() && usingSHA1) {
+            logger.logp(Level.SEVERE, PasswordUtil.class.getName(), "decode_password",
+                        MessageUtils.getMessage("PASSWORDUTIL_EXCEPTION_FIPS140_3_HASH_SHA1_UNAVAILABLE_ALGORITHM"));
+            return null;
+        }
         //Print warning if older algorithm is being used.
-        if (!!!alreadyLoggedHASHWeakPasswordAlgoWarning && (PasswordHashGenerator.getDefaultAlgorithm().equals(algorithm))) {
+        else if (!!!alreadyLoggedHASHWeakPasswordAlgoWarning && usingSHA1) {
             logger.logp(Level.WARNING, PasswordUtil.class.getName(), "generateHash", "PASSWORDUTIL_WEAK_ALGORITHM_WARNING",
                         new Object[] { "{hash}", ": " + algorithm, ": " + PasswordHashGenerator.LATEST_DEFAULT_ALGORITHM });
             alreadyLoggedHASHWeakPasswordAlgoWarning = true;
