@@ -1027,11 +1027,18 @@ public class QueryInfo {
         }
 
         Class<?> returnType = method.getReturnType();
-        if (Optional.class.equals(returnType)) {
+        if (isOptional) {
             returnValue = Optional.of(returnValue);
         } else if (CompletableFuture.class.equals(returnType) ||
                    CompletionStage.class.equals(returnType)) {
             returnValue = CompletableFuture.completedFuture(returnValue);
+        } else if (multiType != null) {
+            throw exc(MappingException.class,
+                      "CWWKD1049.count.convert.err",
+                      count,
+                      method.getName(),
+                      repositoryInterface.getName(),
+                      method.getGenericReturnType().getTypeName());
         }
 
         if (trace && tc.isEntryEnabled())

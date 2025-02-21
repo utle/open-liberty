@@ -253,7 +253,7 @@ task autoFVT {
     def bndProps = new Properties()
 
     // By default, load up all properties with certain prefixes from bndWorkspace
-    bndWorkspace.getProject(project.getProjectDir()).getProperties().each { k, v ->
+    bndWorkspace.getProject(project.name).getProperties().each { k, v ->
       if(k.startsWith("test.") || k.startsWith("fat."))
         bndProps.setProperty(k, v);
     }
