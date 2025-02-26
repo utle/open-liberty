@@ -135,7 +135,7 @@ public class DataProvider implements //
     /**
      * Abstraction for code that pertains to a specific version of Jakarta Data.
      */
-    final DataVersionCompatibility compat;
+    public final DataVersionCompatibility compat;
 
     /**
      * For dynamically creating configuration in response to values that are

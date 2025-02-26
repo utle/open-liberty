@@ -5018,6 +5018,7 @@ public class QueryInfo {
      *         repository Save method signature.
      * @throws Exception if an error occurs.
      */
+    @Trivial // avoid logging customer data
     Object save(Object arg, EntityManager em) throws Exception {
         arg = arg instanceof Stream //
                         ? ((Stream<?>) arg).sequential().collect(Collectors.toList()) //
