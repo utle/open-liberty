@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,9 +13,14 @@
 package com.ibm.ws.jdbc.fat.loadfromapp;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.EnterpriseArchive;
@@ -24,6 +29,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.ShrinkHelper;
@@ -114,5 +120,45 @@ public class JDBCLoadFromAppTest extends FATServletClient {
                               "SRVE9967W.*derbyLocale" // ignore missing Derby locales
             );
         }
+    }
+
+    /**
+     * Reproduce the Java issue reported in RTC 304918 without using Liberty.
+     */
+    @Test
+    public void testStandaloneReproductionOfRTC304918() throws Exception {
+        CountDownLatch blocker = new CountDownLatch(1);
+        CompletableFuture<String> receiveSuppliedValue = new CompletableFuture<>();
+
+        CompletableFuture<String> thenApplyAsyncCompleted = receiveSuppliedValue
+                        .thenApplyAsync(value -> {
+                            return value + "Applied";
+                        });
+
+        CompletableFuture<String> supplyAsyncCompleted = CompletableFuture
+                        .supplyAsync(() -> {
+                            receiveSuppliedValue.complete("Supplied");
+                            try {
+                                if (blocker.await(2, TimeUnit.MINUTES))
+                                    return "supplyAsyncCompleted";
+                                else
+                                    throw new RuntimeException("supplier not allowed to complete");
+                            } catch (InterruptedException x) {
+                                throw new CompletionException(x);
+                            }
+                        });
+
+        String result = thenApplyAsyncCompleted.get(2, TimeUnit.MINUTES);
+        assertEquals("SuppliedApplied",
+                     result);
+
+        // Supplier should still be running:
+        assertFalse(supplyAsyncCompleted.isDone());
+
+        // Allow the first bean method to complete
+        blocker.countDown();
+
+        assertEquals("supplyAsyncCompleted",
+                     supplyAsyncCompleted.get(2, TimeUnit.MINUTES));
     }
 }

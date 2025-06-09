@@ -16,7 +16,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.time.Instant;
+import java.time.Month;
+import java.time.MonthDay;
 import java.time.OffsetDateTime;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.data.Limit;
+import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
@@ -72,6 +77,9 @@ public class DataExperimentalServlet extends FATServlet {
 
     @Inject
     Towns towns;
+
+    @Inject
+    YearlyTotals yearlyTotals;
 
     public static <T> void assertArrayEquals(T[] expected, T[] actual, Comparator<T> comparator) {
         String errorMessage = "expected: " + Arrays.toString(expected) + " but was: " + Arrays.toString(actual);
@@ -185,6 +193,55 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Run queries that order results based on columns of CharSequence subtypes.
+     * The contents of this test are mostly commented out because EclipseLink
+     * uses the BLOB type for these columns, making it unable to order on them.
+     */
+    @Test
+    public void testCharSequence() {
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
+                                            MonthDay.of(Month.JANUARY, 1),
+                                            YearMonth.of(2025, Month.JANUARY),
+                                            "BUF1", "BUILD2", "COM3"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2024),
+                                            MonthDay.of(Month.FEBRUARY, 2),
+                                            YearMonth.of(2024, Month.DECEMBER),
+                                            "BUF3", "BUILD4", "COM2"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2023),
+                                            MonthDay.of(Month.MARCH, 3),
+                                            YearMonth.of(2023, Month.NOVEMBER),
+                                            "BUF4", "BUILD3", "COM4"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2022),
+                                            MonthDay.of(Month.APRIL, 4),
+                                            YearMonth.of(2022, Month.OCTOBER),
+                                            "BUF2", "BUILD1", "COM1"));
+
+        // Not allowed because EclipseLink uses BLOB for StringBuffer
+        //assertEquals(List.of(2025, 2022, 2024, 2023),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.buffer.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for StringBuilder
+        //assertEquals(List.of(2022, 2025, 2023, 2024),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.builder.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for CharSequence
+        //assertEquals(List.of(2022, 2024, 2025, 2023),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.comments.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        yearlyTotals.erase();
+    }
+
+    /**
      * Count the number of matching entries in the database using annotatively defined queries.
      */
     @Test
@@ -265,8 +322,9 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
-     * Test the ElementCount keyword by querying against a collection attribute with different sizes.
-     * Also covers WithMinute and WithSecond.
+     * Test the ElementCount function by querying for a collection attribute of
+     * different sizes. Also covers EXTRACT MINUTE and EXTRACT SECOND in a JPQL
+     * query.
      */
     @Test
     public void testElementCountAndExtract() throws Exception {
@@ -312,37 +370,37 @@ public class DataExperimentalServlet extends FATServlet {
 
         reservations.saveAll(List.of(r1, r2, r3, r4));
 
-        // ElementCount keyword
+        // ElementCount Function
 
         assertEquals(List.of("host1@openliberty.io", "host4@openliberty.io"),
-                     reservations.findByInviteesElementCount(2)
+                     reservations.withInviteeCount(2)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
 
         assertEquals(Collections.EMPTY_LIST,
-                     reservations.findByInviteesElementCount(0)
+                     reservations.withInviteeCount(0)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
-
-        // ElementCount Function
 
         assertEquals(List.of("host3@openliberty.io"),
                      reservations.withInviteeCount(3)
                                      .map(r -> r.host)
                                      .collect(Collectors.toList()));
 
-        // WithHour, WithMinute. We cannot compare the hour without knowing which time zone the database stores it in.
+        // EXTRACT HOUR, EXTRACT MINUTE.
+        // We cannot compare the hour without knowing which time zone the database
+        // stores it in. The range of 0 to 23 includes all hours.
 
         assertEquals(List.of(113001L, 213002L),
-                     reservations.findMeetingIdByStartWithHourBetweenAndStartWithMinute(0, 23, 15));
+                     reservations.startingWithin(0, 23, 15));
 
         assertEquals(List.of(313003L),
                      reservations.startsWithinHoursWithMinute(0, 23, 35));
 
-        // WithSecond
+        // EXTRACT SECOND
 
         assertEquals(List.of(313003L),
-                     reservations.findMeetingIdByStopWithSecond(30));
+                     reservations.findMeetingIdStoppingAtSecond(30));
 
         assertEquals(List.of(113001L, 213002L, 413004L),
                      reservations.endsAtSecond(0));
@@ -556,7 +614,6 @@ public class DataExperimentalServlet extends FATServlet {
                                      .map(c -> c.name + ' ' + c.stateName)
                                      .collect(Collectors.toList()));
 
-        // TODO enable once LOWER(id(o)) is working in EclipseLink
         assertEquals(List.of("Kansas City Missouri",
                              "Rochester Minnesota",
                              "Springfield Illinois"),
@@ -731,6 +788,54 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * Run queries that order results based on columns of type Year, YearMonth,
+     * and MonthDay. Tests for the latter two are commented out because EclipseLink
+     * uses the BLOB type for these columns, making it unable to order on them.
+     */
+    @Test
+    public void testPartialDates() {
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
+                                            MonthDay.of(Month.JUNE, 15),
+                                            YearMonth.of(2025, Month.AUGUST),
+                                            "BUF25", "BUILD25", "COM25"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2024),
+                                            MonthDay.of(Month.APRIL, 14),
+                                            YearMonth.of(2024, Month.SEPTEMBER),
+                                            "BUF24", "BUILD24", "COM24"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2023),
+                                            MonthDay.of(Month.MARCH, 31),
+                                            YearMonth.of(2023, Month.MAY),
+                                            "BUF23", "BUILD23", "COM23"));
+
+        yearlyTotals.publish(YearlyTotal.of(Year.of(2022),
+                                            MonthDay.of(Month.OCTOBER, 24),
+                                            YearMonth.of(2022, Month.JANUARY),
+                                            "BUF22", "BUILD22", "COM22"));
+
+        assertEquals(List.of(2022, 2023, 2024, 2025),
+                     yearlyTotals.obtain(Order.by(YearlyTotals.year.asc()))
+                                     .map(t -> t.year.getValue())
+                                     .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for MonthDay
+        //assertEquals(List.of(2023, 2024, 2025, 2022),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.bestDay.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        // Not allowed because EclipseLink uses BLOB for YearMonth
+        //assertEquals(List.of(2022, 2023, 2024, 2025),
+        //             yearlyTotals.obtain(Order.by(YearlyTotals.bestMonth.asc()))
+        //                             .map(t -> t.year.getValue())
+        //                             .collect(Collectors.toList()));
+
+        yearlyTotals.erase();
+    }
+
+    /**
      * Invoke methods that are annotated with the Select, Where, Update, and Delete annotations.
      */
     @Test
@@ -824,6 +929,15 @@ public class DataExperimentalServlet extends FATServlet {
                      primes.lessThanWithSuffixOrBetweenWithSuffix(40L, "even", 30L, 50L, "one")
                                      .map(p -> p.numberId)
                                      .collect(Collectors.toList()));
+    }
+
+    /**
+     * Query method that selects multiple entity attributes and returns a record.
+     */
+    @Test
+    public void testQuerySelectsRecord() {
+        assertEquals(new Hexadecimal("2F", 47L),
+                     primes.toHexadecimal(47L).orElseThrow());
     }
 
     /**

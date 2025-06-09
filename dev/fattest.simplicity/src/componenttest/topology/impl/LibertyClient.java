@@ -30,6 +30,9 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -677,7 +680,8 @@ public class LibertyClient {
                                                    + " with IBM Java 17, adding required JVM arguments to run with FIPS 140-3 enabled");
                                                    
                 JVM_ARGS += " -Dsemeru.fips=true";
-                JVM_ARGS += " -Dsemeru.customprofile=OpenJCEPlusFIPS.FIPS140-3-withPKCS12";
+                JVM_ARGS += " -Dsemeru.customprofile=OpenJCEPlusFIPS.FIPS140-3-Custom";
+                JVM_ARGS += " -Djava.security.properties=" + getSemeruFips140_3CustomProfileLocationAndPrintFileContents();
                 JVM_ARGS += " -Dcom.ibm.fips.mode=140-3";
                 // JVM_ARGS += " -Djavax.net.debug=all";  // Uncomment as needed for additional debugging
             } else if (javaInfo.majorVersion() == 8) {
@@ -851,6 +855,27 @@ public class LibertyClient {
         }
         postStopClientArchive();
         return output;
+    }
+
+    private String getSemeruFips140_3CustomProfileLocationAndPrintFileContents() throws Exception {
+        Properties localProperties = getLocalProperties();
+        String basedir = localProperties.getProperty("basedir");
+        String location = basedir + "/semeruFips140_3CustomProfile.properties";
+
+        byte[] fileContents = Files.readAllBytes(Paths.get(location));
+        Log.info(c, "getSemeruFips140_3CustomProfileLocationAndPrintFileContents",
+                 "semeruFips140_3CustomProfile.properties contents:\n" + new String(fileContents, StandardCharsets.UTF_8));
+
+        return location;
+    }
+
+    public Properties getLocalProperties() throws Exception {
+        String localPropertiesLocation = System.getProperty("local.properties");
+        Properties localProperties = new Properties();
+        FileInputStream in = new FileInputStream(localPropertiesLocation);
+        localProperties.load(in);
+        in.close();
+        return localProperties;
     }
 
     private void addJava2SecurityPropertiesToBootstrapFile(RemoteFile f) throws Exception {

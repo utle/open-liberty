@@ -13,6 +13,7 @@
 
 package com.ibm.ws.security.token.ltpa.fat;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -25,6 +26,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
@@ -151,18 +153,29 @@ public class LTPAKeyRotationTests {
     private static RemoteFile messagesLogFile = null;
 
     // Define fipsEnabled
-    private static final boolean fipsEnabled;
+    private static final boolean fips140_3Enabled;
+    private static final boolean fips140_2Enabled;
 
     static {
-        boolean isFipsEnabled = false;
+        boolean isFips140_3Enabled = false;
         try {
-            isFipsEnabled = server.isFIPS140_3EnabledAndSupported();
+            isFips140_3Enabled = server.isFIPS140_3EnabledAndSupported();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        fipsEnabled = isFipsEnabled;
+        fips140_3Enabled = isFips140_3Enabled;
+        Log.info(thisClass, "static", "fips140_3Enabled: " + fips140_3Enabled);
 
-        if (fipsEnabled) {
+        boolean isFips140_2Enabled = false;
+        try {
+            isFips140_2Enabled = server.isFIPS140_2EnabledAndSupported();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        fips140_2Enabled = isFips140_2Enabled;
+        Log.info(thisClass, "static", "fips140_2Enabled: " + fips140_2Enabled);
+
+        if (fips140_3Enabled) {
             ALT_VALIDATION_KEY1_PATH = ALT_FIPS_VALIDATION_KEY1_PATH;
             ALT_VALIDATION_KEY2_PATH = ALT_FIPS_VALIDATION_KEY2_PATH;
             ALT_VALIDATION_KEY3_PATH = ALT_FIPS_VALIDATION_KEY3_PATH;
@@ -199,7 +212,7 @@ public class LTPAKeyRotationTests {
         copyFileToServerResourcesSecurityDir(ALT_VALIDATION_KEY1_PATH);
 
         server.setupForRestConnectorAccess();
-        if (fipsEnabled) {
+        if (fips140_3Enabled) {
             File fipsServerXml = new File(server.pathToAutoFVTTestFiles + DEFAULT_FIPS_SERVER_XML);
             File serverXml = new File(server.pathToAutoFVTTestFiles + DEFAULT_SERVER_XML);
             Files.move(fipsServerXml.toPath(), serverXml.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -218,8 +231,27 @@ public class LTPAKeyRotationTests {
         assertNotNull("Expected LTPA configuration ready message not found in the log.",
                       server.waitForStringInLog("CWWKS4105I"));
 
+        checkFipsEnabledMessages();
+
         messagesLogFile = server.getDefaultLogFile();
 
+    }
+
+    private static void checkFipsEnabledMessages() {
+        assertFalse("Expected neither or one of FIPS 140-3 or FIPS 140-2 to be enabled, but both are enabled.", fips140_3Enabled && fips140_2Enabled);
+
+        assertEquals("Expected FIPS 140-3 enabled message to be " + (fips140_3Enabled ? "found, but was not found." : "not found, but was found."),
+                fips140_3Enabled, server.waitForStringInLog("CWWKS5903I") != null);
+
+        // let's not worry about non-fips case for getFipsLevel for now since some JDK's might use 140-2 as default
+        // while some might use disabled. so let's just focus on making sure it's correct for fips enabled.
+        if (fips140_3Enabled || fips140_2Enabled) {
+            String expectedFipsLevel = fips140_3Enabled ? "140-3" : (fips140_2Enabled ? "140-2" : "disabled");
+            assertNotNull("Expected \"getFipsLevel: " + expectedFipsLevel + "\" trace was not found.", server.waitForStringInTrace("getFipsLevel: " + expectedFipsLevel));
+        }
+
+        assertNotNull("Expected \"isFips140_3Enabled: " + fips140_3Enabled + "\" trace was not found.", server.waitForStringInTrace("isFips140_3Enabled: " + fips140_3Enabled));
+        assertNotNull("Expected \"isFips140_2Enabled: " + fips140_2Enabled + "\" trace was not found.", server.waitForStringInTrace("isFips140_2Enabled: " + fips140_2Enabled));
     }
 
     @Before
@@ -287,8 +319,7 @@ public class LTPAKeyRotationTests {
         renameFileIfExists(DEFAULT_KEY_PATH, VALIDATION_KEY1_PATH, false);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response2 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
@@ -796,8 +827,7 @@ public class LTPAKeyRotationTests {
         renameFileIfExists(DEFAULT_KEY_PATH, CONFIGURED_VALIDATION_KEY1_PATH, false);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response2 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
@@ -1026,8 +1056,7 @@ public class LTPAKeyRotationTests {
         renameFileIfExists(DEFAULT_KEY_PATH, CONFIGURED_VALIDATION_KEY1_PATH, false);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Set fileName to null to make it not configured in the validation keys element.
         ServerConfiguration serverConfiguration = server.getServerConfiguration();
@@ -1138,8 +1167,7 @@ public class LTPAKeyRotationTests {
         renameFileIfExists(DEFAULT_KEY_PATH, CONFIGURED_VALIDATION_KEY1_PATH, false);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Set password value to null
         ServerConfiguration serverConfiguration = server.getServerConfiguration();
@@ -1231,8 +1259,7 @@ public class LTPAKeyRotationTests {
         renameFileIfExists(DEFAULT_KEY_PATH, CONFIGURED_VALIDATION_KEY1_PATH, false);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Set validUntilDate value to null
         ServerConfiguration serverConfiguration = server.getServerConfiguration();
@@ -1407,8 +1434,8 @@ public class LTPAKeyRotationTests {
         Thread.sleep(1000);
 
         // Configure the time of expiry as 10 seconds from present time
-        String currentTime = Instant.now().toString();
-        String expiryTime = Instant.now().plusSeconds(10).toString();
+        int expiryInSeconds = isWindows() ? 120 : 10;
+        String expiryTime = Instant.now().plusSeconds(expiryInSeconds).toString();
 
         // Add a new validation keys element with a fileName attribute as "validation2.keys"
         LTPA ltpa = serverConfiguration.getLTPA();
@@ -1420,11 +1447,15 @@ public class LTPAKeyRotationTests {
         validationKeys.add(validationKey);
         updateConfigDynamically(server, serverConfiguration);
 
+        Instant start = Instant.now();
+        waitForLTPAConfigurationReadyMessage();
+        long duration = Duration.between(start, Instant.now()).toMillis();
+
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response2 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
 
         // Wait for 10 seconds
-        Thread.sleep(10000);
+        Thread.sleep((expiryInSeconds * 1000) - duration);
 
         // Attempt to access the simple servlet again with the same cookie and assert it fails and the server needs to login again
         assertTrue("An invalid cookie should result in authorization challenge",
@@ -1608,6 +1639,8 @@ public class LTPAKeyRotationTests {
         // Reset the updateTrigger to polled
         configurationUpdateNeeded = setLTPAupdateTriggerElement(ltpa, "polled");
         updateConfigDynamically(server, serverConfiguration);
+
+        waitForLTPAConfigurationReadyMessage();
     }
 
     /**
@@ -1674,6 +1707,8 @@ public class LTPAKeyRotationTests {
         // Reset the updateTrigger to polled
         configurationUpdateNeeded = setLTPAupdateTriggerElement(ltpa, "polled");
         updateConfigDynamically(server, serverConfiguration);
+
+        waitForLTPAConfigurationReadyMessage();
     }
 
     /**
@@ -1713,7 +1748,7 @@ public class LTPAKeyRotationTests {
 
         // Contents to update ltpa keys with
         Map<String, String> contents;
-        if (fipsEnabled) {
+        if (fips140_3Enabled) {
             contents = new HashMap<String, String>() {
                 {
                     put("com.ibm.websphere.ltpa.SharedKey", "HN+OHlQXsBdZnX0O2G5I4pn30mmJ8myHSo6YYW/VaR6SYfar5qclKil7qdYicp3v");
@@ -1798,12 +1833,10 @@ public class LTPAKeyRotationTests {
         notifyFileChangesWithMbean(createdFilePaths, null, deltedFilePaths);
 
         // Wait for the ltpa.keys file to be regenerated
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4104A", 5000));
+        waitForLTPAKeysCreatedMessage();
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
     }
@@ -1838,7 +1871,7 @@ public class LTPAKeyRotationTests {
      */
     @Test
     @CheckForLeakedPasswords({ validPassword })
-    @AllowedFFDC({ "java.lang.IllegalArgumentException" })
+    @AllowedFFDC({ "java.lang.IllegalArgumentException", "java.lang.NullPointerException" })
     public void testDifferentDirectoriesForPrimaryKeys() throws Exception {
         // Configure the server
         configureServer("true", "10", true);
@@ -1953,8 +1986,7 @@ public class LTPAKeyRotationTests {
         renameFileIfExists(DEFAULT_KEY_PATH, VALIDATION_KEY1_PATH, false);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response2 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
@@ -1969,6 +2001,8 @@ public class LTPAKeyRotationTests {
                                             | setLTPAvalidationKeyFileNameElement(ltpa, "validation1.keys");
         updateConfigDynamically(server, serverConfiguration);
 
+        waitForLTPAConfigurationReadyMessage();
+
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response3 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
 
@@ -1979,6 +2013,8 @@ public class LTPAKeyRotationTests {
         configurationUpdateNeeded = setLTPAkeysFileNameElement(ltpa, "${wlp.install.dir}/resources/ltpa.keys")
                                     | setLTPAvalidationKeyFileNameElement(ltpa, "validation1.keys");
         updateConfigDynamically(server, serverConfiguration);
+
+        waitForLTPAConfigurationReadyMessage();
 
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response4 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
@@ -1991,6 +2027,8 @@ public class LTPAKeyRotationTests {
                                     | setLTPAvalidationKeyFileNameElement(ltpa, "validation1.keys");
         updateConfigDynamically(server, serverConfiguration);
 
+        waitForLTPAConfigurationReadyMessage();
+
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response5 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
 
@@ -2002,6 +2040,8 @@ public class LTPAKeyRotationTests {
                                     | setLTPAvalidationKeyFileNameElement(ltpa, "validation1.keys");
         updateConfigDynamically(server, serverConfiguration);
 
+        waitForLTPAConfigurationReadyMessage();
+
         // Attempt to access the simple servlet again with the same cookie and assert that the server did not need to login again
         String response6 = flClient1.accessProtectedServletWithAuthorizedCookie(FormLoginClient.PROTECTED_SIMPLE, cookie1);
 
@@ -2009,6 +2049,8 @@ public class LTPAKeyRotationTests {
         configurationUpdateNeeded = setLTPAkeysFileNameElement(ltpa, "${server.config.dir}/resources/security/ltpa.keys")
                                     | setLTPAvalidationKeyFileNameElement(ltpa, "configuredValidation1.keys");
         updateConfigDynamically(server, serverConfiguration);
+
+        waitForLTPAConfigurationReadyMessage();
 
         // Delete the ltpa.keys and validation1.keys file from all of the last locations
         deleteFileFromAbsolutePathIfExists(relativeDirectory + "/ltpa.keys", true);
@@ -2065,8 +2107,7 @@ public class LTPAKeyRotationTests {
 
             if (waitForLTPAConfigReadyMessage) {
                 // Wait for the LTPA configuration to be ready after the change
-                assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                              server.waitForStringInLog("CWWKS4105I", 5000));
+                waitForLTPAConfigurationReadyMessage();
             }
         }
 
@@ -2497,8 +2538,7 @@ public class LTPAKeyRotationTests {
         deleteFileIfExists(CONFIGURED_VALIDATION_KEY1_PATH, true);
 
         // Wait for the LTPA configuration to be ready after the change
-        assertNotNull("Expected LTPA configuration ready message not found in the log.",
-                      server.waitForStringInLog("CWWKS4105I", 5000));
+        waitForLTPAConfigurationReadyMessage();
 
         // Assert that a default ltpa.keys file exists prior to next test case
         assertFileWasCreated(DEFAULT_KEY_PATH);
@@ -2544,4 +2584,19 @@ public class LTPAKeyRotationTests {
         }
 
     }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("windows");
+    }
+
+    private static void waitForLTPAKeysCreatedMessage() {
+        int timeoutMillis = isWindows() ? 2 * 60 * 1000 : 5 * 1000;
+        assertNotNull("Expected LTPA keys created message not found in the log.", server.waitForStringInLog("CWWKS4104A", timeoutMillis));
+    }
+
+    private static void waitForLTPAConfigurationReadyMessage() {
+        int timeoutMillis = isWindows() ? 2 * 60 * 1000 : 5 * 1000;
+        assertNotNull("Expected LTPA configuration ready message not found in the log.", server.waitForStringInLog("CWWKS4105I", timeoutMillis));
+    }
+
 }

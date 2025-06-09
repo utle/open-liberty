@@ -12,6 +12,8 @@
  *******************************************************************************/
 package io.openliberty.data.internal.persistence;
 
+import static io.openliberty.data.internal.persistence.Condition.IgnoreCase;
+import static io.openliberty.data.internal.persistence.Condition.Not;
 import static io.openliberty.data.internal.persistence.Util.SORT_PARAM_TYPES;
 import static io.openliberty.data.internal.persistence.Util.lifeCycleReturnTypes;
 import static io.openliberty.data.internal.persistence.cdi.DataExtension.exc;
@@ -497,7 +499,7 @@ public class QueryInfo {
      * Temporary code to append the portion of the query language ql starting from startAt
      * where the entity identify variable is inserted before references to entity attributes.
      * This method does not cover all scenarios but should be sufficient for simulating.
-     * TODO remove this method once we have Jakarta Persistence 3.2.
+     * TODO remove this method once EclipseLink issue #30351 is fixed
      *
      * @param ql        Jakarta Data Query Language
      * @param startAt   position in query language to start at.
@@ -1378,13 +1380,22 @@ public class QueryInfo {
                                                           Set<String> qlRequired) {
         String firstExtraParam = null;
         StringBuilder extraParamNames = new StringBuilder();
-        for (String name : extras) {
-            if (firstExtraParam == null)
-                firstExtraParam = name;
-            else
-                extraParamNames.append(", ");
-            extraParamNames.append(name);
-        }
+        for (String name : extras)
+            if (name.length() > 0) {
+                if (firstExtraParam == null)
+                    firstExtraParam = name;
+                else
+                    extraParamNames.append(", ");
+                extraParamNames.append(name);
+            }
+
+        if (firstExtraParam == null && !extras.isEmpty())
+            // @Param("") with empty String is not valid
+            return exc(MappingException.class,
+                       "CWWKD1104.empty.anno.value",
+                       Param.class.getSimpleName(),
+                       method.getName(),
+                       repositoryInterface.getName());
 
         boolean isFirst = true;
         StringBuilder qlParamNames = new StringBuilder();
@@ -2290,23 +2301,27 @@ public class QueryInfo {
     /**
      * Generates JPQL for a *By condition such as MyColumn[IgnoreCase][Not]Like
      */
-    private void generateCondition(String methodName, int start, int endBefore, StringBuilder q) {
+    private void generateCondition(String methodName,
+                                   int start,
+                                   int endBefore,
+                                   StringBuilder q) {
         int length = endBefore - start;
 
-        Condition condition = Condition.EQUALS;
+        Condition condition = Condition.Equal;
         switch (methodName.charAt(endBefore - 1)) {
             case 'n': // GreaterThan | LessThan | In | Between
                 if (length > 2) {
                     char ch = methodName.charAt(endBefore - 2);
                     if (ch == 'a') { // GreaterThan | LessThan
                         if (endsWith("GreaterTh", methodName, start, endBefore - 2))
-                            condition = Condition.GREATER_THAN;
+                            condition = Condition.GreaterThan;
                         else if (endsWith("LessTh", methodName, start, endBefore - 2))
-                            condition = Condition.LESS_THAN;
+                            condition = Condition.LessThan;
                     } else if (ch == 'I') { // In
-                        condition = Condition.IN;
-                    } else if (ch == 'e' && endsWith("Betwe", methodName, start, endBefore - 2)) {
-                        condition = Condition.BETWEEN;
+                        condition = Condition.In;
+                    } else if (ch == 'e' &&
+                               endsWith("Betwe", methodName, start, endBefore - 2)) {
+                        condition = Condition.Between;
                     }
                 }
                 break;
@@ -2315,11 +2330,13 @@ public class QueryInfo {
                     char ch = methodName.charAt(endBefore - 2);
                     if (ch == 'a') { // GreaterThanEqual | LessThanEqual
                         if (endsWith("GreaterThanEqu", methodName, start, endBefore - 2))
-                            condition = Condition.GREATER_THAN_EQUAL;
+                            condition = Condition.GreaterThanEqual;
                         else if (endsWith("LessThanEqu", methodName, start, endBefore - 2))
-                            condition = Condition.LESS_THAN_EQUAL;
-                    } else if (ch == 'l' & methodName.charAt(endBefore - 3) == 'u' && methodName.charAt(endBefore - 4) == 'N') {
-                        condition = Condition.NULL;
+                            condition = Condition.LessThanEqual;
+                    } else if (ch == 'l' &&
+                               methodName.charAt(endBefore - 3) == 'u' &&
+                               methodName.charAt(endBefore - 4) == 'N') {
+                        condition = Condition.Null;
                     }
                 }
                 break;
@@ -2327,13 +2344,15 @@ public class QueryInfo {
                 if (length > 4) {
                     char ch = methodName.charAt(endBefore - 4);
                     if (ch == 'L') {
-                        if (methodName.charAt(endBefore - 3) == 'i' && methodName.charAt(endBefore - 2) == 'k')
-                            condition = Condition.LIKE;
+                        if (methodName.charAt(endBefore - 3) == 'i' &&
+                            methodName.charAt(endBefore - 2) == 'k')
+                            condition = Condition.Like;
                     } else if (ch == 'T') {
-                        if (methodName.charAt(endBefore - 3) == 'r' && methodName.charAt(endBefore - 2) == 'u')
-                            condition = Condition.TRUE;
+                        if (methodName.charAt(endBefore - 3) == 'r' &&
+                            methodName.charAt(endBefore - 2) == 'u')
+                            condition = Condition.True;
                     } else if (endsWith("Fals", methodName, start, endBefore - 1)) {
-                        condition = Condition.FALSE;
+                        condition = Condition.False;
                     }
                 }
                 break;
@@ -2342,107 +2361,29 @@ public class QueryInfo {
                     char ch = methodName.charAt(endBefore - 8);
                     if (ch == 'E') {
                         if (endsWith("ndsWit", methodName, start, endBefore - 1))
-                            condition = Condition.ENDS_WITH;
-                    } else if (endBefore > 10 && ch == 'a' && endsWith("StartsWit", methodName, start, endBefore - 1)) {
-                        condition = Condition.STARTS_WITH;
+                            condition = Condition.EndsWith;
+                    } else if (endBefore > 10 && ch == 'a' &&
+                               endsWith("StartsWit", methodName, start, endBefore - 1)) {
+                        condition = Condition.StartsWith;
                     }
                 }
                 break;
             case 's': // Contains
                 if (endsWith("Contain", methodName, start, endBefore - 1))
-                    condition = Condition.CONTAINS;
+                    condition = Condition.Contains;
                 break;
             case 'y': // Empty
                 if (endsWith("Empt", methodName, start, endBefore - 1))
-                    condition = Condition.EMPTY;
+                    condition = Condition.Empty;
         }
 
         endBefore -= condition.length;
 
-        boolean negated = endsWith("Not", methodName, start, endBefore);
+        boolean negated = endsWith(Not.name(), methodName, start, endBefore);
         endBefore -= (negated ? 3 : 0);
 
-        String function = null;
-        boolean ignoreCase = false;
-        boolean rounded = false;
-
-        switch (methodName.charAt(endBefore - 1)) {
-            case 'e':
-                if (ignoreCase = endsWith("IgnoreCas", methodName, start, endBefore - 1)) {
-                    function = "LOWER(";
-                    endBefore -= 10;
-                } else if (endsWith("WithMinut", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (MINUTE FROM ";
-                    endBefore -= 10;
-                } else if (endsWith("AbsoluteValu", methodName, start, endBefore - 1)) {
-                    function = "ABS(";
-                    endBefore -= 13;
-                }
-                break;
-            case 'd':
-                if (rounded = endsWith("Rounde", methodName, start, endBefore - 1)) {
-                    function = "ROUND(";
-                    endBefore -= 7;
-                } else if (endsWith("WithSecon", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (SECOND FROM ";
-                    endBefore -= 10;
-                }
-                break;
-            case 'n':
-                if (endsWith("RoundedDow", methodName, start, endBefore - 1)) {
-                    function = "FLOOR(";
-                    endBefore -= 11;
-                }
-                break;
-            case 'p':
-                if (endsWith("RoundedU", methodName, start, endBefore - 1)) {
-                    function = "CEILING(";
-                    endBefore -= 9;
-                }
-                break;
-            case 'r':
-                if (endsWith("WithYea", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (YEAR FROM ";
-                    endBefore -= 8;
-                } else if (endsWith("WithHou", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (HOUR FROM ";
-                    endBefore -= 8;
-                } else if (endsWith("WithQuarte", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (QUARTER FROM ";
-                    endBefore -= 11;
-                }
-                break;
-            case 't':
-                if (endsWith("CharCoun", methodName, start, endBefore - 1)) {
-                    function = "LENGTH(";
-                    endBefore -= 9;
-                } else if (endsWith("ElementCoun", methodName, start, endBefore - 1)) {
-                    function = "SIZE(";
-                    endBefore -= 12;
-                }
-                break;
-            case 'y':
-                if (endsWith("WithDa", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (DAY FROM ";
-                    endBefore -= 7;
-                }
-                break;
-            case 'h':
-                if (endsWith("WithMont", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (MONTH FROM ";
-                    endBefore -= 9;
-                }
-                break;
-            case 'k':
-                if (endsWith("WithWee", methodName, start, endBefore - 1)) {
-                    function = "EXTRACT (WEEK FROM ";
-                    endBefore -= 8;
-                }
-                break;
-        }
-
-        boolean trimmed = endsWith("Trimmed", methodName, start, endBefore);
-        endBefore -= (trimmed ? 7 : 0);
+        boolean ignoreCase = endsWith(IgnoreCase.name(), methodName, start, endBefore);
+        endBefore -= (ignoreCase ? 10 : 0);
 
         String attribute = methodName.substring(start, endBefore);
 
@@ -2452,20 +2393,13 @@ public class QueryInfo {
         String name = getAttributeName(attribute, true);
 
         StringBuilder attributeExpr = new StringBuilder();
-        if (function != null)
-            attributeExpr.append(function); // such as LOWER(  or  ROUND(
-        if (trimmed)
-            attributeExpr.append("TRIM(");
+        if (ignoreCase)
+            attributeExpr.append("LOWER(");
 
         appendAttributeName(name, attributeExpr);
 
-        if (trimmed)
+        if (ignoreCase)
             attributeExpr.append(')');
-        if (function != null)
-            if (rounded)
-                attributeExpr.append(", 0)"); // round to zero digits beyond the decimal
-            else
-                attributeExpr.append(')');
 
         if (negated) {
             Condition negatedCondition = condition.negate();
@@ -2476,57 +2410,82 @@ public class QueryInfo {
         }
 
         boolean isCollection = entityInfo.collectionElementTypes.containsKey(name);
-        if (isCollection)
-            condition.verifyCollectionsSupported(name, ignoreCase);
+        if (isCollection && (ignoreCase || !condition.supportsCollections))
+            throw exc(MappingException.class,
+                      "CWWKD1110.incompat.with.collection",
+                      method.getName(),
+                      repositoryInterface.getName(),
+                      ignoreCase ? IgnoreCase.name() : condition.name(),
+                      name,
+                      entityInfo.getType().getName(),
+                      Condition.supportedForCollections());
 
         switch (condition) {
-            case STARTS_WITH:
-                q.append(attributeExpr).append(negated ? " NOT " : " ").append("LIKE CONCAT(");
+            case StartsWith:
+                q.append(attributeExpr) //
+                                .append(negated ? " NOT " : " ") //
+                                .append("LIKE CONCAT(");
                 generateParam(q, ignoreCase, ++jpqlParamCount).append(", '%')");
                 break;
-            case ENDS_WITH:
-                q.append(attributeExpr).append(negated ? " NOT " : " ").append("LIKE CONCAT('%', ");
+            case EndsWith:
+                q.append(attributeExpr) //
+                                .append(negated ? " NOT " : " ") //
+                                .append("LIKE CONCAT('%', ");
                 generateParam(q, ignoreCase, ++jpqlParamCount).append(")");
                 break;
-            case LIKE:
-                q.append(attributeExpr).append(negated ? " NOT " : " ").append("LIKE ");
+            case Like:
+                q.append(attributeExpr) //
+                                .append(negated ? " NOT " : " ") //
+                                .append("LIKE ");
                 generateParam(q, ignoreCase, ++jpqlParamCount);
                 break;
-            case BETWEEN:
-                q.append(attributeExpr).append(negated ? " NOT " : " ").append("BETWEEN ");
+            case Between:
+                q.append(attributeExpr) //
+                                .append(negated ? " NOT " : " ") //
+                                .append("BETWEEN ");
                 generateParam(q, ignoreCase, ++jpqlParamCount).append(" AND ");
                 generateParam(q, ignoreCase, ++jpqlParamCount);
                 break;
-            case CONTAINS:
+            case Contains:
                 if (isCollection) {
-                    q.append(" ?").append(++jpqlParamCount).append(negated ? " NOT " : " ").append("MEMBER OF ").append(attributeExpr);
+                    q.append(" ?").append(++jpqlParamCount) //
+                                    .append(negated ? " NOT " : " ") //
+                                    .append("MEMBER OF ").append(attributeExpr);
                 } else {
-                    q.append(attributeExpr).append(negated ? " NOT " : " ").append("LIKE CONCAT('%', ");
+                    q.append(attributeExpr) //
+                                    .append(negated ? " NOT " : " ") //
+                                    .append("LIKE CONCAT('%', ");
                     generateParam(q, ignoreCase, ++jpqlParamCount).append(", '%')");
                 }
                 break;
-            case NULL:
-            case NOT_NULL:
-            case TRUE:
-            case FALSE:
+            case Null:
+            case NotNull:
+            case True:
+            case False:
                 q.append(attributeExpr).append(condition.operator);
                 break;
-            case EMPTY:
-                q.append(attributeExpr).append(isCollection ? Condition.EMPTY.operator : Condition.NULL.operator);
+            case Empty:
+                q.append(attributeExpr).append(isCollection //
+                                ? Condition.Empty.operator //
+                                : Condition.Null.operator);
                 break;
-            case NOT_EMPTY:
-                q.append(attributeExpr).append(isCollection ? Condition.NOT_EMPTY.operator : Condition.NOT_NULL.operator);
+            case NotEmpty:
+                q.append(attributeExpr).append(isCollection //
+                                ? Condition.NotEmpty.operator //
+                                : Condition.NotNull.operator);
                 break;
-            case IN:
+            case In:
                 if (ignoreCase)
                     throw exc(UnsupportedOperationException.class,
                               "CWWKD1074.qbmn.incompat.keywords",
                               method.getName(),
                               repositoryInterface.getName(),
-                              "IgnoreCase",
-                              "In");
+                              IgnoreCase.name(),
+                              condition.name());
             default:
-                q.append(attributeExpr).append(negated ? " NOT " : "").append(condition.operator);
+                q.append(attributeExpr) //
+                                .append(negated ? " NOT " : "") //
+                                .append(condition.operator);
                 generateParam(q, ignoreCase, ++jpqlParamCount);
         }
     }
@@ -2975,7 +2934,7 @@ public class QueryInfo {
         String o_ = entityVar_;
 
         String[] cols, selections = entityInfo.builder.provider.compat.getSelections(method);
-        if (selections == null || selections.length == 0) {
+        if (selections.length == 0) {
             cols = null;
         } else if (type == Type.FIND_AND_DELETE) {
             // Unreachable in version 1.0 and uncertain what will be added to
@@ -2984,7 +2943,8 @@ public class QueryInfo {
             ("The " + method.getName() + " method of the " +
              repositoryInterface.getName() + " repository has a " +
              method.getGenericReturnType().getTypeName() + " return type and" +
-             " specifies to return the " + selections + " entity attributes," +
+             " specifies to return the " +
+             Arrays.toString(selections) + " entity attributes," +
              " but delete operations can only return void, a deletion count," +
              " a boolean deletion indicator, or the removed entities.");
         } else {
@@ -3075,8 +3035,14 @@ public class QueryInfo {
 
                     String[] names = new String[recordComponents.length];
                     for (int i = 0; i < recordComponents.length; i++) {
-                        // 1.1 TODO first check for Select annotation on record component
-                        names[i] = recordComponents[i].getName();
+                        String[] select = entityInfo.builder.provider.compat //
+                                        .getSelections(recordComponents[i]);
+                        if (select == null || select.length == 0)
+                            names[i] = recordComponents[i].getName();
+                        else if (select.length == 1)
+                            names[i] = select[0];
+                        else
+                            throw new UnsupportedOperationException("@Select " + Arrays.toString(select)); // 1.1 TODO
                     }
 
                     try {
@@ -3416,7 +3382,7 @@ public class QueryInfo {
                     // id(this)
                     attributeName = entityInfo.attributeNames.get(By.ID);
                     if (attributeName == null && failIfNotFound)
-                        throw exc(UnsupportedOperationException.class,
+                        throw exc(MappingException.class,
                                   "CWWKD1093.fn.not.applicable",
                                   name,
                                   entityInfo.getType().getName(),
@@ -3426,7 +3392,7 @@ public class QueryInfo {
                 } else if (len == 13 && name.regionMatches(true, 0, "version", 0, 7)) {
                     // version(this)
                     if (entityInfo.versionAttributeName == null && failIfNotFound)
-                        throw exc(UnsupportedOperationException.class,
+                        throw exc(MappingException.class,
                                   "CWWKD1093.fn.not.applicable",
                                   name,
                                   entityInfo.getType().getName(),
@@ -3452,46 +3418,45 @@ public class QueryInfo {
                           method.getName(),
                           repositoryInterface.getName(),
                           entityInfo.attributeTypes.keySet());
+        } else if (len == 0) {
+            throw exc(MappingException.class,
+                      "CWWKD1024.missing.entity.attr",
+                      method.getName(),
+                      repositoryInterface.getName(),
+                      entityInfo.getType().getName(),
+                      entityInfo.attributeTypes.keySet());
         } else {
             String lowerName = name.toLowerCase();
             attributeName = entityInfo.attributeNames.get(lowerName);
-            if (attributeName == null)
-                if (name.length() == 0) {
-                    throw exc(MappingException.class,
-                              "CWWKD1024.missing.entity.attr",
-                              method.getName(),
-                              repositoryInterface.getName(),
-                              entityInfo.getType().getName(),
-                              entityInfo.attributeTypes.keySet());
-                } else {
-                    // tolerate possible mixture of . and _ separators:
-                    lowerName = lowerName.replace('.', '_');
+            if (attributeName == null) {
+                // tolerate possible mixture of . and _ separators:
+                lowerName = lowerName.replace('.', '_');
+                attributeName = entityInfo.attributeNames.get(lowerName);
+                if (attributeName == null) {
+                    // tolerate possible mixture of . and _ separators with lack of separators:
+                    lowerName = lowerName.replace("_", "");
                     attributeName = entityInfo.attributeNames.get(lowerName);
-                    if (attributeName == null) {
-                        // tolerate possible mixture of . and _ separators with lack of separators:
-                        lowerName = lowerName.replace("_", "");
-                        attributeName = entityInfo.attributeNames.get(lowerName);
-                        if (attributeName == null && failIfNotFound) {
-                            if (Util.hasOperationAnno(method))
-                                throw exc(MappingException.class,
-                                          "CWWKD1010.unknown.entity.attr",
-                                          name,
-                                          entityInfo.getType().getName(),
-                                          method.getName(),
-                                          repositoryInterface.getName(),
-                                          entityInfo.attributeTypes.keySet());
-                            else
-                                throw exc(MappingException.class,
-                                          "CWWKD1091.method.name.parse.err",
-                                          name,
-                                          entityInfo.getType().getName(),
-                                          method.getName(),
-                                          repositoryInterface.getName(),
-                                          Util.OP_ANNOS,
-                                          entityInfo.attributeTypes.keySet());
-                        }
+                    if (attributeName == null && failIfNotFound) {
+                        if (Util.hasOperationAnno(method))
+                            throw exc(MappingException.class,
+                                      "CWWKD1010.unknown.entity.attr",
+                                      name,
+                                      entityInfo.getType().getName(),
+                                      method.getName(),
+                                      repositoryInterface.getName(),
+                                      entityInfo.attributeTypes.keySet());
+                        else
+                            throw exc(MappingException.class,
+                                      "CWWKD1091.method.name.parse.err",
+                                      name,
+                                      entityInfo.getType().getName(),
+                                      method.getName(),
+                                      repositoryInterface.getName(),
+                                      Util.OP_ANNOS,
+                                      entityInfo.attributeTypes.keySet());
                     }
                 }
+            }
         }
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
             Tr.debug(this, tc, "getAttributeName " + name + ": " + attributeName);
@@ -3506,16 +3471,15 @@ public class QueryInfo {
      */
     @Trivial
     Object[] getCursorValues(Object entity) {
+        final boolean trace = TraceComponent.isAnyTracingEnabled();
         ArrayList<Object> cursorValues = new ArrayList<>();
         for (Sort<?> sort : sorts)
             try {
                 List<Member> accessors = entityInfo.attributeAccessors.get(sort.property());
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                if (trace && tc.isDebugEnabled())
                     Tr.debug(this, tc, "getCursorValues for " + loggable(entity),
                              accessors);
                 Object value = entity;
-                // TODO is it possible for accessors to be null here?
-                // Could sort.property() being VERSION(THIS) or some invalid name cause this?
                 for (Member accessor : accessors)
                     if (accessor instanceof Method)
                         value = ((Method) accessor).invoke(value);
@@ -3525,6 +3489,8 @@ public class QueryInfo {
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException x) {
                 throw new DataException(x instanceof InvocationTargetException ? x.getCause() : x);
             }
+        if (trace && tc.isDebugEnabled())
+            Tr.debug(this, tc, "getCursorValues: " + loggable(cursorValues));
         return cursorValues.toArray();
     }
 
@@ -4246,14 +4212,23 @@ public class QueryInfo {
 
             StringBuilder q;
             if (selectLen > 0) {
-                q = new StringBuilder(ql.length() + (selectLen >= 0 ? 0 : 50) + (fromLen >= 0 ? 0 : 50) + 2);
                 String selection = ql.substring(select0, select0 + selectLen);
+                q = new StringBuilder(ql.length() + (selectLen >= 0 ? 0 : 50) + (fromLen >= 0 ? 0 : 50) + 2);
+                q.append("SELECT");
+                // TODO 1.1 use Jakarta Persistence enhancement issue 420 instead of
+                // editing the query
+                boolean insertConstructor = compat.atLeast(1, 1) &&
+                                            singleType.isRecord() &&
+                                            !selection.toUpperCase().contains(" NEW ");
+                if (insertConstructor)
+                    q.append(" NEW ").append(singleType.getName()).append('(');
                 if (insertEntityVar) {
-                    q.append("SELECT");
                     appendWithIdentifierName(ql, select0, select0 + selectLen, entityVar_, q);
                 } else {
-                    q.append("SELECT").append(selection);
+                    q.append(selection);
                 }
+                if (insertConstructor)
+                    q.append(") ");
                 if (fromLen == 0 && whereLen == 0 && orderLen == 0 &&
                     !Character.isWhitespace(q.charAt(q.length() - 1)))
                     q.append(' ');
@@ -4648,9 +4623,13 @@ public class QueryInfo {
      *
      * @param writer writes to the introspection file.
      * @param indent indentation for lines.
+     * @param future future for this QueryInfo.
      */
+    @FFDCIgnore(Throwable.class)
     @Trivial
-    public void introspect(PrintWriter writer, String indent) {
+    public void introspect(PrintWriter writer,
+                           String indent,
+                           CompletableFuture<QueryInfo> future) {
         writer.println(indent + "QueryInfo@" + Integer.toHexString(hashCode()));
         indent = indent + "  ";
         writer.println(indent + "entity: " + entityInfo);
@@ -4722,6 +4701,22 @@ public class QueryInfo {
 
         writer.println(indent + "validate method parameters? " + validateParams);
         writer.println(indent + "validate method result? " + validateResult);
+
+        if (future != null) {
+            writer.print(indent + "state: ");
+            if (future.isCancelled())
+                writer.println("cancelled");
+            else if (future.isDone())
+                try {
+                    future.join();
+                    writer.println("completed");
+                } catch (Throwable x) {
+                    writer.println("failed");
+                    Util.printStackTrace(x, writer, indent + "  ", null);
+                }
+            else
+                writer.println("not completed");
+        }
     }
 
     /**
@@ -4890,10 +4885,11 @@ public class QueryInfo {
      */
     private int parseFirst(int start, int endBefore) {
         String methodName = method.getName();
+        int i = start;
         int num = start == endBefore ? 1 : 0;
         if (num == 0)
-            while (start < endBefore) {
-                char ch = methodName.charAt(start);
+            while (i < endBefore) {
+                char ch = methodName.charAt(i);
                 if (ch >= '0' && ch <= '9') {
                     if (num <= (Integer.MAX_VALUE - (ch - '0')) / 10)
                         num = num * 10 + (ch - '0');
@@ -4902,9 +4898,9 @@ public class QueryInfo {
                                   "CWWKD1028.first.exceeds.max",
                                   methodName,
                                   repositoryInterface.getName(),
-                                  methodName.substring(0, endBefore),
+                                  methodName.substring(start, endBefore),
                                   "Integer.MAX_VALUE (" + Integer.MAX_VALUE + ")");
-                    start++;
+                    i++;
                 } else {
                     if (num == 0)
                         num = 1;
@@ -4920,7 +4916,7 @@ public class QueryInfo {
         else
             maxResults = num;
 
-        return start;
+        return i;
     }
 
     /**
@@ -4942,10 +4938,29 @@ public class QueryInfo {
             boolean ignoreCase;
             boolean descending = iNext > 0 && iNext == desc;
             int endBefore = iNext < 0 ? methodName.length() : iNext;
-            if (ignoreCase = endsWith("IgnoreCase", methodName, i, endBefore))
+            if (ignoreCase = endsWith(IgnoreCase.name(), methodName, i, endBefore))
                 endBefore -= 10;
 
             String attribute = methodName.substring(i, endBefore);
+
+            if (attribute.length() == 0) {
+                // Error handling for missing attribute name due to Asc or Desc
+                // appearing within an attribute name that is used in the OrderBy
+                String lowerOrderBy = methodName.substring(orderBy + 7).toLowerCase();
+                for (String lowerAttrName : entityInfo.attributeNames.keySet()) {
+                    String keyword = lowerAttrName.contains("asc") ? "Asc" //
+                                    : lowerAttrName.contains("desc") ? "Desc" //
+                                                    : null;
+                    if (keyword != null && lowerOrderBy.contains(lowerAttrName))
+                        throw exc(MappingException.class,
+                                  "CWWKD1105.keyword.in.orderby",
+                                  methodName,
+                                  repositoryInterface.getName(),
+                                  entityInfo.attributeNames.get(lowerAttrName),
+                                  entityInfo.getType().getName(),
+                                  keyword);
+                }
+            }
 
             addSort(ignoreCase, attribute, descending);
 
@@ -5385,13 +5400,16 @@ public class QueryInfo {
      */
     private void setType(Class<? extends Annotation> annoClass, Type operationType) {
         type = operationType;
-        if (entityParamType == null)
+        if (entityParamType == null) {
+            int paramCount = method.getParameterCount();
             throw exc(UnsupportedOperationException.class,
                       "CWWKD1009.lifecycle.param.err",
                       method.getName(),
                       repositoryInterface.getName(),
-                      method.getParameterCount(),
+                      paramCount == 1 ? method.getGenericParameterTypes()[0] //
+                                      : paramCount,
                       annoClass.getSimpleName());
+        }
     }
 
     /**

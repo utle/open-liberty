@@ -341,6 +341,18 @@ task autoFVT {
       defaultCopyLTPAFIPSKeys(filesBaseDir)
     }
 
+    // Copy Semeru FIPS 140-3 custom profile from the FAT's project directory if it exists,
+    // if not, then copy the common one from the build.sharedResources security directory
+    def semeruFips140_3CustomProfile = new File(projectDir, "semeruFips140_3CustomProfile.properties")
+    if (!semeruFips140_3CustomProfile.exists()) {
+      def securitySharedResourcesDir = new File(rootProject.projectDir, 'build.sharedResources/usrShared/resources/security')
+      semeruFips140_3CustomProfile = new File(securitySharedResourcesDir, 'semeruFips140_3CustomProfile.properties')
+    }
+    copy {
+      from semeruFips140_3CustomProfile
+      into autoFvtDir
+    }
+
     // Copy the logging libraries over for use while running FATs
     /*copy {
       from project(':com.ibm.ws.logging.core').buildDir
@@ -684,6 +696,25 @@ buildfat {
   dependsOn assemble
   dependsOn build
   dependsOn zipProjectFVT
+}
+
+task uploadfat {
+  dependsOn buildfat
+  doLast {
+    // Ensure that async upload doesn't occur when adding a file to upload.
+    while(new File("${rootDir}/upload.lock").exists()) {
+      Thread.sleep(100)
+    }
+    new FileWriter("${rootDir}/upload.lock", true).withWriter { }
+
+    def sourceFile = zipProjectFVT.archiveFile.get().asFile.absolutePath
+    def targetFile = uploadRemotePath + zipProjectFVT.archiveFile.get().asFile
+    def uploadLogFile = new FileWriter("${rootDir}/upload.log", true)
+    uploadLogFile.append(sourceFile + "," + targetFile + "\n")
+    uploadLogFile.close()
+
+    new File("${rootDir}/upload.lock").delete()
+  }
 }
 
 task buildandrun {

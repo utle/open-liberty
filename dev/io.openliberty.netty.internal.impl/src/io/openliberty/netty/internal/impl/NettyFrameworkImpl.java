@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2023 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -38,6 +38,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.channelfw.internal.chains.EndPointMgrImpl;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.ws.kernel.feature.ServerStarted;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.wsspi.kernel.service.utils.ServerQuiesceListener;
 
 import io.netty.channel.Channel;
@@ -53,13 +54,17 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import io.openliberty.netty.internal.BootstrapConfiguration;
 import io.openliberty.netty.internal.BootstrapExtended;
+import io.openliberty.netty.internal.ConfigConstants;
 import io.openliberty.netty.internal.NettyFramework;
 import io.openliberty.netty.internal.ServerBootstrapExtended;
 import io.openliberty.netty.internal.exception.NettyException;
+import io.openliberty.netty.internal.tcp.TCPConfigConstants;
 import io.openliberty.netty.internal.tcp.TCPConfigurationImpl;
 import io.openliberty.netty.internal.tcp.TCPUtils;
 import io.openliberty.netty.internal.udp.UDPUtils;
+
 import com.ibm.websphere.channelfw.EndPointMgr;
 
 /**
@@ -70,7 +75,7 @@ import com.ibm.websphere.channelfw.EndPointMgr;
 public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework {
 
     private static final TraceComponent tc = Tr.register(NettyFrameworkImpl.class, NettyConstants.NETTY_TRACE_NAME,
-            NettyConstants.BASE_BUNDLE);
+            NettyConstants.CF_BUNDLE);
 
     /** Reference to the executor service -- required */
     private ExecutorService executorService = null;
@@ -97,6 +102,10 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
 
 	@Activate
 	protected void activate(ComponentContext context, Map<String, Object> config) {
+		if(!ProductInfo.getBetaEdition()) {
+			// Do nothing if beta isn't enabled
+			return;
+		}
 		// Ideally use the executor service provided by Liberty
 		// Compared to channelfw, quiesce is hit every time because
 		// connections are lazy cleaned on deactivate
@@ -108,6 +117,10 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
 
 	@Deactivate
 	protected void deactivate(ComponentContext context, Map<String, Object> properties) {
+		if(!ProductInfo.getBetaEdition()) {
+			// Do nothing if beta isn't enabled
+			return;
+		}
 		if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
 			Tr.event(this, tc, "Deactivate called", new Object[] {context, properties});
 		}
@@ -210,6 +223,10 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
      */
     @Override
     public void serverStopping() {
+	if(!ProductInfo.getBetaEdition()) {
+		// Do nothing if beta isn't enabled
+		return;
+	}
     	if (isActive) {
     		if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
     			Tr.event(this, tc, "Destroying all endpoints (closing all channels): " + activeChannelMap.keySet());
@@ -303,13 +320,16 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
      */
     @Reference(service = ServerStarted.class, policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
     protected void setServerStarted(ServiceReference<ServerStarted> ref) {
+	if(!ProductInfo.getBetaEdition()) {
+		// Do nothing if beta isn't enabled
+		return;
+	}
         // set will be called when the ServerStarted service has been registered (by the
         // FeatureManager as of 9/2015). This is a signal that
         // the server is fully started, but before the "smarter planet" message has been
         // output. Use this signal to run tasks, mostly likely tasks that will
         // finish the port listening logic, that need to run at the end of server
         // startup
-
         FutureTask<?> task;
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(this, tc, "Netty Framework signaled- Server Completely Started signal received");
@@ -343,6 +363,12 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
      * @throws Exception
      */
     public <T> FutureTask<T> runWhenServerStarted(Callable<T> callable) throws Exception {
+	if(!ProductInfo.getBetaEdition()) {
+		// Do nothing if beta isn't enabled
+		FutureTask<T> future = new FutureTask<T>(callable);
+		future.cancel(false);
+		return future;
+	}
         synchronized (syncStarted) {
         	FutureTask<T> future = new FutureTask<T>(callable);
             if (!serverCompletelyStarted.get()) {
@@ -408,9 +434,16 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
         serverCompletelyStarted.set(false);
     }
 
+    @FFDCIgnore({NettyException.class})
     @Override
     public ServerBootstrapExtended createTCPBootstrap(Map<String, Object> tcpOptions) throws NettyException {
-        return TCPUtils.createTCPBootstrap(this, tcpOptions);
+        try{
+            return TCPUtils.createTCPBootstrap(this, tcpOptions);
+        } catch (NettyException e){
+            Tr.error(tc, "chain.initialization.error", new Object[] { tcpOptions.get(ConfigConstants.EXTERNAL_NAME), e.toString() });
+            throw e;
+        }
+        
     }
 
     @Override
@@ -429,9 +462,22 @@ public class NettyFrameworkImpl implements ServerQuiesceListener, NettyFramework
     }
 
     @Override
+    @FFDCIgnore({ NettyException.class })
     public FutureTask<ChannelFuture> start(ServerBootstrapExtended bootstrap, String inetHost, int inetPort,
             ChannelFutureListener bindListener) throws NettyException {
-        return TCPUtils.start(this, bootstrap, inetHost, inetPort, bindListener);
+        
+        BootstrapConfiguration config = bootstrap.getConfiguration();
+        String externalName = "NOT_DEFINED";
+        if(config!= null && config instanceof TCPConfigurationImpl){
+            externalName = ((TCPConfigurationImpl)config).getExternalName();
+        }
+
+        try{
+            return TCPUtils.start(this, bootstrap, inetHost, inetPort, bindListener);
+        }catch(NettyException e){
+            Tr.error(tc, "chain.initialization.error", new Object[] { externalName, e.toString() });
+            throw e;
+        }        
     }
 
     @Override

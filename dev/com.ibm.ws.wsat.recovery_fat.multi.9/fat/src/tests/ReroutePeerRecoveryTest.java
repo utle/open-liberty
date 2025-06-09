@@ -1,5 +1,5 @@
 /* =============================================================================
- * Copyright (c) 2023, 2024 IBM Corporation and others.
+ * Copyright (c) 2023, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -40,6 +40,7 @@ import componenttest.topology.utils.HttpUtils;
 
 @AllowedFFDC(value = { "com.ctc.wstx.exc.WstxIOException",
                        "javax.xml.stream.XMLStreamException",
+                       "javax.xml.ws.WebServiceException",
                        "com.ibm.tx.jta.ut.util.AlreadyDumpedException",
                        "javax.transaction.SystemException",
                        "javax.transaction.xa.XAException",

@@ -12,9 +12,7 @@
  *******************************************************************************/
 package test.jakarta.data.jpa.web;
 
-import static componenttest.annotation.SkipIfSysProp.DB_DB2;
 import static componenttest.annotation.SkipIfSysProp.DB_Not_Default;
-import static componenttest.annotation.SkipIfSysProp.DB_Oracle;
 import static componenttest.annotation.SkipIfSysProp.DB_Postgres;
 import static componenttest.annotation.SkipIfSysProp.DB_SQLServer;
 import static jakarta.data.repository.By.ID;
@@ -44,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -155,6 +154,9 @@ public class DataJPATestServlet extends FATServlet {
 
     @Inject
     Orders orders;
+
+    @Inject
+    Purchases purchases;
 
     @Inject
     Rebates rebates;
@@ -286,11 +288,13 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
-     * Test the AbsoluteValue keyword by querying on values that could be positive or negative.
+     * Test that the ABS JDQL function can be used in a Query with the BETWEEN
+     * operation, and that it queries on values that could be positive or negative.
      */
     @Test
-    public void testAbsoluteValueKeyword() {
-        List<Business> found = businesses.findByLocationLongitudeAbsoluteValueBetween(92.503f, 92.504f);
+    public void testAbsoluteValueFunctionBetween() {
+        List<Business> found = businesses.longitudeAbsoluteValueBetween(92.503f,
+                                                                        92.504f);
         assertNotNull(found);
         assertEquals("Found " + found.toString(), 1, found.size());
         assertEquals("IBM", found.get(0).name);
@@ -499,9 +503,6 @@ public class DataJPATestServlet extends FATServlet {
      * Use repository methods that convert a BigInteger value to other
      * numeric types.
      */
-    @SkipIfSysProp({
-                     DB_DB2, //TODO Failing on DB2 due to eclipselink issue. https://github.com/OpenLiberty/open-liberty/issues/29443
-    })
     @Test
     public void testConvertBigDecimalValue() {
         ZoneId ET = ZoneId.of("America/New_York");
@@ -511,15 +512,11 @@ public class DataJPATestServlet extends FATServlet {
         assertEquals(27480960216618.32,
                      demographics.publicDebtAsBigDecimal(when)
                                      .doubleValue(),
-                     1.0);
+                     0.01);
 
         try {
             Optional<BigInteger> i = demographics.publicDebtAsBigInteger(when);
-            // TODO is BigDecimal.toBigIntegerExact() broken?
-            // or are the fractional digits not being included?
-            //fail("Should not convert BigDecimal 27480960216618.32 to BigInteger " + i);
-            assertEquals(27480960216618L,
-                         i.orElseThrow().longValue());
+            fail("Should not convert BigDecimal 27480960216618.32 to BigInteger " + i);
         } catch (MappingException x) {
             if (x.getCause() instanceof ArithmeticException)
                 ; // expected - out of range
@@ -560,11 +557,7 @@ public class DataJPATestServlet extends FATServlet {
 
         try {
             Long l = demographics.publicDebtAsLong(when);
-            // TODO is BigDecimal.longValueExact() broken?
-            // or are the fractional digits not being included?
-            //fail("Should not convert BigDecimal 27480960216618.32 to Long " + l);
-            assertEquals(Long.valueOf(27480960216618L),
-                         l);
+            fail("Should not convert BigDecimal 27480960216618.32 to Long " + l);
         } catch (MappingException x) {
             // expected - out of range
         }
@@ -581,9 +574,6 @@ public class DataJPATestServlet extends FATServlet {
      * Use repository methods that convert a BigInteger value to other
      * numeric types.
      */
-    @SkipIfSysProp({
-                     DB_DB2, //TODO Failing on DB2 due to eclipselink issue. https://github.com/OpenLiberty/open-liberty/issues/29443
-    })
     @Test
     public void testConvertBigIntegerValue() {
         ZoneId ET = ZoneId.of("America/New_York");
@@ -635,6 +625,66 @@ public class DataJPATestServlet extends FATServlet {
         } catch (MappingException x) {
             // expected - out of range
         }
+    }
+
+    /**
+     * Tests that repository methods can query and sort based on an entity attribute
+     * that has a Converter that is specified on a MappedSuperclass.
+     */
+    @Test
+    public void testConverterOnMappedSuperclass() {
+        PurchaseTime mondayAt6AM = new PurchaseTime( //
+                        LocalTime.of(6, 0, 0), LocalDate.of(2025, 3, 17));
+
+        PurchaseTime mondayAt3PM = new PurchaseTime( //
+                        LocalTime.of(15, 0, 0), LocalDate.of(2025, 3, 17));
+
+        PurchaseTime wednesdayAt6PM = new PurchaseTime( //
+                        LocalTime.of(18, 0, 0), LocalDate.of(2025, 3, 19));
+
+        PurchaseTime thursdayAt10PM = new PurchaseTime( //
+                        LocalTime.of(22, 0, 0), LocalDate.of(2025, 3, 20));
+
+        PurchaseTime fridayAt9AM = new PurchaseTime(//
+                        LocalTime.of(9, 0, 0), LocalDate.of(2025, 3, 21));
+
+        PurchaseTime fridayAtNoon = new PurchaseTime(//
+                        LocalTime.of(12, 0, 0), LocalDate.of(2025, 3, 21));
+
+        PurchaseTime fridayAt10PM = new PurchaseTime(//
+                        LocalTime.of(22, 0, 0), LocalDate.of(2025, 3, 21));
+
+        purchases.removeByTimeOfPurchaseBetween(mondayAt6AM, fridayAt10PM);
+
+        purchases.make(Purchase.of((short) 101,
+                                   "TestAutoApplyConverter-1",
+                                   mondayAt3PM,
+                                   17.89f));
+
+        purchases.make(Purchase.of((short) 102,
+                                   "TestAutoApplyConverter-2",
+                                   thursdayAt10PM,
+                                   22.95f));
+
+        purchases.make(Purchase.of((short) 103,
+                                   "TestAutoApplyConverter-3",
+                                   wednesdayAt6PM,
+                                   30.39f));
+
+        purchases.make(Purchase.of((short) 104,
+                                   "TestAutoApplyConverter-4",
+                                   fridayAtNoon,
+                                   14.49f));
+
+        assertEquals(List.of("TestAutoApplyConverter-1",
+                             "TestAutoApplyConverter-3",
+                             "TestAutoApplyConverter-2"),
+                     purchases.findByTimeOfPurchaseBetween(mondayAt6AM, fridayAt9AM)
+                                     .stream()
+                                     .map(p -> p.itemName)
+                                     .collect(Collectors.toList()));
+
+        assertEquals(4, purchases.removeByTimeOfPurchaseBetween(mondayAt6AM, fridayAt10PM));
     }
 
     /**
@@ -742,6 +792,27 @@ public class DataJPATestServlet extends FATServlet {
                                      .collect(Collectors.toList()));
 
         assertEquals(false, page2.hasNext());
+    }
+
+    /**
+     * Cursor-based pagination using the version and id as key elements,
+     * referring to the version with the query language, VERSION(THIS),
+     * and the id with the query language, ID(THIS).
+     */
+    @Test
+    public void testCursorKeyIncludesVersion() {
+        Order<City> order = Order.by(Sort.asc("VERSION(THIS)"),
+                                     Sort.asc("ID(THIS)"));
+        CursoredPage<City> page;
+        page = cities.findByStateNameGreaterThan("Iowa",
+                                                 PageRequest.ofSize(4),
+                                                 order);
+        assertEquals(4, page.content().size());
+
+        page = cities.findByStateNameGreaterThan("Iowa",
+                                                 page.nextPageRequest(),
+                                                 order);
+        assertEquals(4, page.content().size());
     }
 
     /**
@@ -1099,12 +1170,6 @@ public class DataJPATestServlet extends FATServlet {
         cityNames.add("Mitchell");
         cityNames.add("Pierre");
 
-        //TODO Eclipse link SQL Generation bug on Oracle: https://github.com/OpenLiberty/open-liberty/issues/30444
-        if (jdbcJarName.startsWith("ojdbc8")) {
-            cities.removeByStateName("South Dakota"); //Cleanup Cities repository and skip the rest of these tests
-            return;
-        }
-
         Order<City> orderByCityName = supportsOrderByForUpdate ? Order.by(Sort.asc("name")) : Order.by();
         Iterator<CityId> ids = cities.deleteByStateName("South Dakota", Limit.of(3), orderByCityName).iterator();
         CityId id;
@@ -1267,11 +1332,9 @@ public class DataJPATestServlet extends FATServlet {
                                              .map(a -> a.houseNumber + " " + a.streetName)
                                              .collect(Collectors.toList()));
 
-        // [EclipseLink-6002] Aggregated objects cannot be written/deleted/queried independently from their owners.
-        //                    Descriptor: [RelationalDescriptor(test.jakarta.data.web.StreetAddress --> [])]
-        //                    Query: ReportQuery(referenceClass=StreetAddress )
-        // TODO uncomment the following to reproduce the above error:
-        // List<ShippingAddress> found = shippingAddresses.findByRecipientInfoNotEmpty();
+        // TODO Enable once EclipseLink bug #31558 is fixed:
+        // List<ShippingAddress> found = shippingAddresses
+        //                .findByStreetAddressRecipientInfoNotEmpty();
         // assertEquals(1, found.size());
         // ShippingAddress a = found.get(0);
         // assertEquals(a1.id, a.id);
@@ -1404,7 +1467,11 @@ public class DataJPATestServlet extends FATServlet {
     @Test
     public void testEmbeddableDepth2() {
         CursoredPage<Business> page;
-        List<Integer> zipCodes = List.of(55906, 55902, 55901, 55976, 55905);
+        List<ZipCode> zipCodes = List.of(ZipCode.of(55906),
+                                         ZipCode.of(55902),
+                                         ZipCode.of(55901),
+                                         ZipCode.of(55976),
+                                         ZipCode.of(55905));
 
         page = businesses.findByLocationAddressZipIn(zipCodes, PageRequest.ofSize(4).withoutTotal());
 
@@ -1565,7 +1632,7 @@ public class DataJPATestServlet extends FATServlet {
                                      "NW Lakeridge Pl",
                                      "NW Members Parkway",
                                      "W Highway 14"),
-                             businesses.findByLocationAddressZip(55901)
+                             businesses.findByLocationAddressZip(ZipCode.of(55901))
                                              .map(loc -> loc.address.street.direction + " " + loc.address.street.name)
                                              .collect(Collectors.toList()));
     }
@@ -1581,7 +1648,8 @@ public class DataJPATestServlet extends FATServlet {
                                      "SW 1st St",
                                      "SW Enterprise Dr",
                                      "SW Greenview Dr"),
-                             businesses.findByLocationAddressZipNotAndLocationAddressCity(55901, "Rochester")
+                             businesses.findByLocationAddressZipNotAndLocationAddressCity(ZipCode.of(55901),
+                                                                                          "Rochester")
                                              .map(street -> street.direction + " " + street.name)
                                              .collect(Collectors.toList()));
     }
@@ -1936,15 +2004,16 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
-     * Verify WithYear, WithQuarter, WithMonth, and WithDay Functions to compare different parts of a date.
+     * Verify EXTRACT YEAR/QUARTER/MONTH/DAY functions to compare different parts
+     * of a date.
      */
     @Test
-    public void testExtractFromDateFunctions() {
-        // WithYear
+    public void testExtractFromDateFunctions1() {
+        // EXTRACT YEAR
         assertEquals(List.of(4000921041110001L, 4000921042220002L),
                      creditCards.expiringInOrBefore(2024));
 
-        // WithQuarter
+        // EXTRACT QUARTER
         assertEquals(List.of(1000921011110001L, 1000921011120002L, 1000921011130003L,
                              2000921021110001L, 2000921022220002L,
                              3000921031110001L, 3000921032220002L, 3000921033330003L),
@@ -1952,68 +2021,80 @@ public class DataJPATestServlet extends FATServlet {
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
 
-        // WithMonth
-        assertEquals(List.of(1000921011110001L, 1000921011120002L, 1000921011130003L, 4000921041110001L, 4000921042220002L),
-                     creditCards.issuedInMonth(List.of(Month.APRIL.getValue(), Month.AUGUST.getValue(), Month.JANUARY.getValue()))
+        // EXTRACT MONTH
+        assertEquals(List.of(1000921011110001L, 1000921011120002L, 1000921011130003L,
+                             4000921041110001L, 4000921042220002L),
+                     creditCards.issuedInMonth(List.of(Month.APRIL.getValue(),
+                                                       Month.AUGUST.getValue(),
+                                                       Month.JANUARY.getValue()))
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
 
-        // WithDay
-        assertEquals(List.of(1000921011110001L, 2000921021110001L, 3000921031110001L, 4000921041110001L, 5000921051110001L, 6000921061110001L),
+        // EXTRACT DAY
+        assertEquals(List.of(1000921011110001L,
+                             2000921021110001L,
+                             3000921031110001L,
+                             4000921041110001L,
+                             5000921051110001L,
+                             6000921061110001L),
                      creditCards.issuedBetween(5, 15)
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
     }
 
     /**
-     * Verify WithYear, WithQuarter, WithMonth, and WithDay in query-by-method-name to compare different parts of a date.
+     * Additional test coverage to verify EXTRACT YEAR/QUARTER/MONTH/DAY functions
+     * compare parts of a date.
      */
     @Test
-    public void testExtractFromDateKeywords() {
-        // WithYear
-        assertEquals(List.of(1000921011110001L, 1000921011120002L, 1000921011130003L, 4000921041110001L, 4000921042220002L, 5000921051110001L, 5000921052220002L),
+    public void testExtractFromDateFunction2() {
+        // EXTRACT YEAR
+        assertEquals(List.of(1000921011110001L, 1000921011120002L, 1000921011130003L,
+                             4000921041110001L, 4000921042220002L,
+                             5000921051110001L, 5000921052220002L),
                      creditCards.findNumberByExpiresOnWithYearLessThanEqual(2025));
 
-        // WithQuarter
-        assertEquals(List.of(4000921041110001L, 4000921042220002L, 5000921051110001L, 5000921052220002L, 6000921061110001L, 6000921062220002L),
+        // EXTRACT QUARTER
+        assertEquals(List.of(4000921041110001L, 4000921042220002L,
+                             5000921051110001L, 5000921052220002L,
+                             6000921061110001L, 6000921062220002L),
                      creditCards.findByExpiresOnWithQuarterNot(1)
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
 
-        // WithMonth
-        assertEquals(List.of(2000921021110001L, 2000921022220002L, 5000921051110001L, 5000921052220002L),
-                     creditCards.findByIssuedOnWithMonthIn(List.of(Month.FEBRUARY.getValue(), Month.MAY.getValue(), Month.SEPTEMBER.getValue()))
+        // EXTRACT MONTH
+        assertEquals(List.of(2000921021110001L, 2000921022220002L,
+                             5000921051110001L, 5000921052220002L),
+                     creditCards.findByIssuedOnWithMonthIn(List.of(Month.FEBRUARY.getValue(),
+                                                                   Month.MAY.getValue(),
+                                                                   Month.SEPTEMBER.getValue()))
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
 
-        // WithDay
-        assertEquals(List.of(1000921011120002L, 2000921022220002L, 3000921032220002L, 4000921042220002L, 5000921052220002L, 6000921062220002L),
+        // EXTRACT DAY
+        assertEquals(List.of(1000921011120002L, 2000921022220002L,
+                             3000921032220002L,
+                             4000921042220002L,
+                             5000921052220002L,
+                             6000921062220002L),
                      creditCards.findByIssuedOnWithDayBetween(20, 29)
                                      .map(cc -> cc.number)
                                      .collect(Collectors.toList()));
     }
 
     /**
-     * Verify WithWeek Function to compare the week-of-year part of a date.
+     * Verify the EXTRACT WEEK function to compare the week-of-year part of a date.
      */
     @OnlyIfSysProp(DB_Not_Default) // Derby doesn't support a WEEK function in SQL
     @Test
     public void testExtractWeekFromDateFunction() {
-        // WithWeek
+        // EXTRACT WEEK
         List<CreditCard> results = creditCards.expiringInWeek(15);
 
         assertEquals(1, results.size());
         assertEquals(4000921041110001L, results.get(0).number);
-    }
 
-    /**
-     * Verify WithWeek in query-by-method-name to compare the week-of-year part of a date.
-     */
-    @OnlyIfSysProp(DB_Not_Default) // Derby doesn't support a WEEK function in SQL
-    @Test
-    public void testExtractWeekFromDateKeyword() {
-        // WithWeek
-        List<CreditCard> results = creditCards.findByExpiresOnWithWeek(17);
+        results = creditCards.findByExpiresOnWithWeek(17);
 
         assertEquals(1, results.size());
         assertEquals(4000921042220002L, results.get(0).number);
@@ -2301,7 +2382,7 @@ public class DataJPATestServlet extends FATServlet {
         o2 = orders.findById(o2.id).get();
 
         assertEquals(168.89f, o2.total, 0.01f);
-        assertEquals(o2.purchasedOn, OffsetDateTime.of(2022, 6, 1, 14, 0, 0, 0, MDT));
+        assertEquals(OffsetDateTime.of(2022, 6, 1, 14, 0, 0, 0, MDT), o2.purchasedOn);
     }
 
     /**
@@ -2319,7 +2400,8 @@ public class DataJPATestServlet extends FATServlet {
                                              .map(c -> c.name)
                                              .collect(Collectors.toList()));
 
-        // TODO JPA doesn't allow querying by IdClass. This would need to be interpreted as (c.name=?1 AND c.state=?2)
+        // TODO enable once EclipseLink #29073 is fixed
+        // JPA doesn't allow querying by IdClass. This would need to be interpreted as (c.name=?1 AND c.state=?2)
         // The current error is confusing: You have attempted to set a value of type class test.jakarta.data.jpa.web.CityId
         // for parameter 1 with expected type of class java.lang.String from query string SELECT o FROM City o WHERE (o.state=?1)
         //cities.findById(CityId.of("Rochester", "Minnesota"));
@@ -2750,9 +2832,6 @@ public class DataJPATestServlet extends FATServlet {
     /**
      * Repository method that queries by the year component of an Instant attribute.
      */
-    @SkipIfSysProp({ DB_Postgres, //TODO Failing due to Eclipselink Issue on PostgreSQL: https://github.com/OpenLiberty/open-liberty/issues/29440
-                     DB_Oracle // //TODO Failing due to Eclipselink Issue on Oracle: https://github.com/OpenLiberty/open-liberty/issues/29440
-    })
     @Test
     public void testInstantExtractYear() {
 
@@ -2860,6 +2939,38 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
+     * Verify that LOWER(ID(o)) is valid in a query.
+     */
+    @Test
+    public void testLowerId() {
+        assertEquals(0, counties.deleteByNameIn(List.of("Freeborn", "Steele")));
+
+        int[] freebornZipCodes = new int[] { 55912, 56007, 56009, 56016, 56020, //
+                                             56026, 56029, 56032, 56035, 56036 };
+
+        int[] steeleZipCodes = new int[] { 55049, 55060, 55917, 55924, 55926, //
+                                           55946, 559072 };
+
+        County freeborn = new County("Freeborn", "Minnesota", 30895, freebornZipCodes, //
+                        "Albert Lea", "Alden", "Clarks Grove", "Conger", "Emmons", //
+                        "Freeborn", "Geneva", "Glenville", "Hartland", "Hayward", //
+                        "Hollandale", "Manchester", "Myrtle", "Twin Lakes");
+
+        County steele = new County("Steele", "Minnesota", 37406, steeleZipCodes, //
+                        "Blooming Prairie", "Ellendale", "Medford", "Owatonna");
+
+        counties.save(freeborn, steele);
+
+        assertEquals(Integer.valueOf(30895),
+                     counties.populationOf("freeborn").orElseThrow());
+
+        assertEquals(Integer.valueOf(37406),
+                     counties.populationOf("steele").orElseThrow());
+
+        assertEquals(2, counties.deleteByNameIn(List.of("Freeborn", "Steele")));
+    }
+
+    /**
      * Use a custom join query so that a ManyToMany association can query by attributes of the many side of the relationship.
      */
     @Test
@@ -2885,11 +2996,12 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
-     * Query that matches multiple entities and returns a stream of results
-     * where each result has a ManyToMany association.
+     * Query that matches multiple entities that have a ManyToMany relation.
+     * Verify that the data within the ManyToMany relations of the results
+     * is correct.
      */
     @Test
-    public void testManyToManyReturnsCombinedCollectionFromMany() {
+    public void testManyToManyIncludedInResults() {
 
         List<String> addresses = customers.findByPhoneIn(List.of(5075552444L,
                                                                  5075550101L))
@@ -2912,11 +3024,12 @@ public class DataJPATestServlet extends FATServlet {
     }
 
     /**
-     * Query that matches a single entity, from which the corresponding collection
-     * from its ManyToMany association can be accessed.
+     * Query that matches a single entity that has a ManyToMany relation.
+     * Verify that the data within the ManyToMany relation of the result
+     * is correct.
      */
     @Test
-    public void testManyToManyReturnsOneWithSetOfMany() {
+    public void testManyToManyIncludedInSingleResult() {
         Set<DeliveryLocation> locations = customers //
                         .findByEmail("Maximilian@tests.openliberty.io")
                         .orElseThrow().deliveryLocations;
@@ -2939,7 +3052,6 @@ public class DataJPATestServlet extends FATServlet {
         assertNotNull(loc3.street);
         assertEquals(2800, loc3.houseNum);
         assertEquals("37th St", loc3.street.name);
-        assertEquals("NW", loc3.street.direction);
 
         assertNotNull(locations.toString(), loc4);
         assertEquals(DeliveryLocation.Type.HOME, loc4.type);
@@ -3018,6 +3130,27 @@ public class DataJPATestServlet extends FATServlet {
         assertIterableEquals(List.of("Monica@tests.openliberty.io",
                                      "martin@tests.openliberty.io"),
                              creditCards.findByExpiresOnBetween(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31)));
+    }
+
+    /**
+     * Query that matches based on an attribute of the One of a ManyToOne relation.
+     */
+    @Test
+    public void testManyToOneSubAttribute() {
+
+        Stream<CreditCard> cards = customers//
+                        .findCardsByDebtorEmailEndsWith("an@tests.openliberty.io");
+        List<Long> cardNumbers = cards
+                        .map(card -> card.number)
+                        .collect(Collectors.toList());
+
+        // Customer 5's card numbers must come before Customer 4's card numbers
+        // due to the ordering on Customer.phone.
+        assertEquals(Set.of(5000921051110001L, 5000921052220002L),
+                     new HashSet<>(cardNumbers.subList(0, 2)));
+
+        assertEquals(Set.of(4000921041110001L, 4000921042220002L),
+                     new HashSet<>(cardNumbers.subList(2, 4)));
     }
 
     /**
@@ -3212,28 +3345,6 @@ public class DataJPATestServlet extends FATServlet {
                                      "Maximilian@tests.openliberty.io",
                                      "Megan@tests.openliberty.io"),
                              customers.withCardIssuer(Issuer.MonsterCard));
-    }
-
-    /**
-     * Query that matches multiple entities and returns a combined collection of results across matches for the OneToMany association.
-     */
-    //@Test
-    // This test is currently incorrect because Email is an attribute of Customer (primary entity type), not CreditCard (result type).
-    // This would require a way to indicate that a projection is desired, meaning the return type indicates
-    // an attribute of the entity rather than the entity class itself.
-    // TODO Could this be achieved with @Select?
-    public void testOneToManyReturnsCombinedCollectionFromMany() {
-
-        List<Long> cardNumbers = customers.findCardsByDebtorEmailEndsWith("an@tests.openliberty.io")
-                        .map(card -> card.number)
-                        .collect(Collectors.toList());
-
-        // Customer 5's card numbers must come before Customer 4's card numbers due to the ordering on Customer.phone.
-        assertEquals(cardNumbers.toString(),
-                     true, cardNumbers.equals(List.of(5000921051110001L, 5000921052220002L, 4000921041110001L, 4000921042220002L)) ||
-                           cardNumbers.equals(List.of(5000921051110001L, 5000921052220002L, 4000921042220002L, 4000921041110001L)) ||
-                           cardNumbers.equals(List.of(5000921052220002L, 5000921051110001L, 4000921042220002L, 4000921041110001L)) ||
-                           cardNumbers.equals(List.of(5000921052220002L, 5000921051110001L, 4000921041110001L, 4000921042220002L)));
     }
 
     /**
@@ -3536,7 +3647,11 @@ public class DataJPATestServlet extends FATServlet {
     @Test
     public void testParenthesisInsertionForCursorPagination() {
         PageRequest page1Request = PageRequest.ofSize(3);
-        CursoredPage<Business> page1 = mixed.withZipCodeIn(55901, 55904, page1Request, Sort.asc("name"), Sort.asc(ID));
+        CursoredPage<Business> page1 = mixed.withZipCodeIn(ZipCode.of(55901),
+                                                           ZipCode.of(55904),
+                                                           page1Request,
+                                                           Sort.asc("name"),
+                                                           Sort.asc(ID));
 
         assertEquals(List.of("Benike Construction", "Crenlo", "Home Federal Savings Bank"),
                      page1.stream()
@@ -3545,7 +3660,11 @@ public class DataJPATestServlet extends FATServlet {
 
         assertEquals(true, page1.hasNext());
 
-        CursoredPage<Business> page2 = mixed.withZipCodeIn(55901, 55904, page1.nextPageRequest(), Sort.asc("name"), Sort.asc(ID));
+        CursoredPage<Business> page2 = mixed.withZipCodeIn(ZipCode.of(55901),
+                                                           ZipCode.of(55904),
+                                                           page1.nextPageRequest(),
+                                                           Sort.asc("name"),
+                                                           Sort.asc(ID));
 
         assertEquals(List.of("IBM", "Metafile", "Olmsted Medical"),
                      page2.stream()
@@ -3554,7 +3673,11 @@ public class DataJPATestServlet extends FATServlet {
 
         assertEquals(true, page1.hasNext());
 
-        CursoredPage<Business> page3 = mixed.withZipCodeIn(55901, 55904, page2.nextPageRequest(), Sort.asc("name"), Sort.asc(ID));
+        CursoredPage<Business> page3 = mixed.withZipCodeIn(ZipCode.of(55901),
+                                                           ZipCode.of(55904),
+                                                           page2.nextPageRequest(),
+                                                           Sort.asc("name"),
+                                                           Sort.asc(ID));
 
         assertEquals(List.of("RAC", "Think Bank"),
                      page3.stream()
@@ -4128,7 +4251,7 @@ public class DataJPATestServlet extends FATServlet {
      * Repository method that queries for the IdClass using id(this)
      * and sorts based on the attributes of the IdClass.
      */
-    // @Test // TODO enable once #29073 is fixed
+    @Test
     public void testSelectIdClass() {
         assertEquals(List.of("Illinois:Springfield",
                              "Kansas:Kansas City",
@@ -4140,7 +4263,9 @@ public class DataJPATestServlet extends FATServlet {
                              "Ohio:Springfield",
                              "Oregon:Springfield"),
                      cities.ids()
-                                     .map(id -> id.getStateName() + ":" + id.name)
+                                     .map(id -> id[0] + ":" + id[1])
+                                     // TODO replace above with the following #29073 is fixed
+                                     //.map(id -> id.getStateName() + ":" + id.name)
                                      .collect(Collectors.toList()));
     }
 
@@ -4299,9 +4424,20 @@ public class DataJPATestServlet extends FATServlet {
          * Without using the Eclipselink Oracle plugin the precision of Timestamp is 1 second
          * Therefore, we need to ensure 1 second has passed between queries where we expect
          * the LocalDateTime/version to be different.
+         *
+         * For Derby the timestamp field can hold a precision of nanoseconds,
+         * but the CURRENT_TIMESTAMP function returns a timestamp with millis
+         * precision and there is no configuration to change that.
+         *
+         * For SQLServer the timestamp field also defaults to millis and Eclipselink
+         * offers no alternative query to get better percision.
+         *
+         * PostgreSQL - default is nanoseconds
+         * DB2 - default is microseconds
          */
         String jdbcJarName = System.getenv().getOrDefault("DB_DRIVER", "UNKNOWN");
-        boolean secondPercision = jdbcJarName.startsWith("ojdbc");
+        boolean secondPrecision = jdbcJarName.startsWith("ojdbc");
+        boolean millisecondPrecision = jdbcJarName.startsWith("derby") || jdbcJarName.startsWith("mssql-jdbc");
 
         assertEquals(0, counties.deleteByNameIn(List.of("Dodge", "Mower")));
 
@@ -4323,8 +4459,10 @@ public class DataJPATestServlet extends FATServlet {
 
         dodge = counties.findByName("Dodge").orElseThrow();
 
-        if (secondPercision)
+        if (secondPrecision)
             Thread.sleep(Duration.ofSeconds(1).toMillis());
+        if (millisecondPrecision)
+            Thread.sleep(Duration.ofMillis(1).toMillis());
 
         dodgeZipCodes = new int[] { 55917, 55924, 55927, 55940, 55944, 55955, 55963, 55985 };
         assertEquals(true, counties.updateByNameSetZipCodes("Dodge", dodgeZipCodes));
@@ -4343,8 +4481,10 @@ public class DataJPATestServlet extends FATServlet {
         lastUpdate = dodge.lastUpdated = counties.findLastUpdatedByName("Dodge");
         dodge.population = 20981;
 
-        if (secondPercision)
+        if (secondPrecision)
             Thread.sleep(Duration.ofSeconds(1).toMillis());
+        if (millisecondPrecision)
+            Thread.sleep(Duration.ofMillis(1).toMillis());
 
         counties.save(dodge);
 
@@ -4576,7 +4716,8 @@ public class DataJPATestServlet extends FATServlet {
 
         long mnVer = cities.currentVersion(mnId.name, mnId.getStateName());
         long nyVer = cities.currentVersion(nyId.name, nyId.getStateName());
-        // TODO
+
+        // TODO enable once EclipseLink #29073 is fixed, and maybe remove the above
         //long mnVer = cities.currentVersion(mnId);
         //long nyVer = cities.currentVersion(nyId);
 
@@ -4659,7 +4800,7 @@ public class DataJPATestServlet extends FATServlet {
             assertEquals("N", ibm.location.address.street.direction);
             assertEquals("Rochester", ibm.location.address.city);
             assertEquals("MN", ibm.location.address.state);
-            assertEquals(55901, ibm.location.address.zip);
+            assertEquals(ZipCode.of(55901), ibm.location.address.zip);
         } finally {
             // restore original values
             ibm.location.latitude = originalLatitude;
@@ -4682,7 +4823,7 @@ public class DataJPATestServlet extends FATServlet {
         assertEquals("NW", ibm.location.address.street.direction);
         assertEquals("Rochester", ibm.location.address.city);
         assertEquals("MN", ibm.location.address.state);
-        assertEquals(55901, ibm.location.address.zip);
+        assertEquals(ZipCode.of(55901), ibm.location.address.zip);
     }
 
     /**

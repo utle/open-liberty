@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2024 IBM Corporation and others.
+ * Copyright (c) 2022,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,7 +12,8 @@
  *******************************************************************************/
 package test.jakarta.data.web;
 
-import java.util.Collection;
+import static jakarta.data.repository.By.ID;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -60,17 +61,9 @@ public interface Packages extends BasicRepository<Package, Integer> {
 
     LinkedList<?> delete2ByHeightLessThan(float maxHeight, Limit limit, Sort<?>... sorts);
 
-    long[] delete3(Limit limit, Sort<Package> sort); // invalid return type is not the entity or id
-
-    List<String> delete4(Limit limit, Sort<Package> sort); // invalid return type is not the entity or id
-
-    Collection<Number> delete5(Limit limit, Sort<Package> sort); // invalid return type is not the entity or id
-
     List<Package> deleteFirst2(); // 'first2' should be ignored and this should delete all entities
 
     Package deleteFirst5ByWidthLessThan(float maxWidth); // 'first5' should be ignored and the number of results should be limited by the condition
-
-    Optional<Package> deleteFirst(); // 'first' should be ignored and this should delete all entities (expect failure since the result will be non-unique)
 
     @Delete
     Object[] destroy(Limit limit, Sort<Package> sort);
@@ -89,13 +82,16 @@ public interface Packages extends BasicRepository<Package, Integer> {
                                                                   Order<Package> order,
                                                                   PageRequest pagination);
 
-    @OrderBy(value = "id")
+    @Query("SELECT id WHERE FLOOR(height) = :height")
+    @OrderBy(ID)
     List<Integer> findIdByHeightRoundedDown(int height);
 
-    @OrderBy(value = "id")
+    @Query("SELECT id WHERE CEILING(length) = :length")
+    @OrderBy(ID)
     List<Integer> findIdByLengthRoundedUp(int length);
 
-    @OrderBy(value = "id")
+    @Query("SELECT id WHERE ROUND(width, 0) = :width")
+    @OrderBy(ID)
     List<Integer> findIdByWidthRounded(int width);
 
     @Delete

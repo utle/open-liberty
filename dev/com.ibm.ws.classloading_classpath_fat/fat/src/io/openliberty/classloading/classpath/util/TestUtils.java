@@ -20,6 +20,7 @@ import static io.openliberty.classloading.classpath.fat.FATSuite.LIB14_CLASS_NAM
 import static io.openliberty.classloading.classpath.fat.FATSuite.LIB15_CLASS_NAME;
 import static io.openliberty.classloading.classpath.fat.FATSuite.LIB16_CLASS_NAME;
 import static io.openliberty.classloading.classpath.fat.FATSuite.LIB17_CLASS_NAME;
+import static io.openliberty.classloading.classpath.fat.FATSuite.LIB18_CLASS_NAME;
 import static io.openliberty.classloading.classpath.fat.FATSuite.LIB1_CLASS_NAME;
 import static io.openliberty.classloading.classpath.fat.FATSuite.LIB2_CLASS_NAME;
 import static io.openliberty.classloading.classpath.fat.FATSuite.LIB3_CLASS_NAME;
@@ -152,6 +153,7 @@ public class TestUtils {
         testLoadLibrary15Class(LIB15_CLASS_NAME),
         testLoadLibrary16Class(LIB16_CLASS_NAME),
         testLoadLibrary17Class(LIB17_CLASS_NAME),
+        testLoadLibrary18Class(LIB18_CLASS_NAME),
         testLoadRARLib1Class(RAR_LIB1_CLASS_NAME),
         testLoadRARLib2Class(RAR_LIB2_CLASS_NAME);
 

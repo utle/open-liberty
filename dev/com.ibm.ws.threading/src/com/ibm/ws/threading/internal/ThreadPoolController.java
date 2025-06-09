@@ -1823,7 +1823,11 @@ public final class ThreadPoolController {
                         // happens for a given hang, but otherwise just bail
                         if (hangMaxThreadsMessageEmitted == false && hangIntervalCounter > 0) {
                             if (tc.isWarningEnabled()) {
-                                Tr.warning(tc, "unbreakableExecutorHang", poolSizeWhenHangDetected, poolSize);
+                                if (poolSizeWhenHangDetected != poolSize) {
+                                    Tr.warning(tc, "unbreakableExecutorHang", poolSizeWhenHangDetected, poolSize);
+                                } else {
+                                    Tr.warning(tc, "CWWKE1207.threads.hung.pool.cannot.grow", poolSize);
+                                }
                             }
                             hangMaxThreadsMessageEmitted = true;
                         }

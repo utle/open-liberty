@@ -13,6 +13,7 @@
 package io.openliberty.data.internal.version;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Set;
 
@@ -22,6 +23,11 @@ import jakarta.data.repository.Find;
  * Interface for version-dependent capability, available as an OSGi service.
  */
 public interface DataVersionCompatibility {
+    /**
+     * Size 0 array indicating no Select annotations are present.
+     */
+    final String[] NO_SELECTIONS = new String[0];
+
     /**
      * Append a condition such as o.myAttribute < ?1 to the JPQL query.
      *
@@ -60,6 +66,17 @@ public interface DataVersionCompatibility {
                                              Annotation[] annos);
 
     /**
+     * Indicates whether the enabled version of Jakarta Data is at the requested
+     * level or higher.
+     *
+     * @param major major version of Jakarta Data specification. Must be >= 1.
+     * @param minor minor version of Jakarta Data specification. Must be >= 0.
+     * @return true if at the requested level of Jakarta Data or higher,
+     *         otherwise false.
+     */
+    boolean atLeast(int major, int minor);
+
+    /**
      * Obtains the Count annotation if present on the method. Otherwise null.
      *
      * @param method repository method. Must not be null.
@@ -84,14 +101,15 @@ public interface DataVersionCompatibility {
     Annotation getExistsAnnotation(Method method);
 
     /**
-     * Obtains the value of the Select annotation if present on the method.
-     * Otherwise null.
+     * Obtains the values of Select annotations if present on the method
+     * or record component. The order for values is the same as the order in
+     * which the annotations are listed. Otherwise a size 0 array.
      *
-     * @param method repository method. Must not be null.
-     * @return values of the Select annotation indicating the columns to select,
-     *         otherwise null.
+     * @param element repository method or record component. Must not be null.
+     * @return values of the Select annotations indicating the columns to select,
+     *         otherwise a size 0 array to indicate no Select annotation is present.
      */
-    String[] getSelections(Method method);
+    String[] getSelections(AnnotatedElement element);
 
     /**
      * Return a 2-element array where the first element is the entity attribute name

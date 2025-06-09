@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2024 IBM Corporation and others.
+ * Copyright (c) 2009, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -344,7 +344,7 @@ public class NpTimerConfigRetryServlet extends FATServlet {
 
         // Tolerate the timer running a 3rd time on slow hardware due to catch-up timeouts
         long expectedCount = 2;
-        if (nextTimes.get(nextTimes.size() - 1) <= completedTime && count == 3) {
+        if (count == 3 && nextTimes.get(nextTimes.size() - 2) <= completedTime) {
             expectedCount = 3;
         }
 

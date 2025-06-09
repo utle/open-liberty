@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -15,17 +15,24 @@ package com.ibm.ws.transaction.fat.util;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import com.ibm.websphere.simplicity.log.Log;
 
+import componenttest.containers.ImageBuilder;
 import componenttest.containers.TestContainerSuite;
+import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.database.container.DatabaseContainerFactory;
 import componenttest.topology.database.container.DatabaseContainerType;
 
@@ -33,16 +40,13 @@ import componenttest.topology.database.container.DatabaseContainerType;
  *
  */
 public class TxTestContainerSuite extends TestContainerSuite {
+	private static final Class<?> c = TxTestContainerSuite.class;
+	
     public static final String POSTGRES_DB = "testdb";
     public static final String POSTGRES_USER = "postgresUser";
     public static final String POSTGRES_PASS = "superSecret";
-
-    /*
-     * The image here is generated using the Dockerfile in com.ibm.ws.jdbc_fat_postgresql/publish/files/postgresql-ssl
-     * The command used in that directory was: docker build -t jonhawkes/postgresql-ssl:1.0 .
-     * With the resulting image being pushed to docker hub.
-     */
-    public static final String POSTGRES_IMAGE = "jonhawkes/postgresql-ssl:1.0";
+    
+    public static final DockerImageName POSTGRES_SSL = ImageBuilder.build("postgres-ssl:17.0.0.1").getDockerImageName();
 
     private static DatabaseContainerType databaseContainerType;
     public static JdbcDatabaseContainer<?> testContainer;

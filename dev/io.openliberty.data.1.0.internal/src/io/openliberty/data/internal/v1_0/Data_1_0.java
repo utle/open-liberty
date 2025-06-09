@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@
 package io.openliberty.data.internal.v1_0;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Set;
 
@@ -74,6 +75,12 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
+    public boolean atLeast(int major, int minor) {
+        return major == 1 && minor == 0;
+    }
+
+    @Override
+    @Trivial
     public Annotation getCountAnnotation(Method method) {
         return null;
     }
@@ -92,8 +99,8 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
-    public String[] getSelections(Method method) {
-        return null;
+    public String[] getSelections(AnnotatedElement element) {
+        return NO_SELECTIONS;
     }
 
     @Override

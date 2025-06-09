@@ -153,8 +153,9 @@ public class DataExtension implements Extension {
                                       queriesPerEntityClass,
                                       primaryEntityClassReturnValue,
                                       provider)) {
-                FutureEMBuilder previous = entityGroups.putIfAbsent(futureEMBuilder, futureEMBuilder);
 
+                FutureEMBuilder previous = entityGroups.putIfAbsent(futureEMBuilder,
+                                                                    futureEMBuilder);
                 if (previous != null) {
                     futureEMBuilder = previous;
                     futureEMBuilder.addRepositoryInterface(repositoryInterface);
@@ -175,7 +176,8 @@ public class DataExtension implements Extension {
 
         String appName = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor() //
                         .getComponentMetaData().getJ2EEName().getApplication();
-        provider.onAppStarted(appName, entityGroups.values());
+
+        provider.onStart(appName, entityGroups.keySet());
     }
 
     /**

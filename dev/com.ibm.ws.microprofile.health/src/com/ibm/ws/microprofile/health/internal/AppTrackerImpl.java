@@ -162,7 +162,13 @@ public class AppTrackerImpl implements AppTracker, ApplicationStateListener {
 
     @Override
     public Set<String> getAllConfigAppNames() {
-        return configAdminMap.keySet();
+        lock.readLock().lock();
+        try {
+            return configAdminMap.keySet();
+        } finally {
+            lock.readLock().unlock();
+        }
+
     }
 
     @Override
@@ -184,6 +190,7 @@ public class AppTrackerImpl implements AppTracker, ApplicationStateListener {
     @FFDCIgnore(UnableToAdaptException.class)
     public void applicationStarting(ApplicationInfo appInfo) throws StateChangeException {
         String appName = appInfo.getDeploymentName();
+
         if (tc.isDebugEnabled())
             Tr.debug(tc, "applicationStarting() : appName = " + appName);
 
@@ -292,6 +299,7 @@ public class AppTrackerImpl implements AppTracker, ApplicationStateListener {
     /** {@inheritDoc} */
     @Override
     public void applicationStarted(ApplicationInfo appInfo) throws StateChangeException {
+
         String appName = appInfo.getDeploymentName();
         lock.writeLock().lock();
         try {
@@ -411,6 +419,7 @@ public class AppTrackerImpl implements AppTracker, ApplicationStateListener {
                 appStateMap.replace(appName, ApplicationState.INSTALLED);
             } else {
                 appStateMap.remove(appName);
+                configAdminMap.remove(appName);
             }
             if (tc.isDebugEnabled())
                 Tr.debug(tc, "applicationStopped(): stopped app removed from appStateMap = " + appStateMap.toString() + " for app: " + appName);

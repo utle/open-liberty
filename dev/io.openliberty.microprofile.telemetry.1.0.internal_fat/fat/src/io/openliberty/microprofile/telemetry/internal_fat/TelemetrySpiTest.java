@@ -83,6 +83,7 @@ public class TelemetrySpiTest extends FATServletClient {
     public static void setup() throws Exception {
         // Exporter test
         PropertiesAsset exporterConfig = new PropertiesAsset()
+                        .addProperty("otel.sdk.disabled", "false")
                         .addProperty("otel.traces.exporter", "in-memory");
         WebArchive exporterTestWar = ShrinkWrap.create(WebArchive.class, EXPORTER_APP_NAME + ".war")
                         .addClass(ExporterTestServlet.class)
@@ -96,6 +97,7 @@ public class TelemetrySpiTest extends FATServletClient {
 
         // Sampler test
         PropertiesAsset samplerConfig = new PropertiesAsset()
+                        .addProperty("otel.sdk.disabled", "false")
                         .addProperty("otel.traces.sampler", TestSamplerProvider.NAME);
         WebArchive samplerTestWar = ShrinkWrap.create(WebArchive.class, SAMPLER_APP_NAME + ".war")
                         .addClass(SamplerTestServlet.class)
@@ -108,6 +110,7 @@ public class TelemetrySpiTest extends FATServletClient {
         // Resource test
         // TEST_KEY1 and TEST_KEY2 are expected by TestResourceProvider
         PropertiesAsset resourceConfig = new PropertiesAsset()
+                        .addProperty("otel.sdk.disabled", "false")
                         .addProperty("otel.traces.exporter", "in-memory")
                         .addProperty(TestResourceProvider.TEST_KEY1.getKey(), ResourceTestServlet.TEST_VALUE1);
         server.addEnvVar("OTEL_TEST_KEY2", ResourceTestServlet.TEST_VALUE2);
@@ -126,6 +129,7 @@ public class TelemetrySpiTest extends FATServletClient {
 
         // Propagator test
         PropertiesAsset propagatorConfig = new PropertiesAsset()
+                        .addProperty("otel.sdk.disabled", "false")
                         .addProperty("otel.traces.exporter", "in-memory")
                         .addProperty("otel.propagators", TestPropagatorProvider.NAME);
 
@@ -143,6 +147,7 @@ public class TelemetrySpiTest extends FATServletClient {
 
         // CustomizerTest
         PropertiesAsset customizerConfig = new PropertiesAsset()
+                        .addProperty("otel.sdk.disabled", "false")
                         .addProperty("otel.traces.exporter", "in-memory");
         WebArchive customizerTestWar = ShrinkWrap.create(WebArchive.class, CUSTOMIZER_APP_NAME + ".war")
                         .addClass(CustomizerTestServlet.class)
@@ -154,7 +159,6 @@ public class TelemetrySpiTest extends FATServletClient {
 
         ShrinkHelper.exportAppToServer(server, customizerTestWar, SERVER_ONLY);
 
-        server.addEnvVar("OTEL_SDK_DISABLED", "false");
         server.addEnvVar("OTEL_BSP_SCHEDULE_DELAY", "100");
         server.startServer();
     }

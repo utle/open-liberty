@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2022 IBM Corporation and others.
+ * Copyright (c) 2011, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -17,6 +17,7 @@ import java.lang.instrument.ClassFileTransformer;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -279,4 +280,10 @@ public class UnifiedClassLoader extends LibertyLoader implements SpringLoader {
     public Bundle getBundle() {
         return null;
     }
+
+    @Override
+    public Class<?> publicDefineClass(String name, byte[] b, ProtectionDomain protectionDomain) {
+        return defineClass(name, b, 0, b.length, protectionDomain);
+    }
+
 }

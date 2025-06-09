@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2024 IBM Corporation and others.
+ * Copyright (c) 2009, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -52,12 +53,14 @@ import org.eclipse.equinox.region.RegionDigraph;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 // import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.SynchronousBundleListener;
 import org.osgi.framework.Version;
 import org.osgi.framework.VersionRange;
 import org.osgi.framework.namespace.ExecutionEnvironmentNamespace;
@@ -125,6 +128,7 @@ import com.ibm.wsspi.kernel.service.location.VariableRegistry;
 import com.ibm.wsspi.kernel.service.location.WsLocationAdmin;
 import com.ibm.wsspi.kernel.service.location.WsLocationConstants;
 import com.ibm.wsspi.kernel.service.location.WsResource;
+import com.ibm.wsspi.kernel.service.utils.FrameworkState;
 import com.ibm.wsspi.kernel.service.utils.OnErrorUtil;
 import com.ibm.wsspi.kernel.service.utils.OnErrorUtil.OnError;
 import com.ibm.wsspi.kernel.service.utils.PathUtils;
@@ -1058,6 +1062,9 @@ public class FeatureManager implements FixManager, FeatureProvisioner, Framework
             time = TimestampUtils.getElapsedTime();
         }
 
+        if (FrameworkState.isStopping()) {
+            return;
+        }
         if (provisioningMode == ProvisioningMode.UPDATE) {
             Tr.audit(tc, "COMPLETE_AUDIT", time);
         } else {
@@ -2679,9 +2686,21 @@ public class FeatureManager implements FixManager, FeatureProvisioner, Framework
     private final void shutdownFramework() {
         try {
             Bundle bundle = bundleContext.getBundle(Constants.SYSTEM_BUNDLE_LOCATION);
-
-            if (bundle != null)
+            if (bundle != null) {
+                CountDownLatch stopping = new CountDownLatch(1);
+                SynchronousBundleListener l = new SynchronousBundleListener() {
+                    @Override
+                    public void bundleChanged(BundleEvent e) {
+                        if (BundleEvent.STOPPING == e.getType() && e.getBundle().getBundleId() == 0) {
+                            stopping.countDown();
+                        }
+                    }
+                };
+                bundleContext.addBundleListener(l);
                 bundle.stop();
+                stopping.await(1000, TimeUnit.MILLISECONDS);
+                // no need to remove listener since we are stopping anyway
+            }
         } catch (Exception e) {
         }
 

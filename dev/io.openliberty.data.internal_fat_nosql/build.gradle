@@ -25,8 +25,22 @@ dependencies {
   	exclude group: 'jakarta.nosql', module: 'jakarta.nosql-api'
   }
   jnosql "org.eclipse.jnosql.databases:jnosql-mongodb:${jnosqlVersion}", withoutJakartaAPI
+  
+  //Annotation processor - generates .java files in build/libs/generated/sources - static meta models
+  annotationProcessor "org.eclipse.jnosql.metamodel:mapping-metamodel-processor:1.1.4"
+  compileOnly "org.eclipse.jnosql.metamodel:mapping-metamodel-processor:1.1.4"
+  
 }
 
+def metaModelDir = file("build/libs/generated/sources/annotationProcessor/java/main") 
+
+// this code copy the metamodels generated to the "generated-src" directory
+assemble.doLast {
+  copy{
+    from metaModelDir
+    into "generated-src"
+    }
+  }
 
 task addJNoSQL(type: Copy) {
   mustRunAfter jar

@@ -16,8 +16,9 @@
                    xmlns:ibmui="http://www.ibm.com/xmlns/appservers/osgi/metatype/ui/v1.0.0"
                    localization="OSGI-INF/l10n/metatype">
 
-    <OCD id="io.openliberty.microprofile.health" name="%mpHealth" description="%mpHealth.desc" ibm:alias="mpHealth" ibm:beta="true">
-        <AD id="fileUpdateInterval" name="%fileUpdateInterval" description="%fileUpdateInterval.desc" required="false" type="String" ibm:beta="true"/>
+    <OCD id="io.openliberty.microprofile.health" name="%mpHealth" description="%mpHealth.desc" ibm:alias="mpHealth" >
+        <AD id="checkInterval" name="%checkInterval" description="%checkInterval.desc" required="false" type="String" />
+        <AD id="startupCheckInterval" name="%startupCheckInterval" description="%startupCheckInterval.desc" required="false" type="String"/>
     </OCD>
 
     <Designate pid="io.openliberty.microprofile.health">

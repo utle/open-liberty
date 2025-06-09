@@ -59,20 +59,22 @@ public class Dockerfile implements Comparable<Dockerfile> {
      * @return The DockerImageName for this Dockerfile
      */
     private static DockerImageName constructImageName(Path location) {
+        
+        final String SEPARATOR = "/";
 
         // io.openliberty.org.testcontainers/resources/openliberty/testcontainers/[repository]/[version]/Dockerfile
-        final String fullPath = location.toString();
+        final String fullPath = location.toString().replace("\\", SEPARATOR);
         
         System.out.println("Full path to dockerfile is: " + fullPath);
 
         // Find version (between the last two separator characters)
-        int end = fullPath.lastIndexOf(File.separator);
-        int start = fullPath.substring(0, end).lastIndexOf(File.separator) + 1;
+        int end = fullPath.lastIndexOf(SEPARATOR);
+        int start = fullPath.substring(0, end).lastIndexOf(SEPARATOR) + 1;
         final String version = fullPath.substring(start, end);
 
         // Find repository (between "resources/" and version)
+        end = start - 1; //End where the version started (exclude the path separator)
         start = fullPath.lastIndexOf("resources/") + 10;
-        end = fullPath.indexOf(version) - 1;
         final String repository = fullPath.substring(start, end);
 
         // Construct and return name
@@ -106,11 +108,8 @@ public class Dockerfile implements Comparable<Dockerfile> {
     /**
      * Similar logic to ImageBuilder.findBaseImageFrom(resource)
      * 
-     * However, in this case we can only use the ArtifactoryMirrorSubstitutor so we
-     * have to manually put in the Artifactory registry (when available)
-     * 
      * @param location of Dockerfile the resource path of the Dockerfile
-     * @return The substituted docker image of the BASE_IMAGE argument
+     * @return The docker image of the BASE_IMAGE argument
      */
     private DockerImageName findBaseImageFrom(Path location) {
         final String BASE_IMAGE_PREFIX = "ARG BASE_IMAGE=\"";

@@ -25,6 +25,7 @@
 	<classpathentry kind="src" path="test-applications/testLib15.jar/src"/>
 	<classpathentry kind="src" path="test-applications/testLib16.jar/src"/>
 	<classpathentry kind="src" path="test-applications/testLib17.jar/src"/>
+	<classpathentry kind="src" path="test-applications/testLib18.jar/src"/>
 	<classpathentry kind="src" path="test-applications/testRar1.rar/src"/>
 	<classpathentry kind="src" path="test-applications/testResourceAdaptor.jar/src"/>
 	<classpathentry kind="src" path="test-applications/testLibFileSet/src"/>
