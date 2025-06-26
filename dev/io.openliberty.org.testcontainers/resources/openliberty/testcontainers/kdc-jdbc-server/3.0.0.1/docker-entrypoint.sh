@@ -61,8 +61,8 @@ cat <<EOT > /var/lib/krb5kdc/kdc.conf
         kadmin_port = 749
         max_life = 12h 0m 0s
         max_renewable_life = 7d 0h 0m 0s
-        master_key_type = aes256-cts
-        supported_enctypes = aes256-cts:normal aes128-cts:normal
+        master_key_type = aes256-cts-hmac-sha384-192
+        supported_enctypes = aes256-cts-hmac-sha384-192:normal
         default_principal_flags = +preauth
     }
     
