@@ -568,6 +568,8 @@ public class ApacheDSandKDC {
                       "        udp_preference_limit = 1\n" +
                       "        dns_lookup_kdc = false\n" +
                       "        renew_lifetime = 7d\n" +
+                      "        default_tkt_enctypes = aes256-cts-hmac-sha384-192 aes128-cts-hmac-sha256-128 \n" +
+                      "        default_tgs_enctypes = aes256-cts-hmac-sha384-192 aes128-cts-hmac-sha256-128 \n" +
                       "        forwardable = true\n";
         if (includeRealm) {
             conf = conf + "        default_realm = " + DOMAIN.toUpperCase() + "\n";
