@@ -24,6 +24,7 @@ import componenttest.topology.impl.LibertyServer;
 
 @RunWith(FATRunner.class)
 public class DualServerDynamicFSTest1 extends DualServerDynamicCoreTest1 {
+
     @Server("com.ibm.ws.transaction_FSCLOUD001")
     public static LibertyServer s1;
 

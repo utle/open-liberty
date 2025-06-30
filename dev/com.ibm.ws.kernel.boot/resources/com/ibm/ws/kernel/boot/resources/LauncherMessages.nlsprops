@@ -879,3 +879,7 @@ info.list.of.defined.servers=The following servers are defined relative to the u
 info.communicate.server=A communication error has occurred between the command {0} and the server {1}.
 
 info.serialFilterLoaded=The serial filter agent loaded.
+
+# {0} The full path to a configured logs directory.
+# Displayed when creating a server dump, if an alternate server logs directory has been configured.
+info.dump.server.alt.logs=Detected the configured server logs directory at {0}.

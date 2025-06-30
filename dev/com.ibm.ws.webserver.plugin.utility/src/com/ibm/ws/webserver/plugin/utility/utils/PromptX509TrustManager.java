@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  * Custom trust manager which will check the provided managers, and if no
@@ -62,7 +63,7 @@ public class PromptX509TrustManager implements X509TrustManager {
     }
 
     /**
-     * This method is used to create a "SHA-1" or "MD5" digest on an
+     * This method is used to create a "SHA1" or "MD5" digest on an
      * X509Certificate as the "fingerprint".
      * 
      * @param algorithmName
@@ -141,7 +142,7 @@ public class PromptX509TrustManager implements X509TrustManager {
         // will eventually be replaced when we have a client-side SSL solution.
         StringBuilder fullMD5Buf = new StringBuilder();
         for (int i = 0; i < chain.length; i++) {
-            fullMD5Buf.append(generateDigest("MD5", chain[i]));
+            fullMD5Buf.append(generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5, chain[i]));
             if (i < (chain.length - 1)) {
                 // Still more to go, so append a comma
                 fullMD5Buf.append(',');
@@ -179,8 +180,8 @@ public class PromptX509TrustManager implements X509TrustManager {
             stdout.println(getMessage("sslTrust.certIssueDN", chain[i].getIssuerDN()));
             stdout.println(getMessage("sslTrust.certSerial", chain[i].getSerialNumber()));
             stdout.println(getMessage("sslTrust.certExpires", chain[i].getNotAfter()));
-            stdout.println(getMessage("sslTrust.certSHADigest", generateDigest("SHA-1", chain[i])));
-            stdout.println(getMessage("sslTrust.certMD5Digest", generateDigest("MD5", chain[i])));
+            stdout.println(getMessage("sslTrust.certSHADigest", generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1, chain[i])));
+            stdout.println(getMessage("sslTrust.certMD5Digest", generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5, chain[i])));
             stdout.println();
         }
 

@@ -1558,6 +1558,26 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Supply a null Limit results in NullPointerException.
+     */
+    @Test
+    public void testNullLimit() {
+        try {
+            List<Voter> found = voters
+                            .findBySsnLessThanEqualOrderBySsnDesc(999999999, null);
+            fail("Repository method with a null Limit must raise" +
+                 " NullPointerException. Instead: " + found);
+        } catch (NullPointerException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1087E") &&
+                x.getMessage().contains(Limit.class.getName()))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
      * BasicRepository.findAll(PageRequest, null) must raise NullPointerException.
      */
     @Test
@@ -1589,6 +1609,47 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() != null &&
                 x.getMessage().startsWith("CWWKD1087E") &&
                 x.getMessage().contains(PageRequest.class.getName()))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Attempt to supply a NULL Sort parameter.
+     */
+    @Test
+    public void testNullSortArgument() {
+        Page<Voter> page;
+        try {
+            page = voters.selectByName("Vincent",
+                                       PageRequest.ofSize(9),
+                                       null);
+            fail("Obtained a page sorted by NULL: " + page);
+        } catch (NullPointerException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1087E") &&
+                x.getMessage().contains(Sort.class.getName()))
+                ; // expected
+            else
+                throw x;
+        }
+    }
+
+    /**
+     * Attempt to supply a NULL varargs Sort parameter.
+     */
+    @Test
+    public void testNullSortArray() {
+        Page<Voter> page;
+        try {
+            page = voters.selectAll(PageRequest.ofSize(3),
+                                    (Sort[]) null);
+            fail("Obtained a page sorted by NULL: " + page);
+        } catch (NullPointerException x) {
+            if (x.getMessage() != null &&
+                x.getMessage().startsWith("CWWKD1087E") &&
+                x.getMessage().contains(Sort.class.getName() + "[]"))
                 ; // expected
             else
                 throw x;

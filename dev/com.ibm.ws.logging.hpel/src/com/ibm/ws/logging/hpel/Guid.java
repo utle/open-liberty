@@ -27,7 +27,7 @@ import java.security.MessageDigest;
 import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.util.Random;
-
+import com.ibm.ws.common.crypto.CryptoUtils;
 /**
  * Universally Unique IDentifier (UUID) or Globally Unique IDentifier (GUID) implementation for
  * generating a hexadecimal string representation of a GUID.
@@ -245,7 +245,7 @@ public final class Guid {
                 //Instantiate and seed the random number generator:
                 try {
 
-                    randomNumberGenerator = SecureRandom.getInstance("MD5");
+                    randomNumberGenerator = SecureRandom.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
                     randomNumberGenerator.setSeed(uniqueTimeStamp);
                 } catch (Throwable t) {
 
@@ -460,7 +460,7 @@ public final class Guid {
         try {
 
             //Compute the message digest:
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            MessageDigest md5 = MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
 
             md5.reset();
 

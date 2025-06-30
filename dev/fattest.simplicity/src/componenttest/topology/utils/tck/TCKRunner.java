@@ -241,7 +241,7 @@ public class TCKRunner {
         }
 
         // Configure a simple formatter
-        loggingProperties.put("java.util.logging.SimpleFormatter.format", "[%1$tm/%1$te/%1$tY %1$tT:%1$tM %1$tZ] %2$s %4$.1s %5$s %6$s %n");
+        loggingProperties.put("java.util.logging.SimpleFormatter.format", "[%1$tm/%1$td/%1$tY %1$tH:%1$tM:%1$tS:%1$tL %1$tZ] %4$.1s %2$s %5$4s %6$4s %n");
 
         // Log warning to console
         loggingProperties.put("java.util.logging.ConsoleHandler.formatter", "java.util.logging.SimpleFormatter");

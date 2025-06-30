@@ -19,6 +19,7 @@ import java.io.OutputStream;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  * GenerateChecksums

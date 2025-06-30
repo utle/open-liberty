@@ -18,6 +18,7 @@ src: \
 	test-applications/timeoutTest/src,\
 	test-applications/mpjwt/src,\
 	test-applications/mphealth/src,\
+	test-applications/mphealthup/src,\
 	test-applications/mpTelemetry/src,\
 	test-applications/jaxrspropagation/src,\
 	test-applications/mpOpenAPIConfig/src
@@ -44,6 +45,7 @@ tested.features: \
         mpOpenAPI-2.0,\
         mpOpenAPI-3.0,\
         mpOpenAPI-4.0,\
+        mpOpenAPI-4.1,\
         mpOpenTracing-2.0,\
         mpRestClient-4.0,\
         mpTelemetry-1.1, \

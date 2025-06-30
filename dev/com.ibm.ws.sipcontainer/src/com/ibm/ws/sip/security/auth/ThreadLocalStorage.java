@@ -11,6 +11,7 @@ package com.ibm.ws.sip.security.auth;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  * @author Nitzan, May 27 2005
@@ -31,7 +32,7 @@ public class ThreadLocalStorage
 	private static MessageDigest createMsgDigest(){
 		MessageDigest digester = null;
 		try {
-			digester = MessageDigest.getInstance("MD5");
+			digester = MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
 			_msgDigest.set( digester);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();

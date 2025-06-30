@@ -56,6 +56,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
+import io.openliberty.data.internal.persistence.cdi.RepositoryProducer;
 import io.openliberty.data.internal.version.DataVersionCompatibility;
 import jakarta.data.Limit;
 import jakarta.data.Order;
@@ -186,7 +187,7 @@ public class QueryInfo {
 
     /**
      * For counting the total number of results across all pages.
-     * Null if pagination is not used or only slices are used.
+     * Null if pagination is not used or if pagination without totals is used.
      */
     String jpqlCount;
 
@@ -228,6 +229,11 @@ public class QueryInfo {
      * Null if the query return type limits to single results.
      */
     final Class<?> multiType;
+
+    /**
+     * Producer for the repository bean.
+     */
+    final RepositoryProducer<?> producer;
 
     /**
      * The interface that is annotated with @Repository.
@@ -302,6 +308,7 @@ public class QueryInfo {
     /**
      * Construct partially complete query information.
      *
+     * @param repositoryProducer  producer of the repository bean instance.
      * @param repositoryInterface interface annotated with @Repository.
      * @param method              repository method.
      * @param entityParamType     type of the first parameter if a life cycle method, otherwise null.
@@ -319,7 +326,8 @@ public class QueryInfo {
      *                                which resolves to { CompletionStage.class, Product[].class, Product.class }
      */
     @Trivial
-    public QueryInfo(Class<?> repositoryInterface,
+    public QueryInfo(RepositoryProducer<?> repositoryProducer,
+                     Class<?> repositoryInterface,
                      Method method,
                      Class<?> entityParamType,
                      Class<?> returnArrayType,
@@ -339,6 +347,7 @@ public class QueryInfo {
             Tr.entry(this, tc, "<init>", b.toString(), entityParamType, returnArrayType, returnTypeAtDepth);
         }
 
+        this.producer = repositoryProducer;
         this.repositoryInterface = repositoryInterface;
         this.method = method;
         this.entityParamType = entityParamType;
@@ -406,11 +415,15 @@ public class QueryInfo {
     /**
      * Construct partially complete query information.
      */
-    public QueryInfo(Class<?> repositoryInterface, Method method, Type type) {
+    public QueryInfo(RepositoryProducer<?> repositoryProducer,
+                     Class<?> repositoryInterface,
+                     Method method,
+                     Type type) {
         this.method = method;
         this.entityParamType = null;
         this.multiType = null;
         this.isOptional = false;
+        this.producer = repositoryProducer;
         this.repositoryInterface = repositoryInterface;
         this.returnArrayType = null;
         this.singleType = null;
@@ -443,6 +456,7 @@ public class QueryInfo {
         method = source.method;
         multiType = source.multiType;
         repositoryInterface = source.repositoryInterface;
+        producer = source.producer;
         returnArrayType = source.returnArrayType;
         singleType = source.singleType;
         singleTypeElementType = source.singleTypeElementType;
@@ -1202,7 +1216,7 @@ public class QueryInfo {
                           method.getName(),
                           repositoryInterface.getName(),
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
             else
                 throw exc(OptimisticLockingFailureException.class,
                           "CWWKD1052.multi.opt.lock.exc",
@@ -1211,7 +1225,7 @@ public class QueryInfo {
                           numExpected - updateCount,
                           numExpected,
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
 
         Object returnValue = toReturnValue(updateCount, method.getReturnType());
 
@@ -1319,7 +1333,7 @@ public class QueryInfo {
                           repositoryInterface.getName(),
                           e.getClass().getName(),
                           entityProps,
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
             }
         } else if (numDeleted > 1) {
             // ought to be unreachable
@@ -1611,10 +1625,9 @@ public class QueryInfo {
                    "CWWKD1011.unknown.method.pattern",
                    method.getName(),
                    repositoryInterface.getName(),
-                   List.of("Delete", "Find", "Insert",
-                           "Query", "Save", "Update"),
-                   List.of("Connection", "DataSource", "EntityManager"),
-                   List.of("count", "delete", "exists", "find"),
+                   Util.operationAnnoNames(producer),
+                   Util.resourceAccessorTypeNames(producer),
+                   Util.methodNamePrefixes(producer),
                    entityInfo.getExampleMethodNames());
     }
 
@@ -2236,7 +2249,7 @@ public class QueryInfo {
                       repositoryInterface.getName(),
                       e.getClass().getName(),
                       entityProps,
-                      Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                      Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
         }
 
         Object returnValue = em.merge(toEntity(e));
@@ -3437,7 +3450,7 @@ public class QueryInfo {
                     lowerName = lowerName.replace("_", "");
                     attributeName = entityInfo.attributeNames.get(lowerName);
                     if (attributeName == null && failIfNotFound) {
-                        if (Util.hasOperationAnno(method))
+                        if (Util.hasOperationAnno(method, producer))
                             throw exc(MappingException.class,
                                       "CWWKD1010.unknown.entity.attr",
                                       name,
@@ -3452,7 +3465,7 @@ public class QueryInfo {
                                       entityInfo.getType().getName(),
                                       method.getName(),
                                       repositoryInterface.getName(),
-                                      Util.OP_ANNOS,
+                                      Util.operationAnnoNames(producer),
                                       entityInfo.attributeTypes.keySet());
                     }
                 }
@@ -3958,16 +3971,21 @@ public class QueryInfo {
                 // The end of the SELECT clause is a FROM, WHERE, GROUP BY, HAVING, or ORDER BY clause, or the end of the query
             }
 
+            // track depth of parenthesis to ignore FROM within expressions, such as in
+            // SELECT EXTRACT(YEAR FROM colName) FROM EntityName
+            int depth = 0;
             boolean isEmbedded = false;
             boolean isLiteral = false;
             StringBuilder paramName = null;
             for (; startAt < length; startAt++) {
                 char ch = ql.charAt(startAt);
-                if (!isLiteral && (ch == ':' || ch == '.')) {
-                    if (ch == ':')
-                        paramName = new StringBuilder(30);
-                    else
-                        isEmbedded = true;
+                if (!isLiteral && (ch == ':' || ch == '.' || ch == '(' || ch == ')')) {
+                    switch (ch) {
+                        case ':' -> paramName = new StringBuilder(30);
+                        case '.' -> isEmbedded = true;
+                        case '(' -> depth++;
+                        case ')' -> depth = depth > 0 ? depth - 1 : 0;
+                    }
                 } else if (ch == '\'') {
                     if (isLiteral) {
                         if (startAt + 1 < length && ql.charAt(startAt + 1) == '\'')
@@ -3991,7 +4009,7 @@ public class QueryInfo {
                             paramName.append(ch);
                             startAt++;
                         }
-                    } else if (!isEmbedded && !isLiteral) {
+                    } else if (!isEmbedded && !isLiteral && depth == 0) {
                         int by;
                         if (from0 < 0 && where0 < 0 && length > startAt + 4
                             && ql.regionMatches(true, startAt, "FROM", 0, 4)
@@ -4991,27 +5009,26 @@ public class QueryInfo {
             for (int s = 0; s < sortPositions.length; s++) {
                 int p = sortPositions[s];
                 if (Order.class.equals(paramTypes[p]) ||
-                    Sort.class.equals(paramTypes[p]))
+                    Sort.class.equals(paramTypes[p]) ||
+                    Sort[].class.equals(paramTypes[p])) {
+                    String paramTypeName = Sort[].class.equals(paramTypes[p]) //
+                                    ? (Sort.class.getName() + "[]") //
+                                    : paramTypes[p].getName();
                     if (args[p] == null)
                         // BasicRepository.findAll(PageRequest, Order) requires
                         // NullPointerException when Order is null.
                         throw exc(NullPointerException.class,
                                   "CWWKD1087.null.param",
-                                  paramTypes[p].getName(),
+                                  paramTypeName,
                                   method.getName(),
                                   repositoryInterface.getName());
                     else
                         throw exc(IllegalArgumentException.class,
                                   "CWWKD1088.empty.sorts",
-                                  paramTypes[p].getName(),
+                                  paramTypeName,
                                   method.getName(),
                                   repositoryInterface.getName());
-                else if (Sort[].class.equals(paramTypes[p]))
-                    throw exc(IllegalArgumentException.class,
-                              "CWWKD1088.empty.sorts",
-                              Sort.class.getName() + "[]",
-                              method.getName(),
-                              repositoryInterface.getName());
+                }
             }
         }
 
@@ -5235,7 +5252,7 @@ public class QueryInfo {
                               method.getName(),
                               repositoryInterface.getName(),
                               entityName,
-                              List.of("Insert", "Save", "Update", "Delete"),
+                              Util.lifeCycleAnnoNames(producer),
                               ql);
             }
         } else {
@@ -5684,7 +5701,7 @@ public class QueryInfo {
                           method.getName(),
                           repositoryInterface.getName(),
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
             else
                 throw exc(OptimisticLockingFailureException.class,
                           "CWWKD1052.multi.opt.lock.exc",
@@ -5693,7 +5710,7 @@ public class QueryInfo {
                           numExpected - updateCount,
                           numExpected,
                           entityInfo.entityClass.getName(),
-                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES);
+                          Util.LIFE_CYCLE_METHODS_THAT_RETURN_ENTITIES_STATELESS);
 
         Object returnValue = toReturnValue(updateCount, method.getReturnType());
 

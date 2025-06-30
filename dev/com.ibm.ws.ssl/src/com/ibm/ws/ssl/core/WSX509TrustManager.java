@@ -439,7 +439,7 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
                     if (tc.isDebugEnabled())
                         Tr.debug(tc, "Adding alias \"" + alias + "\" to truststore \"" + tsFile + "\".");
                     wsks.setCertificateEntry(alias, chain[chain.length - 1]);
-                    String shaDigest = KeyStoreManager.getInstance().generateDigest("SHA-1", chain[chain.length - 1]);
+                    String shaDigest = KeyStoreManager.getInstance().generateDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1, chain[chain.length - 1]);
 
                     issueMessage("ssl.signer.add.to.local.truststore.CWPKI0308I", new Object[] { alias, tsFile, shaDigest }, "CWPKI0308I: Adding signer alias \"" + alias
                                                                                                                              + "\" to local keystore \"" + tsFile

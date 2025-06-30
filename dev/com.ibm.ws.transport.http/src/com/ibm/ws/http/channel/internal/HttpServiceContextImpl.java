@@ -2691,9 +2691,26 @@ public abstract class HttpServiceContextImpl implements HttpServiceContext, FFDC
         // check whether we need to pass data through the compression handler
         if (null != this.compressHandler) {
 
+            // Check if this is an SSE response
+            boolean isSSE = false;
+            if (msg.containsHeader(HttpHeaderKeys.HDR_CONTENT_TYPE)) {
+                String contentType = msg.getHeader(HttpHeaderKeys.HDR_CONTENT_TYPE).asString();
+                isSSE = contentType != null && contentType.toLowerCase().contains("text/event-stream");
+            }
+
             List<WsByteBuffer> list = this.compressHandler.compress(buffers);
             if (this.isFinalWrite) {
                 list.addAll(this.compressHandler.finish());
+            } else if (isSSE) {
+                // For SSE, explicitly flush after compression to ensure data is sent
+                // immediately
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Compressing an SSE event");
+                }
+                List<WsByteBuffer> flushedList = this.compressHandler.flush(this.isFinalWrite);
+                if (flushedList != null && !flushedList.isEmpty()) {
+                    list.addAll(flushedList);
+                }
             }
 
             // put any created buffers onto the release list

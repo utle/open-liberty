@@ -82,7 +82,10 @@ import com.ibm.ws.springboot.support.fat.utility.SpringBootUtilityThinTest;
                 JmsWebAppTests20.class,
                 JmsSpringBootAppTests20.class,
                 ConcurrencyAppTests20.class,
-                ConcurrencyAppTests20War.class
+                ConcurrencyAppTests20War.class,
+                ValidationTests20.class,
+                ValidationTests20War.class
+
 })
 
 public class FATSuite {

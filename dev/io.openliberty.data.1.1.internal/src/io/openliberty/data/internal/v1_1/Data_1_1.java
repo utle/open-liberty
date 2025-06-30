@@ -15,11 +15,14 @@ package io.openliberty.data.internal.v1_1;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.sql.DataSource;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -49,8 +52,14 @@ import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.exceptions.MappingException;
 import jakarta.data.page.PageRequest;
+import jakarta.data.repository.Delete;
 import jakarta.data.repository.Find;
+import jakarta.data.repository.Insert;
+import jakarta.data.repository.Query;
+import jakarta.data.repository.Save;
 import jakarta.data.repository.Select;
+import jakarta.data.repository.Update;
+import jakarta.persistence.EntityManager;
 
 /**
  * Capability that is specific to the version of Jakarta Data.
@@ -82,6 +91,63 @@ public class Data_1_1 implements DataVersionCompatibility {
         FUNCTION_CALLS.put(Extract.Field.YEAR.name(), "EXTRACT (YEAR FROM ");
     }
 
+    /**
+     * Annotations that represent lifecycle operations that are allowed for
+     * methods of a stateful repository.
+     */
+    private static final Set<Class<? extends Annotation>> LIFECYCLE_ANNOS_STATEFUL = //
+                    Set.of(); // TODO 1.1 Detach, Merge, Persist, Refresh, Remove
+
+    /**
+     * Annotations that represent lifecycle operations that are allowed for
+     * methods of a stateless repository.
+     */
+    private static final Set<Class<? extends Annotation>> LIFECYCLE_ANNOS_STATELESS = //
+                    Set.of(Delete.class,
+                           Insert.class,
+                           Update.class,
+                           Save.class);
+
+    /**
+     * Annotations that represent operations that are allowed for methods of a
+     * stateful repository.
+     */
+    private static final Set<Class<? extends Annotation>> OP_ANNOS_STATEFUL = //
+                    Set.of(Find.class,
+                           // TODO 1.1 Merge, Persist, ...
+                           Query.class);
+
+    /**
+     * Annotations that represent operations that are allowed for methods of a
+     * stateless repository.
+     */
+    private static final Set<Class<? extends Annotation>> OP_ANNOS_STATELESS = //
+                    Set.of(Delete.class,
+                           Find.class,
+                           Insert.class,
+                           Query.class,
+                           Save.class,
+                           Update.class);
+
+    /**
+     * Classes that are valid as return types of resource accessor methods for a
+     * stateful repository.
+     */
+    private static final Set<Class<?>> RESOURCE_ACCESSOR_CLASSES_STATEFUL = //
+                    Set.of(Connection.class,
+                           DataSource.class,
+                           EntityManager.class);
+
+    /**
+     * Classes that are valid as return types of resource accessor methods for a
+     * stateless repository.
+     */
+    private static final Set<Class<?>> RESOURCE_ACCESSOR_CLASSES_STATELESS = //
+                    RESOURCE_ACCESSOR_CLASSES_STATEFUL; // TODO 1.1 entity agent
+
+    /**
+     * Types that are valid as repository method special parameters.
+     */
     private static final Set<Class<?>> SPECIAL_PARAM_TYPES = //
                     Set.of(Limit.class, Order.class,
                            Sort.class, Sort[].class,
@@ -351,6 +417,25 @@ public class Data_1_1 implements DataVersionCompatibility {
             if (anno instanceof Or)
                 return true;
         return false;
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<? extends Annotation>> lifeCycleAnnoTypes(boolean stateful) {
+        return stateful ? LIFECYCLE_ANNOS_STATEFUL : LIFECYCLE_ANNOS_STATELESS;
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<? extends Annotation>> operationAnnoTypes(boolean stateful) {
+        return stateful ? OP_ANNOS_STATEFUL : OP_ANNOS_STATELESS;
+    }
+
+    @Override
+    @Trivial
+    public Set<Class<?>> resourceAccessorTypes(boolean stateful) {
+        return stateful ? RESOURCE_ACCESSOR_CLASSES_STATEFUL //
+                        : RESOURCE_ACCESSOR_CLASSES_STATELESS;
     }
 
     @Override

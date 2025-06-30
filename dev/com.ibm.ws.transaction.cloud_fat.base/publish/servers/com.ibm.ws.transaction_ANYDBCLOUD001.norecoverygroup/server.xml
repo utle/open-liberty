@@ -1,6 +1,5 @@
 <server>
   <transaction
-    dataSourceRef="tranlogDataSource"
     heuristicRetryInterval="10"
     recoverOnStartup="true"
     waitForRecovery="true"

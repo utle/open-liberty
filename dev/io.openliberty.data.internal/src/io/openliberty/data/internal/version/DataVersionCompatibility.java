@@ -132,6 +132,34 @@ public interface DataVersionCompatibility {
     boolean hasOrAnnotation(Annotation[] annos);
 
     /**
+     * Returns the repository method annotations that represent life cycle
+     * operations (such as Delete and Insert) for either a stateful or
+     * stateless repository, depending on the parameter.
+     *
+     * @param stateful true for a stateful repository; false for stateless.
+     * @return the annotation classes.
+     */
+    Set<Class<? extends Annotation>> lifeCycleAnnoTypes(boolean stateful);
+
+    /**
+     * Returns the repository method annotations that represent operations
+     * (such as Find and Delete, but not OrderBy) for either a stateful or
+     * stateless repository, depending on the parameter.
+     *
+     * @param stateful true for a stateful repository; false for stateless.
+     * @return the annotation classes.
+     */
+    Set<Class<? extends Annotation>> operationAnnoTypes(boolean stateful);
+
+    /**
+     * List of valid return types for resource accessor methods.
+     *
+     * @param stateful true for a stateful repository; false for stateless.
+     * @return valid return types.
+     */
+    Set<Class<?>> resourceAccessorTypes(boolean stateful);
+
+    /**
      * Returns the names of special parameter types that are valid for repository
      * find operations.
      *

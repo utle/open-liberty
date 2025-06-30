@@ -14,7 +14,11 @@
 bVersion: 1.0
 
 #Common Versions
-testContainerVersion: 1.20.3
+# NOTE: previous update of docker-java above 3.4.0 caused
+# errors on our AIX systems. When updating this in the 
+# future make sure to run a personal AIX SOE build.
+# Likely due to update: https://github.com/docker-java/docker-java/pull/2364
+testContainerVersion: 1.21.0
 dockerJavaVersion: 3.4.0
 
 Bundle-Name: FAT Testcontainer Bundle

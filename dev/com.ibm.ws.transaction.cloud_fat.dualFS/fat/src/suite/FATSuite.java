@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -17,8 +17,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.ibm.ws.transaction.fat.util.TxTestContainerSuite;
-
 import componenttest.rules.repeater.FeatureReplacementAction;
 import componenttest.rules.repeater.RepeatTests;
 import tests.DualServerDynamicFSTest1;
@@ -29,7 +27,7 @@ import tests.DualServerDynamicFSTest2;
                 DualServerDynamicFSTest1.class,
                 DualServerDynamicFSTest2.class,
 })
-public class FATSuite extends TxTestContainerSuite {
+public class FATSuite {
     @ClassRule
     public static RepeatTests r = RepeatTests.withoutModificationInFullMode()
                     .andWith(FeatureReplacementAction.EE8_FEATURES().fullFATOnly().forServers(DualServerDynamicFSTest1.serverNames))
@@ -37,10 +35,4 @@ public class FATSuite extends TxTestContainerSuite {
                                     .conditionalFullFATOnly(FeatureReplacementAction.GREATER_THAN_OR_EQUAL_JAVA_11)
                                     .forServers(DualServerDynamicFSTest1.serverNames))
                     .andWith(FeatureReplacementAction.EE10_FEATURES().forServers(DualServerDynamicFSTest1.serverNames));
-
-    public static void beforeSuite() throws Exception {
-    }
-
-    public static void afterSuite() {
-    }
 }

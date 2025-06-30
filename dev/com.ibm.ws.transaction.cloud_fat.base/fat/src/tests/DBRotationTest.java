@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,9 +70,6 @@ public class DBRotationTest extends CloudFATServletClient {
     @Server("com.ibm.ws.transaction_ANYDBCLOUD001.shortlease")
     public static LibertyServer shortLeaseServer1;
 
-    @Server("com.ibm.ws.transaction_ANYDBCLOUD002.shortlease")
-    public static LibertyServer shortLeaseServer2;
-
     @Server("com.ibm.ws.transaction_ANYDBCLOUD001.norecoverygroup")
     public static LibertyServer noRecoveryGroupServer1;
 
@@ -105,7 +101,6 @@ public class DBRotationTest extends CloudFATServletClient {
                                                         "com.ibm.ws.transaction_ANYDBCLOUD001.noShutdown",
                                                         "com.ibm.ws.transaction_ANYDBCLOUD001.shortlease",
                                                         "com.ibm.ws.transaction_ANYDBCLOUD001.norecoverygroup",
-                                                        "com.ibm.ws.transaction_ANYDBCLOUD002.shortlease",
                                                         "com.ibm.ws.transaction_ANYDBCLOUD002.fastcheck",
                                                         "com.ibm.ws.transaction_ANYDBCLOUD001.longleaseA",
                                                         "com.ibm.ws.transaction_ANYDBCLOUD001.longleaseB",
@@ -135,7 +130,6 @@ public class DBRotationTest extends CloudFATServletClient {
         ShrinkHelper.exportAppToServer(server2, app, dO);
         ShrinkHelper.exportAppToServer(longLeaseCompeteServer1, app, dO);
         ShrinkHelper.exportAppToServer(shortLeaseServer1, app, dO);
-        ShrinkHelper.exportAppToServer(shortLeaseServer2, app, dO);
         ShrinkHelper.exportAppToServer(noRecoveryGroupServer1, app, dO);
         ShrinkHelper.exportAppToServer(peerPrecedenceServer1, app, dO);
         ShrinkHelper.exportAppToServer(longLeaseLogFailServer1, app, dO);
@@ -149,16 +143,9 @@ public class DBRotationTest extends CloudFATServletClient {
         server.addEnvVar("DB_DRIVER", DatabaseContainerType.valueOf(testContainer).getDriverName());
 
         //Setup server DataSource properties
-        DatabaseContainerUtil.setupDataSourceDatabaseProperties(server, testContainer);
+        DatabaseContainerUtil.build(server, testContainer).withDatabaseProperties().modify();
 
         server.setServerStartTimeout(FATUtils.LOG_SEARCH_TIMEOUT);
-    }
-
-    @AfterClass
-    public static void teardown() throws Exception {
-        if (!isDerby()) {
-            dropTables();
-        }
     }
 
     /**
@@ -170,17 +157,12 @@ public class DBRotationTest extends CloudFATServletClient {
      */
     @Test
     public void testLeaseTableAccess() throws Exception {
-        final String method = "testLeaseTableAccess";
-        StringBuilder sb = null;
-        String id = "001";
 
         serversToCleanup = Arrays.asList(server1);
 
         FATUtils.startServers(_runner, server1);
 
-        sb = runTestWithResponse(server1, SERVLET_NAME, "testLeaseTableAccess");
-
-        Log.info(c, method, "testLeaseTableAccess" + id + " returned: " + sb);
+        runTest(server1, SERVLET_NAME, "testLeaseTableAccess");
     }
 
     /**
@@ -247,6 +229,9 @@ public class DBRotationTest extends CloudFATServletClient {
         }
 
         assertNotNull(server1.getServerName() + " didn't crash properly", server1.waitForStringInLog(XAResourceImpl.DUMP_STATE));
+
+        // server1 is down. This will stop an attempt to stop it again after test completion.
+        server1.resetStarted();
 
         // Now start server2
         server2.setHttpDefaultPort(cloud2ServerPort);
@@ -406,6 +391,7 @@ public class DBRotationTest extends CloudFATServletClient {
 
             // Check that server1 is dead
             assertNotNull(longLeaseLogFailServer1.getServerName() + " did not shutdown", longLeaseLogFailServer1.waitForStringInLog("CWWKE0036I", FATUtils.LOG_SEARCH_TIMEOUT));
+            longLeaseLogFailServer1.resetStarted();
         }
     }
 
@@ -496,6 +482,7 @@ public class DBRotationTest extends CloudFATServletClient {
 
             assertNotNull(server2.getServerName() + " should have stopped",
                           server2.waitForStringInLog("CWWKE0036I: The server com.ibm.ws.transaction_ANYDBCLOUD002 stopped", FATUtils.LOG_SEARCH_TIMEOUT));
+            server2.resetStarted();
         }
     }
 
@@ -528,6 +515,7 @@ public class DBRotationTest extends CloudFATServletClient {
 
                 assertNotNull(server2.getServerName() + " should have stopped",
                               server2.waitForStringInLog("CWWKE0036I: The server com.ibm.ws.transaction_ANYDBCLOUD002 stopped", FATUtils.LOG_SEARCH_TIMEOUT));
+                server2.resetStarted();
             }
         }
     }

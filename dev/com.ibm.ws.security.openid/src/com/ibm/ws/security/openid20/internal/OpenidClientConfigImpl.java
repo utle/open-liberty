@@ -32,6 +32,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.security.openid20.OpenidClientConfig;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.kernel.service.utils.FilterUtils;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  * Process the openID entry in the server.xml file
@@ -83,8 +84,8 @@ public class OpenidClientConfigImpl implements OpenidClientConfig {
     public static final String SIGNATURE_HMAC_SHA1 = "HMAC-SHA1";
     public static final String SIGNATURE_HMAC_SHA256 = "HMAC-SHA256";
 
-    public static final String HASH_ALG_SHA1 = "SHA1";
-    public static final String HASH_ALG_SHA256 = "SHA256";
+    public static final String HASH_ALG_SHA1 = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA1;
+    public static final String HASH_ALG_SHA256 = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256;
 
     public static final String KEY_CONFIGURATION_ADMIN = "configurationAdmin";
 

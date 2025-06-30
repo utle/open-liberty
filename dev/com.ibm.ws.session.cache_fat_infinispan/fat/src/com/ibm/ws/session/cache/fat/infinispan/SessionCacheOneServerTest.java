@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 IBM Corporation and others.
+ * Copyright (c) 2018, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -78,6 +78,8 @@ public class SessionCacheOneServerTest extends FATServletClient {
     @AfterClass
     public static void tearDown() throws Exception {
         executor.shutdownNow();
+        Log.info(SessionCacheOneServerTest.class, "tearDown", "Wait for active tasks to stop...");
+        TimeUnit.SECONDS.sleep(5);
         server.stopServer();
 
         if (isZOS()) {

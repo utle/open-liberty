@@ -13,10 +13,27 @@ package com.ibm.ws.springboot.support.fat;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
+import com.ibm.websphere.simplicity.config.ManagedExecutorService;
+import com.ibm.websphere.simplicity.config.ManagedScheduledExecutorService;
+import com.ibm.websphere.simplicity.config.ServerConfiguration;
+
 import componenttest.custom.junit.runner.FATRunner;
 
 @RunWith(FATRunner.class)
 public abstract class ConcurrencyAppAbstractTests extends AbstractSpringTests {
+
+    @Override
+    public void modifyServerConfiguration(ServerConfiguration config) {
+
+        ManagedExecutorService executorService = new ManagedExecutorService();
+        executorService.setJndiName("taskExecutor1");
+        config.getManagedExecutorServices().add(executorService);
+
+        ManagedScheduledExecutorService scheduledExecutorService = new ManagedScheduledExecutorService();
+        scheduledExecutorService.setJndiName("taskScheduler1");
+        config.getManagedScheduledExecutorServices().add(scheduledExecutorService);
+
+    }
 
     @Before
     public void setDefaultPort() {

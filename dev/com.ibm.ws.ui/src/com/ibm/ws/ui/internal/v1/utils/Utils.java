@@ -27,6 +27,7 @@ import com.google.gson.Gson;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
+import com.ibm.ws.common.crypto.CryptoUtils;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 import com.ibm.wsspi.rest.handler.RESTRequest;
 
@@ -39,7 +40,7 @@ public class Utils {
 
     static {
         try {
-            messagedigest = MessageDigest.getInstance("MD5");
+            messagedigest = CryptoUtils.isFips140_3EnabledWithBetaGuard() ? MessageDigest.getInstance("SHA-256") : MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
         } catch (NoSuchAlgorithmException e) {
             //should not happen
             throw new RuntimeException(e);

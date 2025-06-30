@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -87,7 +87,6 @@ public class JavaInfo {
         return fromPath(clientJava);
     }
 
-
     /**
      * The java.vendor of the JDK. Note that Sun and Oracle JDKs are considered to be the same.
      */
@@ -105,9 +104,10 @@ public class JavaInfo {
     final Vendor VENDOR;
     final int SERVICE_RELEASE;
     final int FIXPACK;
+    final String RUNTIME_NAME;
     Optional<Boolean> criuSupported = Optional.empty();
 
-    private JavaInfo(String jdk_home, int major, int minor, int micro, Vendor v, int sr, int fp) {
+    private JavaInfo(String jdk_home, int major, int minor, int micro, Vendor v, int sr, int fp, String runtime_name) {
         JAVA_HOME = jdk_home;
         MAJOR = major;
         MINOR = minor;
@@ -115,6 +115,7 @@ public class JavaInfo {
         VENDOR = v;
         SERVICE_RELEASE = sr;
         FIXPACK = fp;
+        RUNTIME_NAME = runtime_name;
 
         Log.info(c, "<init>", this.toString());
     }
@@ -191,6 +192,8 @@ public class JavaInfo {
             }
         }
         FIXPACK = fp;
+
+        RUNTIME_NAME = System.getProperty("java.runtime.name");
 
         Log.info(c, "<init>", this.toString());
     }
@@ -275,6 +278,10 @@ public class JavaInfo {
 
     public int fixpack() {
         return FIXPACK;
+    }
+
+    public String runtimeName() {
+        return RUNTIME_NAME;
     }
 
     /**
@@ -425,7 +432,9 @@ public class JavaInfo {
             }
         }
 
-        return new JavaInfo(javaHome, major, minor, micro, v, sr, fp);
+        String runtimeName = buildInfo.trim();
+
+        return new JavaInfo(javaHome, major, minor, micro, v, sr, fp, runtimeName);
     }
 
     @Override

@@ -33,6 +33,7 @@ import com.ibm.ws.common.encoder.Base64Coder;
 import com.ibm.ws.xml.ParserFactory;
 import com.ibm.ws.cache.intf.DCache;
 import com.ibm.ws.cache.ServerCache;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class WebServicesCacheProcessor extends FragmentCacheProcessor {
    protected static TraceComponent tc = Tr.register(WebServicesCacheProcessor.class, "WebSphere Dynamic Cache", "com.ibm.ws.cache.resources.dynacache");
@@ -218,7 +219,7 @@ public class WebServicesCacheProcessor extends FragmentCacheProcessor {
                // else if(c.id.equalsIgnoreCase(HASH)){
                else { //default is hash value.
                   if (md == null)
-                     md = MessageDigest.getInstance("SHA");
+                     md = MessageDigest.getInstance(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA);
                   byte[] reqHash = md.digest(reqContent);
                   return Base64Coder.encode(reqHash);
                }

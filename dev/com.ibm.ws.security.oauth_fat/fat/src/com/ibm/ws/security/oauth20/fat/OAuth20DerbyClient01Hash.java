@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
+ *
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
@@ -56,6 +56,8 @@ public class OAuth20DerbyClient01Hash extends OAuth20Client01Common {
     @AllowedFFDC({ "java.sql.SQLRecoverableException" })
     public void testOAuthDerbyCodeFlow() throws Exception {
         super.testOAuthDerbyCodeFlow();
+        boolean isFips = server.isFIPS140_3EnabledAndSupported();
+        String iterations = isFips ? "210000" : "2048";
 
         String msg = checkDerbyEntry("http://" + server.getHostname() + ":" + server.getHttpDefaultPort(), server.getHttpDefaultPort(), "dclient01", "OAuthConfigDerby");
         assertNotNull("Servlet should have returned a secret type", msg);
@@ -63,7 +65,7 @@ public class OAuth20DerbyClient01Hash extends OAuth20Client01Common {
 
         msg = checkDerbyIteration("http://" + server.getHostname() + ":" + server.getHttpDefaultPort(), server.getHttpDefaultPort(), "dclient01", "OAuthConfigDerby");
         assertNotNull("Servlet should have returned an iteration type for " + clientID, msg);
-        assertEquals("Iteration is incorrect in the database for client " + clientID, "2048", msg);
+        assertEquals("Iteration is incorrect in the database for client " + clientID, iterations, msg);
 
         msg = checkDerbyAlgorithm("http://" + server.getHostname() + ":" + server.getHttpDefaultPort(), server.getHttpDefaultPort(), "dclient01", "OAuthConfigDerby");
         assertNotNull("Servlet should have returned an algorithm type for " + clientID, msg);
@@ -74,3 +76,4 @@ public class OAuth20DerbyClient01Hash extends OAuth20Client01Common {
     }
 
 }
+

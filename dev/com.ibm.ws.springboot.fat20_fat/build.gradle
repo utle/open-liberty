@@ -65,8 +65,9 @@ def appDefs =
     [ 'com.ibm.ws.springboot.fat20.transactions.app', '.war' ],
     [ 'com.ibm.ws.springboot.fat20.data.app', '.war' ],
     [ 'com.ibm.ws.springboot.fat20.jms.app', '.war' ],
-    [ 'com.ibm.ws.springboot.fat20.data.app', '.war' ], 
-    [ 'com.ibm.ws.springboot.fat20.concurrency.app', '.war' ] ]
+    [ 'com.ibm.ws.springboot.fat20.data.app', '.war' ],
+    [ 'com.ibm.ws.springboot.fat20.concurrency.app', '.war' ],
+    [ 'com.ibm.ws.springboot.fat20.validation.app', '.war' ] ]
 
 autoFVT.dependsOn ':wlp.lib.extract:build'
 appDefs.each { appDef ->

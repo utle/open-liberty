@@ -31,6 +31,7 @@ import com.ibm.websphere.simplicity.config.IncludeElement;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 
 import componenttest.annotation.MinimumJavaLevel;
+import componenttest.annotation.SkipIfSysProp;
 import componenttest.containers.SimpleLogConsumer;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.utils.HttpUtils;
@@ -38,11 +39,13 @@ import componenttest.topology.utils.HttpUtils.HTTPRequestMethod;
 
 @RunWith(FATRunner.class)
 @MinimumJavaLevel(javaLevel = 17)
+@SkipIfSysProp(SkipIfSysProp.OS_ZOS)
 public abstract class JmsAbstractTests extends AbstractSpringTests {
 
     private static final String mqVersion = "9.3.2.0-r2";
     private static final int MQ_LISTENER_PORT = 1414;
 
+    @SuppressWarnings("resource")
     @ClassRule
     public static GenericContainer<?> container = new GenericContainer<>("icr.io/ibm-messaging/mq:" + mqVersion)
                     .withExposedPorts(MQ_LISTENER_PORT)

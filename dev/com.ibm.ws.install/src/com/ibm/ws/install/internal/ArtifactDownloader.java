@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import com.ibm.ws.install.InstallConstants.VerifyOption;
 import com.ibm.ws.install.InstallException;
 import com.ibm.ws.install.internal.InstallLogUtils.Messages;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class ArtifactDownloader implements AutoCloseable {
 
@@ -206,9 +207,9 @@ public class ArtifactDownloader implements AutoCloseable {
 
         String[] checksumFormats = new String[3];
 
-        checksumFormats[0] = "MD5";
-        checksumFormats[1] = "SHA1";
-        checksumFormats[2] = "SHA256";
+        checksumFormats[0] = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5;
+        checksumFormats[1] = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA1;
+        checksumFormats[2] = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256;
 
         dLocation = FormatPathSuffix(dLocation);
         String repo = FormatUrlSuffix(repository.getRepositoryUrl());

@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2024 Red Hat, Inc., and individual contributors
+ * Copyright 2024, 2025 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,7 +41,6 @@ import org.jboss.resteasy.microprofile.client.DefaultMediaTypeFilter;
 import org.jboss.resteasy.microprofile.client.DefaultResponseExceptionMapper;
 import org.jboss.resteasy.microprofile.client.ExceptionMapping;
 import org.jboss.resteasy.microprofile.client.MethodInjectionFilter;
-import org.jboss.resteasy.microprofile.client.ProxyInvocationHandler;
 import org.jboss.resteasy.microprofile.client.RestClientBuilderImpl;
 import org.jboss.resteasy.microprofile.client.RestClientListeners;
 import org.jboss.resteasy.microprofile.client.RestClientProxy;
@@ -58,6 +57,7 @@ import org.jboss.resteasy.spi.ResteasyUriBuilder;
 
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
 
+import io.openliberty.microprofile.rest.client40.internal.LibertyProxyClassLoader;
 import io.openliberty.microprofile.rest.client40.internal.OsgiServices;
 import io.openliberty.restfulWS.client.AsyncClientExecutorService;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -109,7 +109,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -140,12 +139,23 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     public static final ClientHeadersRequestFilter HEADERS_REQUEST_FILTER = new ClientHeadersRequestFilter();
 
     private static final Class<?> FT_ANNO_CLASS = getFTAnnotationClass(); // Liberty Change
+    private static final ClassLoader thisClassLoader; // Liberty Change 
+    private final LibertyProxyClassLoader myClassLoader; // Liberty change
 
     static ResteasyProviderFactory PROVIDER_FACTORY;
     
     static {
         Collections.addAll(IGNORED_METHODS, Closeable.class.getMethods());
         Collections.addAll(IGNORED_METHODS, AutoCloseable.class.getMethods());
+        
+        // Liberty Change Start
+        thisClassLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return LibertyRestClientBuilderImpl.class.getClassLoader();
+            }
+        });
+        // Liberty Change End
     }
 
     public static void setProviderFactory(ResteasyProviderFactory providerFactory) {
@@ -173,6 +183,15 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     // Liberty Change End
 
     public LibertyRestClientBuilderImpl() { // Liberty Change
+        // Liberty Change Start
+        myClassLoader = AccessController.doPrivileged(new PrivilegedAction<LibertyProxyClassLoader>() {
+            @Override
+            public LibertyProxyClassLoader run() {
+                return new LibertyProxyClassLoader(thisClassLoader);
+            }
+        });
+        // Liberty Change End
+        
         builderDelegate = new MpClientBuilderImpl();
 
         if (PROVIDER_FACTORY != null) {
@@ -476,7 +495,7 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
         final BeanManager beanManager = getBeanManager();
         Map<Method, List<InterceptorInvoker>> interceptorInvokers = initInterceptorInvokers(beanManager, aClass); // Liberty Change
         T proxy = (T) Proxy.newProxyInstance(classLoader, interfaces,
-                new LibertyProxyInvocationHandler(aClass, actualClient, getLocalProviderInstances(), client, beanManager, interceptorInvokers)); // Liberty Change
+                new LibertyProxyInvocationHandler(aClass, actualClient, getLocalProviderInstances(), client, beanManager, interceptorInvokers, classLoader)); // Liberty Change
         ClientHeaderProviders.registerForClass(aClass, proxy, beanManager);
         return proxy;
         // Liberty Change End
@@ -942,12 +961,21 @@ public class LibertyRestClientBuilderImpl implements RestClientBuilder {
     }
 
     // Liberty Change Start
-    private static ClassLoader getClassLoader(Class<?> clazz) {
+    private ClassLoader getClassLoader(Class<?> clazz) {
+        ClassLoader clazzLoader = null;
         if (System.getSecurityManager() == null) {
-            return clazz.getClassLoader();
+            clazzLoader = clazz.getClassLoader();
+        } else {
+            clazzLoader = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader);
         }
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) clazz::getClassLoader);
+        
+        if (clazzLoader != thisClassLoader) {
+            myClassLoader.addLoader(clazzLoader);
+        }
+        
+        return myClassLoader;
     }
+    // Liberty Change End
 
     private static Map<Method, List<InterceptorInvoker>> initInterceptorInvokers(BeanManager beanManager,
                                                                                  Class<?> restClient) {

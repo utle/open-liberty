@@ -33,6 +33,7 @@ import com.ibm.ws.security.common.encoding.EncodingUtils;
 import com.ibm.ws.security.social.SocialLoginConfig;
 import com.ibm.ws.security.social.TraceConstants;
 import com.ibm.ws.security.social.error.SocialLoginException;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class TAIEncryptionUtils {
 
@@ -247,7 +248,7 @@ public class TAIEncryptionUtils {
         if (clientSecret == null) {
             return null;
         }
-        MessageDigest md = getMessageDigest("SHA-256");
+        MessageDigest md = getMessageDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256);
         if (md == null) {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "The secret key and initialization vector couldn't be initialized because a MessageDigest could not be created");

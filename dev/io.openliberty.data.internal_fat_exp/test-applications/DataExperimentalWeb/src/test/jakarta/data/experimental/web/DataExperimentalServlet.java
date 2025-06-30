@@ -199,6 +199,13 @@ public class DataExperimentalServlet extends FATServlet {
      */
     @Test
     public void testCharSequence() {
+        // We once saw EclipseLink fail here when running locally with the error
+        // java.sql.SQLSyntaxErrorException: Table/View 'YEARLYTOTAL' does not exist.
+        // Error Code: 20000 Call: DELETE FROM YearlyTotal
+        // Query: DeleteAllQuery(referenceClass=YearlyTotal sql="DELETE FROM YearlyTotal")
+        // but it did not reproduce. If it ever occurs again, collect the logs and
+        // report an issue to EclipseLink or the Persistence Service for it.
+        yearlyTotals.erase();
 
         yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
                                             MonthDay.of(Month.JANUARY, 1),
@@ -794,6 +801,13 @@ public class DataExperimentalServlet extends FATServlet {
      */
     @Test
     public void testPartialDates() {
+        // We once saw EclipseLink fail here when running locally with the error
+        // java.sql.SQLSyntaxErrorException: Table/View 'YEARLYTOTAL' does not exist.
+        // Error Code: 20000 Call: DELETE FROM YearlyTotal
+        // Query: DeleteAllQuery(referenceClass=YearlyTotal sql="DELETE FROM YearlyTotal")
+        // but it did not reproduce. If it ever occurs again, collect the logs and
+        // report an issue to EclipseLink or the Persistence Service for it.
+        yearlyTotals.erase();
 
         yearlyTotals.publish(YearlyTotal.of(Year.of(2025),
                                             MonthDay.of(Month.JUNE, 15),

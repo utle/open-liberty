@@ -45,6 +45,7 @@ import com.ibm.ws.security.oauth20.util.MediaRange;
 import com.ibm.ws.security.oauth20.util.OIDCConstants;
 import com.ibm.ws.security.oauth20.util.OidcOAuth20Util;
 import com.ibm.ws.security.oauth20.util.StringUtil;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  *
@@ -88,7 +89,9 @@ public abstract class AbstractOidcEndpointServices {
     protected static final String HTTP_METHOD_PUT = "PUT";
     protected static final String HTTP_METHOD_DELETE = "DELETE";
 
-    protected static final String ALG_MD5 = "MD5";
+    protected static final String ALG_MD5 = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5;
+    protected static final String ALG_SHA256 = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256;
+
 
     private static TraceComponent tc = Tr.register(AbstractOidcEndpointServices.class);
 

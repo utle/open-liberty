@@ -66,6 +66,7 @@ public abstract class AbstractSpringTests extends TestContainerSuite {
     public static final String SPRING_BOOT_30_APP_DATA = "io.openliberty.springboot.fat30.data.app-0.0.1-SNAPSHOT.war";
     public static final String SPRING_BOOT_30_APP_JMS = "io.openliberty.springboot.fat30.jms.app-0.0.1-SNAPSHOT.war";
     public static final String SPRING_BOOT_30_APP_CONCURRENCY = "io.openliberty.springboot.fat30.concurrency.app-0.0.1-SNAPSHOT.war";
+    public static final String SPRING_BOOT_30_APP_VALIDATION = "io.openliberty.springboot.fat30.validation.app-0.0.1-SNAPSHOT.war";
 
     // Various spring configuration property fragments.
     public static final String ID_VIRTUAL_HOST = "springBootVirtualHost-";

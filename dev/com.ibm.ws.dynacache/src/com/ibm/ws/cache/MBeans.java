@@ -83,7 +83,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.cache.intf.DCache;
 import com.ibm.ws.cache.util.MessageDigestUtility;
 import com.ibm.wsspi.cache.CacheStatistics;
-
+import com.ibm.ws.common.crypto.CryptoUtils;
 /**
  * All public methods in this class are exposed as runtime operations on the
  * Dynacache mbean.
@@ -653,7 +653,7 @@ public class MBeans extends StandardMBean implements CacheAdmin {
     private void getMessageDigestMD5() throws AttributeNotFoundException {
         if (MBeans.messageDigestMD5 == null) {
             try {
-                MBeans.messageDigestMD5 = MessageDigestUtility.createMessageDigest("MD5");
+                MBeans.messageDigestMD5 = MessageDigestUtility.createMessageDigest(CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5);
             } catch (NoSuchAlgorithmException e) {
                 Tr.error(tc, "DYNA1044E", new Object[] { e.getMessage() });
                 throw new AttributeNotFoundException("Message digest for MD5 is not available. " + e.getMessage());

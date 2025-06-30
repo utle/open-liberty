@@ -13,6 +13,7 @@
 package com.ibm.ws.wssecurity.internal;
 
 import java.util.ResourceBundle;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 public class WSSecurityConstants {
 
@@ -87,5 +88,5 @@ public class WSSecurityConstants {
     public static final String KEY_timeToLive = "timeToLive";
     public static final String KEY_audienceRestrictions = "audienceRestrictions";
 
-    public static final String WSSEC_DEFAULT_SIGNATURE_ALGORITHM = "SHA1";
+    public static final String WSSEC_DEFAULT_SIGNATURE_ALGORITHM = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA1;
 }

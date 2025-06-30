@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +31,8 @@ public class MyScheduledTask {
 
 	private final ConcurrencyTasks concurrencyTasks;
 	private final CountDownLatch latch = new CountDownLatch(5);
-	private final AtomicBoolean testedAsyncMethods = new AtomicBoolean();
+	private final AtomicBoolean testedAsync1and2Methods = new AtomicBoolean();
+	private final AtomicBoolean testedAsync3Methods = new AtomicBoolean();
 
 	public MyScheduledTask(ConcurrencyTasks concurrencyTasks) {
 		this.concurrencyTasks = concurrencyTasks;;
@@ -42,10 +44,16 @@ public class MyScheduledTask {
 
 		AppRunner.assertManagedThread("ScheduledTask");
 
-		assertAsyncMethod("ScheduledTask");
+		assertAsyncTask1and2Method("ScheduledTask");
 
 		logger.info("Task count" + latch.getCount() + " executed at: " + new java.util.Date());
 		this.latch.countDown();
+	}
+	
+	@Scheduled(fixedRate = 3000)
+	public void scheduledTask2() throws InterruptedException, Throwable {
+		
+		assertAsyncTask3Method("ScheduledTask2");
 	}
 
 	@Async
@@ -71,8 +79,8 @@ public class MyScheduledTask {
 		return true;
 	}
 
-	public void assertAsyncMethod(String message) throws Exception {
-		if (!testedAsyncMethods.compareAndSet(false, true)) {
+	public void assertAsyncTask1and2Method(String message) throws Exception {
+		if (!testedAsync1and2Methods.compareAndSet(false, true)) {
 			return;
 		}
 		concurrencyTasks.task1("Assert Async Method").whenComplete((r, e) -> {
@@ -96,6 +104,23 @@ public class MyScheduledTask {
 				return;
 			}
 			logger.info(message + " Async task 2: ASSERT ASYNC METHOD VERIFICATION PASSED");
+		});
+	}
+	
+	public void assertAsyncTask3Method(String message) throws Exception {
+		if (!testedAsync3Methods.compareAndSet(false, true)) {
+			return;
+		}
+		concurrencyTasks.task3("Assert Async Method").whenComplete((r, e) -> {
+			if (e != null) {
+				logger.error("Async Task 3 exception", e);
+				return;
+			}
+			if (r == null) {
+				logger.error("Async Task 3 failed", e);
+				return;
+			}
+			logger.info(message + " Async task 3: ASSERT ASYNC METHOD VERIFICATION PASSED");
 		});
 	}
 }

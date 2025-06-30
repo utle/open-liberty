@@ -45,6 +45,11 @@ public class ConcurrencyAppTests30War extends ConcurrencyAppAbstractTests {
     }
 
     @Test
+    public void testConcurrencyScheduledTask5() throws Exception {
+        assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("ScheduledTask2 Async task 3: ASSERT ASYNC METHOD VERIFICATION PASSED"));
+    }
+
+    @Test
     public void testConcurrencyAssertAsyncMethod1() throws Exception {
         assertNotNull("Did not find TESTS PASSED messages", server.waitForStringInLog("Assert Async Method: Async Task 1: MANAGED THREAD VERIFICATION PASSED"));
     }

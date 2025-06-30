@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 IBM Corporation and others.
+ * Copyright (c) 2017, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -60,14 +60,14 @@ public class TxTestUtils {
 
     // This is an environment variable which should take the form 1,2,6
     // That would make connections 1,2 & 6 fail.
-	public static final String CONNECTION_MANAGER_FAILS = "CONNECTION_MANAGER_FAILS";
+    public static final String CONNECTION_MANAGER_FAILS = "CONNECTION_MANAGER_FAILS";
 
     /**
      * Message written to servlet to indicate that is has been successfully invoked.
      */
     public static final String SUCCESS_MESSAGE = "COMPLETED SUCCESSFULLY";
 
-	private static int connectCount;
+    private static int connectCount;
 
     public static String printStatus(int status) {
         switch (status) {
@@ -94,7 +94,7 @@ public class TxTestUtils {
         }
     }
 
-	public static void scupperConnection() throws SQLException {
+    public static void scupperConnection() throws SQLException {
 
         String fails = System.getenv(CONNECTION_MANAGER_FAILS);
         System.out.println("SIMHADB: getDriverConnection: " + CONNECTION_MANAGER_FAILS + "=" + fails);
@@ -114,29 +114,35 @@ public class TxTestUtils {
             System.out.println("SIMHADB: getDriverConnection: scuppering now");
             throw new SQLNonTransientException(new ConnectException("Scuppering connection attempt number " + connectCount));
         }
-	}
+    }
 
-	public static void setTestResourcesFile() throws IOException {
-		String recoveryId = System.getProperty("LOCAL_RECOVERY_ID");
-		System.out.println("setTestResourcesFile: recoveryId prop="+recoveryId);
-		if (recoveryId != null) {
-			String resourcesDirPath = System.getenv("WLP_OUTPUT_DIR") + "/../shared/test-resources/" + recoveryId;
-			File resourcesDir = new File(resourcesDirPath);
-			// Create it if necessary
-			if (!resourcesDir.exists()) {
-				resourcesDir.mkdirs();
-			}
-			XAResourceImpl.setStateFile(new File(resourcesDir.getPath() + File.separator + "XAResources.dat"));
-			System.out.println("setTestResourcesFile: "+XAResourceImpl.STATE_FILE);
-		}
-	}
+    public static void setTestResourcesFile() throws IOException {
+        String recoveryId = System.getProperty("LOCAL_RECOVERY_ID");
+        System.out.println("setTestResourcesFile: recoveryId prop="+recoveryId);
+        if (recoveryId != null) {
+            String resourcesDirPath = System.getenv("WLP_OUTPUT_DIR") + "/../shared/test-resources/" + recoveryId;
+            File resourcesDir = new File(resourcesDirPath);
+            // Create it if necessary
+            if (!resourcesDir.exists()) {
+                resourcesDir.mkdirs();
+            }
+            XAResourceImpl.setStateFile(new File(resourcesDir.getPath() + File.separator + "XAResources.dat"));
+            System.out.println("setTestResourcesFile: "+XAResourceImpl.STATE_FILE);
+        }
+    }
 
-	public static void setTimeouts(Map<String, Object> requestContext, int timeout) {
-		requestContext.put("com.sun.xml.ws.connect.timeout", timeout);
-		requestContext.put("com.sun.xml.ws.request.timeout", timeout);
-		requestContext.put("javax.xml.ws.client.connectionTimeout", timeout);
-		requestContext.put("javax.xml.ws.client.receiveTimeout", timeout);
-	}
+    private static final int DEFAULT_REQUEST_TIMEOUT = 300000;
+
+    public static void setTimeouts(Map<String, Object> requestContext) {
+        setTimeouts(requestContext, DEFAULT_REQUEST_TIMEOUT);
+    }
+
+    public static void setTimeouts(Map<String, Object> requestContext, int timeout) {
+        requestContext.put("com.sun.xml.ws.connect.timeout", timeout);
+        requestContext.put("com.sun.xml.ws.request.timeout", timeout);
+        requestContext.put("javax.xml.ws.client.connectionTimeout", timeout);
+        requestContext.put("javax.xml.ws.client.receiveTimeout", timeout);
+    }
 }
 
 

@@ -12,6 +12,8 @@
  *******************************************************************************/
 package com.ibm.ws.sip.security.auth;
 
+import com.ibm.ws.common.crypto.CryptoUtils;
+
 public interface DigestConstants {
 	public static final short DIGEST_LENGTH=6;
 	public static final String DIGEST = "Digest";
@@ -34,7 +36,7 @@ public interface DigestConstants {
 	
 	public static final String QOP_AUTH = "auth";
 	public static final String QOP_AUTH_INT = "auth-int";
-	public static final String ALG_MD5 = "MD5";
+	public static final String ALG_MD5 = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_MD5;
 	public static final String ALG_MD5_SESS = "MD5-sess";
 	public static final String METHOD_DEFAULT="AUTHENTICATE";
 }

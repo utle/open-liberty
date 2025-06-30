@@ -39,12 +39,12 @@ import org.osgi.framework.Version;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
-
+import com.ibm.ws.common.crypto.CryptoUtils;
 public class BundleFactory extends ManifestFactory {
     private static final TraceComponent tc = Tr.register(BundleFactory.class);
     private static final String EXTRAS_SHA_HEADER = "IBM-Extras-SHA";
-    private static final String SHA_ALGORITHM = "SHA-256";
-    private static final String SHA_ALGORITHM_DEFAULT = "SHA-1";
+    private static final String SHA_ALGORITHM = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_256;
+    private static final String SHA_ALGORITHM_DEFAULT = CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA_1;
     private BundleContext bundleContext;
     private String bundleLocationPrefix = "VirtualBundle@";
     private String bundleLocation = null;

@@ -510,4 +510,9 @@ public class DefaultConfigurationProvider implements ConfigurationProvider {
     public int getAsyncResponseThreadpoolSize() {
         return 2;
     }
+
+    @Override
+    public boolean isUTAsSpecified() {
+        return false;
+    }
 }

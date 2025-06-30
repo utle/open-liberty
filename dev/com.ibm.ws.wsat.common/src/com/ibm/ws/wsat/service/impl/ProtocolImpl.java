@@ -451,7 +451,7 @@ public class ProtocolImpl {
 
         WSATCoordinator coord = new WSATCoordinator(globalId, toEpr);
 
-        WebClient webClient = WebClient.getWebClient(coord, null);
+        final WebClient webClient = WebClient.getWebClient(coord, new WSATParticipant(globalId, wrapper.getPartID(), wrapper.getReplyTo()));
         webClient.setMisrouting(false);
 
         switch (messageType) {
