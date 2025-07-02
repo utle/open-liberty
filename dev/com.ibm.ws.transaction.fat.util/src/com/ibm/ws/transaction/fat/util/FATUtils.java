@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2024 IBM Corporation and others.
+ * Copyright (c) 2021, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -41,7 +41,15 @@ public class FATUtils {
      * @throws Exception
      */
     public static Duration startServers(LibertyServer... servers) throws Exception {
-    	return startServers((SetupRunner)null, servers);
+    	return startServers(RETRY_COUNT, (SetupRunner)null, servers);
+    }
+
+    public static Duration startServers(int retries, LibertyServer... servers) throws Exception {
+    	return startServers(retries, (SetupRunner)null, servers);
+    }
+
+    public static Duration startServers(SetupRunner r, LibertyServer... servers) throws Exception {
+    	return startServers(RETRY_COUNT, r, servers);
     }
 
     private static final FATServletClient fsc = new FATServletClient();
@@ -108,7 +116,7 @@ public class FATUtils {
      * @return Mean server start time
      * @throws Exception
      */
-    public static Duration startServers(SetupRunner r, LibertyServer... servers) throws Exception {
+    public static Duration startServers(int retries, SetupRunner r, LibertyServer... servers) throws Exception {
         final String method = "startServers";
 
         Instant startStart = Instant.now();
@@ -116,7 +124,7 @@ public class FATUtils {
         for (LibertyServer server : servers) {
             assertNotNull("Attempted to start a null server", server);
             int attempt = 0;
-            int maxAttempts = 5;
+            int maxAttempts = retries;
             
             Log.info(c, method, "Starting " + server.getServerName());
 

@@ -593,6 +593,76 @@ public class DBRotationTest extends CloudFATServletClient {
     }
 
     /**
+     * Test a server can start with empty tranlog tables
+     */
+    @Test
+    public void testEmptyLogTablesStartup() throws Exception {
+        serversToCleanup = Arrays.asList(server2, noRecoveryGroupServer1);
+        server2.useSecondaryHTTPPort();
+
+        FATUtils.startServers(_runner, server2, noRecoveryGroupServer1);
+        assertNotNull(server2.getServerName() + " recovery should have completed",
+                      server2.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
+
+        try {
+            // We expect this to fail since it is gonna crash the server (leaving non-empty logs behind)
+            runTest(server2, SERVLET_NAME, "setupRec001");
+            fail();
+        } catch (IOException e) {
+        }
+
+        assertNotNull(server2.getServerName() + " should have crashed", server2.waitForStringInLog(XAResourceImpl.DUMP_STATE));
+
+        // Server2's logs should now exist
+        runTest(noRecoveryGroupServer1, SERVLET_NAME, "emptyServer2Tables");
+
+        FATUtils.stopServers(noRecoveryGroupServer1);
+
+        // Server2 should start normally even though its logs were empty
+        FATUtils.startServers(0, _runner, server2);
+        assertNotNull(server2.getServerName() + " recovery should have completed",
+                      server2.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
+
+        runTest(server2, SERVLET_NAME, "normalTran");
+    }
+
+    /**
+     * Test a server can recover a peer with empty tranlog tables
+     */
+    @Test
+    public void testEmptyLogTablesPeerRecovery() throws Exception {
+        serversToCleanup = Arrays.asList(server2, server1, noRecoveryGroupServer1);
+        server2.useSecondaryHTTPPort();
+
+        FATUtils.startServers(_runner, server2, noRecoveryGroupServer1);
+        assertNotNull(server2.getServerName() + " recovery should have completed",
+                      server2.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
+
+        try {
+            // We expect this to fail since it is gonna crash the server (leaving non-empty logs behind)
+            runTest(server2, SERVLET_NAME, "setupRec001");
+            fail();
+        } catch (IOException e) {
+        }
+
+        assertNotNull(server2.getServerName() + " should have crashed", server2.waitForStringInLog(XAResourceImpl.DUMP_STATE));
+
+        // Server2's logs should now exist
+        runTest(noRecoveryGroupServer1, SERVLET_NAME, "emptyServer2Tables");
+
+        FATUtils.stopServers(noRecoveryGroupServer1);
+
+        // Server1 should start normally
+        FATUtils.startServers(_runner, server1);
+        assertNotNull(server1.getServerName() + " recovery should have completed",
+                      server1.waitForStringInTrace("WTRN0133I: Transaction recovery processing for this server is complete", FATUtils.LOG_SEARCH_TIMEOUT));
+
+        // Server1 should recover server2's logs even though they were empty
+        assertNotNull(server1.getServerName() + " should have recovered for " + server2.getServerName(),
+                      server1.waitForStringInTrace("Performed recovery for cloud0021", FATUtils.LOG_SEARCH_TIMEOUT));
+    }
+
+    /**
      * Temporarily set an extra transaction attribute
      */
     private static AutoCloseable withExtraTranAttribute(LibertyServer server, String... attrs) throws Exception {
