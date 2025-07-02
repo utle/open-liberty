@@ -760,6 +760,108 @@ public class DataExperimentalServlet extends FATServlet {
     }
 
     /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed.
+     */
+    @Test
+    public void testIntermixedParameters() {
+        shipments.removeEverything();
+
+        Shipment s1 = new Shipment();
+        s1.setDestination("Building 25-2, 2800 37th St NW, Rochester, MN 55901");
+        s1.setLocation("44.0581278,-92.5063833");
+        s1.setId(252);
+        s1.setOrderedAt(OffsetDateTime.now().minusHours(6));
+        s1.setStatus("IN_TRANSIT");
+        shipments.save(s1);
+
+        Shipment s2 = new Shipment();
+        s2.setDestination("Building 30-2, 2800 37th St NW, Rochester, MN 55901");
+        s2.setLocation("44.057426, -92.5031221");
+        s2.setId(302);
+        s2.setOrderedAt(OffsetDateTime.now().minusHours(1));
+        s2.setStatus("SUBMITTED");
+        shipments.save(s2);
+
+        String newDestination = "Building 50-2, 2800 37th St NW, Rochester, MN 55901";
+        assertEquals(true,
+                     shipments.switchDestination("SUBMITTED",
+                                                 newDestination,
+                                                 302));
+
+        // destination must be updated
+        s2 = shipments.find(302);
+        assertEquals(newDestination,
+                     s2.getDestination());
+        assertEquals("SUBMITTED",
+                     s2.getStatus());
+        assertEquals(302,
+                     s2.getId());
+        assertEquals("44.057426, -92.5031221",
+                     s2.getLocation());
+
+        // destination must not be updated
+        s1 = shipments.find(252);
+        assertEquals("Building 25-2, 2800 37th St NW, Rochester, MN 55901",
+                     s1.getDestination());
+        assertEquals("IN_TRANSIT",
+                     s1.getStatus());
+        assertEquals(252,
+                     s1.getId());
+        assertEquals("44.0581278,-92.5063833",
+                     s1.getLocation());
+
+        shipments.removeEverything();
+    }
+
+    /**
+     * An update operation in which repository method parameters for the
+     * WHERE clause and the UPDATE clause are intermixed and one of the
+     * parameters is a composite IdClass value.
+     */
+    // TODO enable once #29073 is fixed
+    //@Test
+    public void testIntermixedParametersIncludingIdClass() {
+
+        final int oldPopulation = 121395;
+        final int newPopulation = 122413;
+
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         newPopulation,
+                                         oldPopulation));
+
+        // population must be updated
+        Town rochester;
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(newPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+
+        // restore the old value to avoid interfering with other tests
+        assertEquals(true,
+                     towns.setPopulation(TownId.of("Rochester", "Minnesota"),
+                                         oldPopulation,
+                                         newPopulation));
+
+        // population must be updated
+        rochester = towns.findById(TownId.of("Rochester", "Minnesota"))
+                        .orElseThrow();
+
+        assertEquals(oldPopulation,
+                     rochester.population);
+        assertEquals("Rochester",
+                     rochester.name);
+        assertEquals("Minnesota",
+                     rochester.stateName);
+    }
+
+    /**
      * Test the Not annotation on a parameter-based query.
      */
     @Test

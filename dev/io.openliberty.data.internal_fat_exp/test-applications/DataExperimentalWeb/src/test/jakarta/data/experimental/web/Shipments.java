@@ -80,6 +80,13 @@ public interface Shipments {
     @Delete
     int statusBasedRemoval(@By("status") String s);
 
+    // The assignment is intentionally between the other two query parameters
+    // to cover a scenario of intermixing them.
+    @Update
+    boolean switchDestination(String status,
+                              @Assign("destination") String newDestination,
+                              long id);
+
     @Update
     boolean updateLocation(long id,
                            String location,

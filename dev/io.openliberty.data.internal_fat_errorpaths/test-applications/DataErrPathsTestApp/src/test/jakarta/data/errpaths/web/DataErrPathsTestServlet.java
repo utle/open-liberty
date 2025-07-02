@@ -569,7 +569,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                  + " a PageRequest.");
         } catch (UnsupportedOperationException x) {
             if (x.getMessage() == null ||
-                !x.getMessage().startsWith("CWWKD1022E:") ||
+                !x.getMessage().startsWith("CWWKD1020E:") ||
                 !x.getMessage().contains("discardPage"))
                 throw x;
         }
@@ -588,7 +588,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                  " deletes entities but does not return them");
         } catch (UnsupportedOperationException x) {
             if (x.getMessage() == null ||
-                !x.getMessage().startsWith("CWWKD1097E:") ||
+                !x.getMessage().startsWith("CWWKD1020E:") ||
                 !x.getMessage().contains("discardLimited"))
                 throw x;
         }
@@ -636,7 +636,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                  " deletes entities but does not return them");
         } catch (UnsupportedOperationException x) {
             if (x.getMessage() == null ||
-                !x.getMessage().startsWith("CWWKD1097E:") ||
+                !x.getMessage().startsWith("CWWKD1020E:") ||
                 !x.getMessage().contains("discardOrdered"))
                 throw x;
         }
@@ -655,7 +655,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                  " deletes entities and returns an update count: " + count);
         } catch (UnsupportedOperationException x) {
             if (x.getMessage() == null ||
-                !x.getMessage().startsWith("CWWKD1097E:") ||
+                !x.getMessage().startsWith("CWWKD1020E:") ||
                 !x.getMessage().contains("discardSorted"))
                 throw x;
         }
@@ -1371,7 +1371,7 @@ public class DataErrPathsTestServlet extends FATServlet {
                  " multiple parameters. Result: " + list);
         } catch (UnsupportedOperationException x) {
             if (x.getMessage() == null ||
-                !x.getMessage().startsWith("CWWKD1009E") ||
+                !x.getMessage().startsWith("CWWKD1014E") ||
                 !x.getMessage().contains("changeBoth"))
                 throw x;
         }

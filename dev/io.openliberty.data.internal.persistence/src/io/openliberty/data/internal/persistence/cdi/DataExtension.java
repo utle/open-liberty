@@ -49,6 +49,7 @@ import com.ibm.ws.threadContext.ComponentMetaDataAccessorImpl;
 import io.openliberty.data.internal.persistence.DataProvider;
 import io.openliberty.data.internal.persistence.QueryInfo;
 import io.openliberty.data.internal.persistence.Util;
+import io.openliberty.data.internal.version.QueryType;
 import jakarta.data.exceptions.DataException;
 import jakarta.data.exceptions.EmptyResultException;
 import jakarta.data.exceptions.EntityExistsException;
@@ -219,7 +220,7 @@ public class DataExtension implements Extension {
                                 producer, //
                                 repositoryInterface, //
                                 method, //
-                                QueryInfo.Type.RESOURCE_ACCESS);
+                                QueryType.RESOURCE_ACCESS);
 
                 List<QueryInfo> queries = queriesPerEntity.get(Void.class);
                 if (queries == null)

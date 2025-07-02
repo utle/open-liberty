@@ -105,6 +105,13 @@ public interface Towns {
                 @Assign("areaCodes") Set<Integer> newAreaCodes,
                 @Assign("population") int newPopulation);
 
+    // The assignment is intentionally between the other two query parameters
+    // to cover a scenario of intermixing them.
+    @Update
+    boolean setPopulation(@By(ID) TownId id,
+                          @Assign("population") int newPopulation,
+                          @By("population") int oldPopulation);
+
     @Find
     @OrderBy(value = ID, descending = true)
     CursoredPage<Town> sizedWithin(@By("population") @Is(GreaterThanEqual) int minPopulation,

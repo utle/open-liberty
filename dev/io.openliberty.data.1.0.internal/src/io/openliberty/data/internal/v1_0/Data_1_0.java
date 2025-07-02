@@ -26,10 +26,12 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import com.ibm.websphere.ras.annotation.Trivial;
 
 import io.openliberty.data.internal.version.DataVersionCompatibility;
+import io.openliberty.data.internal.version.QueryType;
 import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
 import jakarta.data.page.PageRequest;
+import jakarta.data.repository.By;
 import jakarta.data.repository.Delete;
 import jakarta.data.repository.Find;
 import jakarta.data.repository.Insert;
@@ -106,36 +108,21 @@ public class Data_1_0 implements DataVersionCompatibility {
                     Set.of(Limit.class, Order.class, PageRequest.class,
                            Sort.class, Sort[].class);
 
+    /**
+     * Appends the equality constraint.
+     */
     @Override
     @Trivial
-    public StringBuilder appendCondition(StringBuilder q, int qp,
-                                         Method method, int p,
-                                         String o_, String attrName,
-                                         boolean isCollection, Annotation[] annos) {
+    public StringBuilder appendConstraint(StringBuilder q,
+                                          String o_,
+                                          String attrName,
+                                          Object constraint,
+                                          int qp,
+                                          boolean isCollection,
+                                          Annotation[] annos) {
         if (attrName.charAt(attrName.length() - 1) != ')')
             q.append(o_);
         return q.append(attrName).append("=?").append(qp);
-    }
-
-    @Override
-    @Trivial
-    public StringBuilder appendConditionsForIdClass(StringBuilder q, int qp,
-                                                    Method method, int p,
-                                                    String o_, String[] idClassAttrNames,
-                                                    Annotation[] annos) {
-        q.append('(');
-
-        int count = 0;
-        for (String name : idClassAttrNames) {
-            if (count != 0)
-                q.append(" AND ");
-
-            q.append(o_).append(name).append("=?").append(count++ + qp);
-        }
-
-        q.append(')');
-
-        return q;
     }
 
     @Override
@@ -182,6 +169,36 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
+    public int inspectMethodParam(int p,
+                                  Class<?> paramType,
+                                  Annotation[] paramAnnos,
+                                  String[] attrNames,
+                                  Object[] constraints, // TODO 1.1: Class<?>[]
+                                  char[] updateOps,
+                                  int qpNext) {
+        // In Data 1.0, all constraints are the equality condition
+        // By.class serves as a marker for this because that is how it behaves
+        // absent any other constraints or annotations.
+        constraints[p] = By.class;
+        return qpNext + 1;
+    }
+
+    @Override
+    @Trivial
+    public boolean isSpecialParamValid(Class<?> paramType,
+                                       QueryType queryType) {
+        return switch (queryType) {
+            case FIND -> true;
+            case FIND_AND_DELETE -> !PageRequest.class.equals(paramType);
+            case COUNT, EXISTS -> Order.class.equals(paramType) ||
+                                  Sort.class.equals(paramType) ||
+                                  Sort[].class.equals(paramType);
+            default -> false;
+        };
+    }
+
+    @Override
+    @Trivial
     public Set<Class<? extends Annotation>> lifeCycleAnnoTypes(boolean stateful) {
         return stateful ? LIFECYCLE_ANNOS_STATEFUL : LIFECYCLE_ANNOS_STATELESS;
     }
@@ -190,6 +207,12 @@ public class Data_1_0 implements DataVersionCompatibility {
     @Trivial
     public Set<Class<? extends Annotation>> operationAnnoTypes(boolean stateful) {
         return stateful ? OP_ANNOS_STATEFUL : OP_ANNOS_STATELESS;
+    }
+
+    @Override
+    @Trivial
+    public String paramAnnosForUpdate() {
+        return By.class.getName();
     }
 
     @Override
