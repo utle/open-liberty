@@ -187,8 +187,6 @@
 
 7111=Voc\u00ea n\u00e3o pode adquirir um HistoricalSession de um UnitOfWork, outro HistoricalSession, um ServerSession ou um ServerSessionBroker.  Voc\u00ea pode adquirir um de uma sess\u00e3o regular, um ClientSession ou um ClientSessionBroker.
 
-7112=Voc\u00ea especificou que o EclipseLink usa o recurso {0}, mas esse recurso n\u00e3o est\u00e1 dispon\u00edvel na vers\u00e3o do JDK atualmente em execu\u00e7\u00e3o: {1}.
-
 7113={0} n\u00e3o suporta chamada com retorno.
 
 7114=Dados isolados n\u00e3o s\u00e3o suportados atualmente em um boker de sess\u00e3o do cliente. A sess\u00e3o denominada {0} cont\u00e9m descritores que representam dados isolados.
@@ -640,4 +638,12 @@
 7359=Nenhum servi\u00e7o ASM dispon\u00edvel.
 
 7360=A senha do banco de dados foi criptografada por um algoritmo obsoleto. Recriptografe-o por `passwordUpdate.sh` de eclipselink.zip pacote.
+
+7361=Apenas um campo na enumera\u00e7\u00e3o pode ser marcado pela anota\u00e7\u00e3o @EnumeratedValue. Verifique a classe enum [ {0} ].
+
+7362=Para um tipo enumerado ORDINAL, somente os tipos byte, short, int, log ou wrapper podem ser usados como um tipo de atributo marcado por @EnumeratedValue. Verifique o atributo [ {0} ] na classe enum [ {1} ].
+
+7363=Para um tipo enumerado STRING, somente o tipo java.lang.String pode ser usado como um tipo de atributo marcado por @EnumeratedValue. Verifique o atributo [ {0} ] na classe enum [ {1} ].
+
+7364=Na entidade [ {0} ] em NamedNativeQuery [ {1} ], um SqlResultSetMapping impl\u00edcito (atributo "entities", "classes" ou "columns") \u00e9 usado junto com um SqlResultSetMapping externo que \u00e9 referenciado pelo atributo "resultSetMapping". Essa combina\u00e7\u00e3o n\u00e3o \u00e9 permitida.
 

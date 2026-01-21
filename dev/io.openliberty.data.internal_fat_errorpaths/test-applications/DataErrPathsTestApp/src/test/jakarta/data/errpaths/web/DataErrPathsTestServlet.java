@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024,2025 IBM Corporation and others.
+ * Copyright (c) 2024,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -40,6 +40,12 @@ import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
 import jakarta.data.page.PageRequest.Cursor;
 import jakarta.data.page.PageRequest.Mode;
+import jakarta.data.repository.Delete;
+import jakarta.data.repository.Find;
+import jakarta.data.repository.Insert;
+import jakarta.data.repository.Query;
+import jakarta.data.repository.Save;
+import jakarta.data.repository.Update;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -108,6 +114,9 @@ public class DataErrPathsTestServlet extends FATServlet {
 
     @Inject
     Investments errRecordEnityWithJPAAnnoRepo;
+
+    @Inject
+    InvalidRegistrations errRecordEntityWithoutId;
 
     @Inject
     WrongPersistenceUnitRefRepo errWrongPersistenceUnitRef;
@@ -419,9 +428,9 @@ public class DataErrPathsTestServlet extends FATServlet {
                                                             PageRequest.ofSize(8));
             fail("Should not be able to retrieve CursoredPage of a non-entity." +
                  " Found: " + page);
-        } catch (UnsupportedOperationException x) {
+        } catch (MappingException x) {
             if (x.getMessage() == null ||
-                !x.getMessage().startsWith("CWWKD1037E:") ||
+                !x.getMessage().startsWith("CWWKD1005E:") ||
                 !x.getMessage().contains("CursoredPage<java.lang.Integer>"))
                 throw x;
         }
@@ -891,6 +900,26 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Verify an appropriate error is raised when a repository method attempts
+     * to use an EXCEPT query with cursor-based pagainstion.
+     */
+    @Test
+    public void testExceptWithCursorPagination() {
+        try {
+            CursoredPage<Voter> page;
+            page = voters.withNameNotAddress("Vincent",
+                                             "770 W Silver Lake Dr NE, Rochester, MN 55906",
+                                             PageRequest.ofSize(5));
+            fail("Obtained a cursored page for an EXCEPT query. " + page);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1120E:") ||
+                !x.getMessage().contains("EXCEPT"))
+                throw x;
+        }
+    }
+
+    /**
      * Verify an error is raised when an exists Query by Method Name method
      * tries to return a true/false value as int.
      */
@@ -1093,6 +1122,45 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Verify an appropriate error is raised when a repository method attempts
+     * to use a GROUP BY query for cursor-based pagainstion.
+     */
+    @Test
+    public void testGroupByQueryForCursorPagination() {
+        try {
+            CursoredPage<Voter> page1 = //
+                            voters.groupedByAddress(PageRequest.ofSize(4));
+            fail("Obtained a cursored page for a GROUP BY query. " + page1);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1120E:") ||
+                !x.getMessage().contains("FROM Voter v GROUP BY v.address"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised for the invalid combination of the
+     * IgnoreCase and In keywords on a Query by Method Name method.
+     */
+    @Test
+    public void testIgnoreCaseIn() {
+        Set<String> addresses = Set.of("401 9th Ave NW, Rochester, MN 55901",
+                                       "88 23RD AVE SW, Rochester, MN 55902");
+        try {
+            List<Voter> found = voters.findByAddressIgnoreCaseIn(addresses);
+            fail("Should not be able to combine IgnoreCase and In keywords." +
+                 " Found: " + found);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1074E:") ||
+                !x.getMessage().contains("IgnoreCase") ||
+                !x.getMessage().contains("In"))
+                throw x;
+        }
+    }
+
+    /**
      * Verify an error is raised for a repository insert method with a parameter
      * that can insert multiple entities and a return type that can only return
      * one inserted entity.
@@ -1217,6 +1285,26 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1018E") ||
                 !x.getMessage().contains("occupying"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised when a repository method attempts
+     * to use an INTERSECT query for cursor-based pagainstion.
+     */
+    @Test
+    public void testIntersectionForCursorPagination() {
+        try {
+            CursoredPage<Voter> page;
+            page = voters.withNameAndAddress("Vincent",
+                                             "770 W Silver Lake Dr NE, Rochester, MN 55906",
+                                             PageRequest.ofSize(5));
+            fail("Obtained a cursored page for an INTERSECT query. " + page);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1120E:") ||
+                !x.getMessage().contains("INTERSECT"))
                 throw x;
         }
     }
@@ -1451,6 +1539,73 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1084E:") ||
                 !x.getMessage().contains("bornIn"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised when Insert and Find annotate
+     * the same repository method.
+     */
+    @Test
+    public void testMixInsertAndFind() {
+        Voter v = new Voter(22446688, "Vera", //
+                        LocalDate.of(1972, Month.JANUARY, 7), //
+                        "244 Soldiers Field Dr SW, Rochester, MN 55902");
+
+        try {
+            v = voters.addAndRetrieve(v);
+            fail("Repository method annotated both Insert and Find" +
+                 " should be invalid. Instead found: " + v);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1002E:") ||
+                !x.getMessage().contains(Find.class.getName()) ||
+                !x.getMessage().contains(Insert.class.getName()))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised when Save and Delete annotate
+     * the same repository method.
+     */
+    @Test
+    public void testMixSaveAndDelete() {
+        Voter v = voters.findById(987665432).orElseThrow();
+        v.birthday = LocalDate.of(1988, Month.JANUARY, 8);
+
+        try {
+            voters.saveAndRemove(v);
+            fail("Repository method annotated both Save and Remove" +
+                 " should be invalid.");
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1002E:") ||
+                !x.getMessage().contains(Save.class.getName()) ||
+                !x.getMessage().contains(Delete.class.getName()))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised when Update and Query annotate
+     * the same repository method.
+     */
+    @Test
+    public void testMixUpdateAndQuery() {
+        Voter v = voters.findById(987665432).orElseThrow();
+        v.birthday = LocalDate.of(1981, Month.JANUARY, 5);
+
+        try {
+            Optional<Voter> found = voters.updateAndRetrieve(v.ssn, v);
+            fail("Repository method annotated both Update and Query" +
+                 " should be invalid. Instead found: " + found);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1002E:") ||
+                !x.getMessage().contains(Query.class.getName()) ||
+                !x.getMessage().contains(Update.class.getName()))
                 throw x;
         }
     }
@@ -1808,9 +1963,12 @@ public class DataErrPathsTestServlet extends FATServlet {
             List<Voter> found = voters.sortedByEndOfAddress();
             fail("OrderBy annotation with invalid function must cause an error." +
                  " Instead, the repository method returned: " + found);
-        } catch (MappingException x) {
+        } catch (Exception x) {
+            // Jakarta Data cannot filter out invalid functions without
+            // inadvertently filtering out some valid functions as well.
+            // So instead, we let the Jakarta Persistence provider raise the
+            // error,
             if (x.getMessage() != null &&
-                x.getMessage().startsWith("CWWKD1010E") &&
                 x.getMessage().contains("last5DigitsOf(address)"))
                 ; // expected
             else
@@ -2030,6 +2188,32 @@ public class DataErrPathsTestServlet extends FATServlet {
     }
 
     /**
+     * Verify that an appropriate and informative error is raised when a
+     * record entity lacks an identifier attribute.
+     */
+    @Test
+    public void testRecordEntityWithoutId() {
+        VoterRegistration reg = new VoterRegistration( //
+                        989898989, //
+                        "Victoria", //
+                        "7 1st Ave SW, Rochester, MN 55902", //
+                        LocalDate.of(1997, 10, 28));
+
+        try {
+            reg = errRecordEntityWithoutId.save(reg);
+
+            fail("Used a record entity that has no identifier attribute: " +
+                 reg);
+        } catch (MappingException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1121E:") ||
+                !x.getMessage().contains(VoterRegistration.class.getName()) ||
+                !x.getMessage().contains("ssn"))
+                throw x;
+        }
+    }
+
+    /**
      * Tests an error path where a repository method attempts to remove an entity
      * but return it as a record instead.
      */
@@ -2207,6 +2391,62 @@ public class DataErrPathsTestServlet extends FATServlet {
             if (x.getMessage() == null ||
                 !x.getMessage().startsWith("CWWKD1015E") ||
                 !x.getMessage().contains("addOrUpdate"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised upon attempt to access totals from
+     * a Page that was requested without totals.
+     */
+    @Test
+    public void testTotalsWhenRequestedWithoutTotals() {
+        Order<Voter> order = Order.by(_Voter.birthday.asc(),
+                                      _Voter.name.asc());
+        PageRequest pageReq = PageRequest.ofSize(12).withoutTotal();
+        String address = "4051 E River Rd NE, Rochester, MN 55906";
+
+        Page<Voter> page = voters.atAddress(address, pageReq, order);
+
+        try {
+            long total = page.totalElements();
+            fail("Should not be able to retrieve totalElements when the page is" +
+                 " requested without totals. Found: " + total);
+        } catch (IllegalStateException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1042E:") ||
+                !x.getMessage().contains("requestTotal"))
+                throw x;
+        }
+
+        try {
+            long total = page.totalPages();
+            fail("Should not be able to retrieve totalPages when the page is" +
+                 " requested without totals. Found: " + total);
+        } catch (IllegalStateException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1042E:") ||
+                !x.getMessage().contains("requestTotal"))
+                throw x;
+        }
+    }
+
+    /**
+     * Verify an appropriate error is raised when a repository method attempts
+     * to use a UNION query for cursor-based pagainstion.
+     */
+    @Test
+    public void testUnionForCursorPagination() {
+        try {
+            CursoredPage<Voter> page;
+            page = voters.unionOfAddresses("701 Silver Creek Rd NE, Rochester, MN 55906",
+                                           "770 W Silver Lake Dr NE, Rochester, MN 55906",
+                                           PageRequest.ofSize(4));
+            fail("Obtained a cursored page for a UNION query. " + page);
+        } catch (UnsupportedOperationException x) {
+            if (x.getMessage() == null ||
+                !x.getMessage().startsWith("CWWKD1120E:") ||
+                !x.getMessage().contains("UNION"))
                 throw x;
         }
     }

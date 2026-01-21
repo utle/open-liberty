@@ -187,8 +187,6 @@
 
 7111=Nu pute\u0163i ob\u0163ine o HistoricalSession de la o UnitOfWork, o alt\u0103 HistoricalSession, o ServerSession sau o ServerSessionBroker.  Pute\u0163i achizi\u0163iona una de la o sesiune obi\u015fnuit, o ClientSession sau o ClientSessionBroker.
 
-7112=A\u0163i specificat c\u0103 EclipseLink utilizeaz\u0103 caracteristca : {0}, dar aceast\u0103 caracteristic\u0103 nu este disponibil\u0103 \u00een versiunea JDK ce ruleaz\u0103 momentan :{1}.
-
 7113={0} nu suport\u0103 apelare cu returnare.
 
 7114=\u00cen prezent nu sunt suportate date izolate \u00eentr-un broker de sesiune e client. Sesiunea numit\u0103 {0} con\u0163ine descriptori ce reprezint date izolate.
@@ -640,4 +638,12 @@
 7359=Nu exist\u0103 niciun serviciu ASM disponibil.
 
 7360=Parola bazei de date a fost criptat\u0103 de un algoritm depreciat. Recripta\u021bi-l prin `passwordUpdate.sh` din eclipselink.zip pachet.
+
+7361=Un singur c\u00e2mp din enumerare poate fi marcat prin adnotarea @EnumeratedValue. Verifica\u021bi clasa enum [ {0} ].
+
+7362=Pentru un tip enumerat ORDINAL, numai tipurile byte, short, int, log sau wrapper pot fi utilizate ca tip de atribut marcat prin @EnumeratedValue. Verifica\u021bi atributul [ {0} ] \u00een clasa enum [ {1} ].
+
+7363=Pentru un tip enumerat STRING, numai tipul java.lang.String poate fi utilizat ca tip de atribut marcat prin @EnumeratedValue. Verifica\u021bi atributul [ {0} ] \u00een clasa enum [ {1} ].
+
+7364=\u00cen entitatea [ {0} ] din NamedNativeQuery [ {1} ], se utilizeaz\u0103 un SqlResultSetMapping implicit (atributul "entities", "classes" sau "columns") \u00eempreun\u0103 cu un SqlResultSetMapping extern la care se face trimitere prin atributul "resultSetMapping". Aceast\u0103 combina\u021bie nu este permis\u0103.
 

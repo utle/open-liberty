@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -11,15 +11,13 @@ package io.openliberty.jpa.data.tests.models;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 
-/**
- * Add the @Entity annotation when enabling testOLGH30534.
- */
-
+@Entity
 public class County {
 
     @Id
@@ -30,6 +28,10 @@ public class County {
 
     @Version
     private LocalDateTime lastUpdated;
+
+    public County() {
+
+    }
 
     public County(String name) {
         this.name = name;

@@ -1,0 +1,22 @@
+<server description="Server for testing the startupCheckInterval">
+
+    <include location="../fatTestPorts.xml"/>
+
+    <featureManager>
+        <feature>localConnector-1.0</feature>
+        <feature>mpHealth-4.0</feature>
+        <feature>mpConfig-3.0</feature>
+        <feature>servlet-4.0</feature>
+    </featureManager>
+    
+    <mpHealth startupCheckInterval="30s" checkInterval="5s" />
+    	
+	<logging traceSpecification="*=info:HEALTH=all" isoDateFormat="true"/>
+	
+    <webContainer deferServletLoad="false"/>
+
+	<httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="${bvt.prop.HTTP_default}" httpsPort="${bvt.prop.HTTP_default.secure}">
+		<tcpOptions portOpenRetries="60" />                   
+	</httpEndpoint>
+	
+</server>

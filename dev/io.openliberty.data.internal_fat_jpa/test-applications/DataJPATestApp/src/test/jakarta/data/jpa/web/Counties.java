@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023,2025 IBM Corporation and others.
+ * Copyright (c) 2023,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -33,7 +33,7 @@ import javax.naming.InitialContext;
 /**
  * Repository for the County entity.
  */
-@Repository
+@Repository(dataStore = "java:app/env/data/DataStoreRef")
 public interface Counties {
 
     boolean deleteByNameAndLastUpdated(String name, LocalDateTime version);
@@ -51,6 +51,7 @@ public interface Counties {
     @OrderBy("name")
     List<Set<CityId>> findCitiesByNameStartsWith(String beginning);
 
+    @Query("SELECT lastUpdated WHERE ID(this) = :name")
     LocalDateTime findLastUpdatedByName(String name);
 
     @Query("SELECT zipcodes WHERE name = ?1")
@@ -109,8 +110,21 @@ public interface Counties {
         EntityManager emOuter1 = getEntityManager();
         EntityManager emInner = getAutoClosedEntityManager();
         EntityManager emOuter2 = getEntityManager();
-        return new Object[] { emOuter1, emOuter2, emOuter1.isOpen(), emOuter2.isOpen(), emInner.isOpen() };
+        return new Object[] {
+                              emOuter1,
+                              emOuter2,
+                              emOuter1.isOpen(),
+                              emOuter2.isOpen(),
+                              emInner.isOpen()
+        };
     }
 
-    boolean updateByNameSetZipCodes(String name, int... zipcodes);
+    @Query("""
+                    UPDATE County
+                       SET zipcodes=?2,
+                           lastUpdated=LOCAL DATETIME
+                     WHERE name=?1
+                    """)
+    boolean setZipCodesFor(String name,
+                           int... zipcodes);
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2025 IBM Corporation and others.
+ * Copyright (c) 2022,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -70,12 +70,16 @@ public class PageImpl<T> implements Page<T> {
      * Construct a new Page.
      *
      * @param queryInfo   query information.
+     * @param em          the entity manager.
      * @param pageRequest the request for this page.
      * @param args        values that are supplied to the repository method.
+     * @throws Exception if an error occurs.
      */
-    @FFDCIgnore(Exception.class)
     @Trivial
-    PageImpl(QueryInfo queryInfo, PageRequest pageRequest, Object[] args) {
+    PageImpl(QueryInfo queryInfo,
+             EntityManager em,
+             PageRequest pageRequest,
+             Object[] args) {
         final boolean trace = TraceComponent.isAnyTracingEnabled();
         if (trace && tc.isEntryEnabled())
             Tr.entry(tc, "<init>", queryInfo, pageRequest, queryInfo.loggable(args));
@@ -96,22 +100,17 @@ public class PageImpl<T> implements Page<T> {
         this.pageRequest = pageRequest;
         this.args = args;
 
-        EntityManager em = queryInfo.entityInfo.builder.createEntityManager();
-        try {
-            @SuppressWarnings("unchecked")
-            TypedQuery<T> query = (TypedQuery<T>) em.createQuery(queryInfo.jpql, queryInfo.entityInfo.entityClass);
-            queryInfo.setParameters(query, args);
+        @SuppressWarnings("unchecked")
+        TypedQuery<T> query = (TypedQuery<T>) em.createQuery(queryInfo.jpql,
+                                                             Object.class);
+        queryInfo.setParameters(query, args, null);
 
-            int maxPageSize = pageRequest.size();
-            query.setFirstResult(queryInfo.computeOffset(pageRequest));
-            query.setMaxResults(maxPageSize + (maxPageSize == Integer.MAX_VALUE ? 0 : 1));
+        int maxPageSize = pageRequest.size();
+        query.setFirstResult(queryInfo.computeOffset(pageRequest));
+        query.setMaxResults(maxPageSize + (maxPageSize == Integer.MAX_VALUE ? 0 : 1));
 
-            results = query.getResultList();
-        } catch (Exception x) {
-            throw RepositoryImpl.failure(x, queryInfo.entityInfo.builder);
-        } finally {
-            em.close();
-        }
+        List<T> resultList = query.getResultList();
+        results = resultList;
 
         if (trace && tc.isEntryEnabled())
             Tr.exit(this, tc, "<init>");
@@ -136,12 +135,20 @@ public class PageImpl<T> implements Page<T> {
             pageRequest.size() < Integer.MAX_VALUE)
             return results.size();
 
+        if (queryInfo.jpqlCount.length() < Util.MIN_COUNT_QUERY_LENGTH)
+            throw exc(UnsupportedOperationException.class,
+                      "CWWKD1119.keyword.prevents.count",
+                      queryInfo.method.getName(),
+                      queryInfo.repositoryInterface.getName(),
+                      queryInfo.jpqlCount,
+                      queryInfo.jpql);
+
         EntityManager em = queryInfo.entityInfo.builder.createEntityManager();
         try {
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
                 Tr.debug(this, tc, "query for count: " + queryInfo.jpqlCount);
             TypedQuery<Long> query = em.createQuery(queryInfo.jpqlCount, Long.class);
-            queryInfo.setParameters(query, args);
+            queryInfo.setParameters(query, args, null);
 
             return query.getSingleResult();
         } catch (Exception x) {
@@ -181,7 +188,8 @@ public class PageImpl<T> implements Page<T> {
 
     @Override
     public boolean hasTotals() {
-        return pageRequest.requestTotal();
+        return queryInfo.jpqlCount.length() >= Util.MIN_COUNT_QUERY_LENGTH &&
+               pageRequest.requestTotal();
     }
 
     @Override

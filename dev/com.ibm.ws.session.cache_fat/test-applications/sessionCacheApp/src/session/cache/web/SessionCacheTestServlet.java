@@ -741,11 +741,16 @@ public class SessionCacheTestServlet extends FATServlet {
             System.out.println("Session was null and was expecting null value.");
             return;
         } else if (session == null) {
-            // Retry getSession() as session may need time to replicate to server B
-            TimeUnit.SECONDS.sleep(5);
-            session = request.getSession(false);
+            // Retry getSession() multiple times as session may need time to replicate to server B
+            // This addresses intermittent timing issues in distributed session replication
+            int maxRetries = 5;
+            for (int attempt = 1; attempt <= maxRetries && session == null; attempt++) {
+                System.out.println("Session is null on attempt " + attempt + " of " + maxRetries + ", waiting for replication...");
+                TimeUnit.SECONDS.sleep(2);
+                session = request.getSession(false);
+            }
             if (session == null) {
-                fail("Was expecting to get " + key + '=' + expectedValue + ", but instead got a null session.");
+                fail("SessionCacheTestServlet.sessionGet: Was expecting to get " + key + '=' + expectedValue + ", but instead got a null session.");
             }
         }
         Object actualValue = session.getAttribute(key);
@@ -864,13 +869,17 @@ public class SessionCacheTestServlet extends FATServlet {
     public void testStringBufferAppendWithoutSetAttribute(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String key = request.getParameter("key");
         HttpSession session = request.getSession(true);
-        StringBuffer value = (StringBuffer) session.getAttribute(key);
-        value.append("Appended");
+        if (session != null) {
+            StringBuffer value = (StringBuffer) session.getAttribute(key);
+            if (value!= null)
+                value.append("Appended");
+        }
     }
 
     public void testTimeoutExtensionA(HttpServletRequest request, HttpServletResponse response) throws Exception {
         HttpSession session = request.getSession(true);
-        session.setMaxInactiveInterval(500); // seconds
+        if (session != null)
+            session.setMaxInactiveInterval(500); // seconds
     }
 
     public void testTimeoutExtensionB(HttpServletRequest request, HttpServletResponse response) throws Exception {

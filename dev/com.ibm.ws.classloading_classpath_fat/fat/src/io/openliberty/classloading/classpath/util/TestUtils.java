@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 IBM Corporation and others.
+ * Copyright (c) 2024, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -35,11 +35,13 @@ import static io.openliberty.classloading.classpath.fat.FATSuite.RAR_LIB2_CLASS_
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -52,12 +54,30 @@ import junit.framework.AssertionFailedError;
  */
 public class TestUtils {
 
+    private static final Method findLibrary;
+    private static final Throwable findLibraryException;
+    static {
+        Method m = null;
+        Throwable t = null;
+        try {
+            m = ClassLoader.class.getDeclaredMethod("findLibrary", String.class);
+            m.setAccessible(true);
+        } catch (Throwable e) {
+            t = e;
+        }
+        findLibrary = m;
+        findLibraryException = t;
+    }
     /**
      * @param resource
      * @param testClassPath1App
      */
     public static void assertCommonResourceFromArchive(Class<?> clazz, String expected) {
-        URL resource = clazz.getResource("/io/openliberty/classloading/test/resources/common.properties");
+        assertResourceFromArchive("common.properties", clazz, expected);
+    }
+
+    public static void assertResourceFromArchive(String resourceName, Class<?> clazz, String expected) {
+        URL resource = clazz.getResource("/io/openliberty/classloading/test/resources/" + resourceName);
         assertNotNull("No resource found for expected: " + expected, resource);
         assertEquals("Wrong resource found", expected, readFromArchive(resource));
     }
@@ -90,7 +110,7 @@ public class TestUtils {
         int i = 0;
         for (; i < expectedOrder.size(); i++) {
             assertTrue("No more resources found to match i=" + i + " for: " + expectedOrder.get(i), i < urls.size());
-            assertEquals("Wrong resource found for i=" + i, expectedOrder.get(i), readFromArchive(urls.get(i)));
+            assertEquals("Wrong resource found for i=" + i + " urls=" + urls, expectedOrder.get(i), readFromArchive(urls.get(i)));
         }
 
         if (i < urls.size()) {
@@ -129,6 +149,28 @@ public class TestUtils {
             throw createAssertionFailedError("Should have failed to load class: " + loaded, null);
         } catch (ClassNotFoundException e) {
             // expected
+        }
+    }
+
+    public static void assertFindLibrary(String fromClassName, String libraryName, boolean succeed) {
+        if (findLibraryException != null) {
+            throw createAssertionFailedError("findLibrary method error.", findLibraryException);
+        }
+        String expectedLibraryFileName = System.mapLibraryName(libraryName);
+        String resultPath = null;
+        try {
+            Class<?> fromClass = Class.forName(fromClassName);
+            ClassLoader fromLoader = fromClass.getClassLoader();
+            resultPath = (String) findLibrary.invoke(fromLoader, libraryName);
+        } catch (Throwable e) {
+            throw createAssertionFailedError("findLibrary invoke error.", e);
+        }
+
+        if (succeed) {
+            assertNotNull("No library found: " + libraryName, resultPath);
+            assertTrue("Wrong path result to library: " + resultPath, resultPath.endsWith(expectedLibraryFileName));
+        } else {
+            assertNull("Did not expect to find library: " + libraryName, resultPath);
         }
     }
 

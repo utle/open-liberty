@@ -18,7 +18,8 @@ bVersion=1.0
 src: \
 	fat/src,\
 	test-applications/ffdc-servlet/src, \
-	test-applications/quick-log-test/src
+	test-applications/quick-log-test/src, \
+	test-applications/logger-servlet/src
 	
 
 fat.project: true
@@ -56,4 +57,5 @@ tested.features:\
 	com.ibm.websphere.filetransfer;version=latest,\
 	com.ibm.json4j;version=latest,\
 	com.ibm.websphere.javaee.persistence.2.1;version=latest,\
-	com.ibm.ws.logging_fat;version=latest
+	com.ibm.ws.logging_fat;version=latest,\
+	io.openliberty.org.crac.1.4;version=latest

@@ -187,8 +187,6 @@
 
 7111=Nie mo\u017cna uzyska\u0107 sesji historycznej z jednostki pracy, innej sesji historycznej, sesji serwera lub brokera sesji serwera.  Mo\u017cna uzyska\u0107 jedn\u0105 z sesji regularnych, sesj\u0119 klienta lub sesj\u0119 brokera klienta.
 
-7112=Okre\u015blono projekt EclipseLink, kt\u00f3ry korzysta z funkcji {0}, ale ta funkcja nie jest dost\u0119pna w obecnie dzia\u0142aj\u0105cej wersji pakietu JDK {1}.
-
 7113={0} nie obs\u0142uguje wywo\u0142a\u0144 z powrotem.
 
 7114=Dane izolowane nie s\u0105 obecnie obs\u0142ugiwane w obr\u0119bie brokera sesji klienta. Sesja o nazwie {0} zawiera deskryptory reprezentuj\u0105ce izolowane dane.
@@ -640,4 +638,12 @@
 7359=Brak dost\u0119pnej us\u0142ugi ASM.
 
 7360=Has\u0142o bazy danych zosta\u0142o zaszyfrowane przy u\u017cyciu przestarza\u0142ego algorytmu. Zaszyfruj go ponownie `passwordUpdate.sh` z eclipselink.zip pakiet.
+
+7361=Tylko jedno pole w wyliczeniu mo\u017ce by\u0107 oznaczone adnotacj\u0105 @EnumeratedValue. Sprawd\u017a klas\u0119 wyliczeniow\u0105 [ {0} ].
+
+7362=W przypadku typu wyliczeniowego ORDINAL tylko typy byte, short, int, log lub wrapper mog\u0105 by\u0107 u\u017cywane jako typ atrybutu oznaczony przez @EnumeratedValue. Sprawd\u017a atrybut [ {0} ] w klasie wyliczeniowej [ {1} ].
+
+7363=Dla typu wyliczeniowego STRING, tylko typ java.lang.String mo\u017ce by\u0107 u\u017cyty jako typ atrybutu oznaczony przez @EnumeratedValue. Sprawd\u017a atrybut [ {0} ] w klasie wyliczeniowej [ {1} ].
+
+7364=W encji [ {0} ] w NamedNativeQuery [ {1} ] u\u017cywany jest niejawny atrybut SqlResultSetMapping (atrybut "entities", "classes" lub "columns") wraz z zewn\u0119trznym atrybutem SqlResultSetMapping, do kt\u00f3rego odwo\u0142uje si\u0119 atrybut "resultSetMapping". Ta kombinacja jest niedozwolona.
 

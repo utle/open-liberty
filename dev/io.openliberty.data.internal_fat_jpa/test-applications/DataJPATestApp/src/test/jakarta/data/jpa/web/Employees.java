@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023,2025 IBM Corporation and others.
+ * Copyright (c) 2023,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -25,7 +25,7 @@ import jakarta.data.repository.Repository;
  * Do not add add a superinterface for this class, and do not add any lifecycle methods.
  * (A save method for Employee can be found on the Businesses repository)
  */
-@Repository
+@Repository(dataStore = "java:app/env/data/DataStoreRef")
 public interface Employees {
 
     void deleteByLastName(String lastName);
@@ -52,7 +52,7 @@ public interface Employees {
 
     @OrderBy("badge.number")
     @OrderBy("badge.accessLevel")
-    Stream<Badge> findByLastName(String lastName);
+    Stream<Employee> findByLastName(String lastName);
 
     // "IN" is not supported for embeddables, but EclipseLink generates SQL that leads to an SQLDataException rather than rejecting outright
     @Query("SELECT e FROM Employee e WHERE e.badge IN ?1")

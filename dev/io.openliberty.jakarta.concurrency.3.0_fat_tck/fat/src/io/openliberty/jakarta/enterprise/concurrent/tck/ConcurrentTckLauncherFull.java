@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 IBM Corporation and others.
+ * Copyright (c) 2022, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -70,6 +70,7 @@ public class ConcurrentTckLauncherFull {
         server.stopServer(
                           "WLTC0032W", //Transaction rollback warning.
                           "WLTC0033W", //Transaction rollback warning.
+                          "CWWKC1101E.*InterruptedException", // task cancelled while running
                           "CWWKS0901E" //Quickstart security
         );
     }
@@ -83,7 +84,7 @@ public class ConcurrentTckLauncherFull {
         suiteXmlFile = FATSuite.createSuiteXML(FATSuite.PROFILE.FULL);
 
         TCKRunner.build(server, Type.JAKARTA, "Concurrency")
-                        .withPlatfromVersion("10")
+                        .withPlatformVersion("10")
                         .withQualifiers("full")
                         .withSuiteFileName(suiteXmlFile)
                         .withAdditionalMvnProps(additionalProps)

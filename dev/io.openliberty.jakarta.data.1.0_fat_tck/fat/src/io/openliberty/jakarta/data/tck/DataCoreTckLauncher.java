@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 IBM Corporation and others.
+ * Copyright (c) 2022, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -12,11 +12,12 @@
  *******************************************************************************/
 package io.openliberty.jakarta.data.tck;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -88,7 +89,7 @@ public class DataCoreTckLauncher {
         additionalProps.put("jakarta.data.tck.version", "1.0.1");
 
         TCKRunner.build(persistenceServer, Type.JAKARTA, "Data")
-                        .withPlatfromVersion("11")
+                        .withPlatformVersion("11")
                         .withQualifiers("core", "persistence")
                         .withRelativeTCKRunner("publish/tckRunner/platform/")
                         .withAdditionalMvnProps(additionalProps)
@@ -100,14 +101,24 @@ public class DataCoreTckLauncher {
      * Run the TCK (controlled by autoFVT/publish/tckRunner/tck/*)
      */
     @Test
-    @Ignore("jnosql does not support static metamodel yet")
     @AllowedFFDC // The tested exceptions cause FFDC so we have to allow for this.
     public void launchDataTckCoreNoSQL() throws Exception {
 
         // Setup nosql server
         noSQLServer.addEnvVar("MONGO_DBNAME", "testdb");
         noSQLServer.addEnvVar("MONGO_HOST", FATSuite.noSQLDatabase.getHost() + ":" + String.valueOf(FATSuite.noSQLDatabase.getMappedPort(27017)));
+        noSQLServer.addEnvVar("JNOSQL_VERSION", FATSuite.JNOSQL_VERSION);
+
         noSQLServer.startServer();
+
+        //Tests to exclude that jNoSQL fail
+        List<String> exclude = new ArrayList<>();
+        // Fails: testDataRepositoryHonorsProviderAttribute
+        // Provides an impl for a repository with a different provider
+        exclude.add("ee.jakarta.tck.data.core.cdi.CDITests");
+        // Fails: testNotRunOnPersistence
+        // Does not provide an impl for the repository Category
+        exclude.add("ee.jakarta.tck.data.standalone.nosql.example.NoSQLEntityTests");
 
         // Test groups to run
         Map<String, String> additionalProps = new HashMap<>();
@@ -123,12 +134,14 @@ public class DataCoreTckLauncher {
             additionalProps.put("included.groups", "core & nosql & !signature");
         }
 
+        additionalProps.put("excluded.tests", String.join(", ", exclude));
+
         //Comment out to use SNAPSHOT
         additionalProps.put("jakarta.data.groupid", "jakarta.data");
         additionalProps.put("jakarta.data.tck.version", "1.0.1");
 
         TCKRunner.build(noSQLServer, Type.JAKARTA, "Data")
-                        .withPlatfromVersion("11")
+                        .withPlatformVersion("11")
                         .withQualifiers("core", "NoSQL")
                         .withRelativeTCKRunner("publish/tckRunner/platform/")
                         .withAdditionalMvnProps(additionalProps)

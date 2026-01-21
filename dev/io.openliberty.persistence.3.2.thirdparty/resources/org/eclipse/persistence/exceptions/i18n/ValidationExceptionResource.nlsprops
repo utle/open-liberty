@@ -187,8 +187,6 @@
 
 7111=You may not acquire a HistoricalSession from a UnitOfWork, another HistoricalSession, a ServerSession, or a ServerSessionBroker.  You may acquire one from a regular session, a ClientSession, or a ClientSessionBroker.
 
-7112=You have specified that EclipseLink uses the feature : {0}, but this feature is not available in the currently running JDK version :{1}.
-
 7113={0} does not support call with returning.
 
 7114=Isolated data is not currently supported within a client session broker. Session named {0} contains descriptors representing isolated data.
@@ -640,4 +638,12 @@
 7359=No any ASM service available.
 
 7360=Database password was encrypted by deprecated algorithm. Reencrypt it by `passwordUpdate.sh` from eclipselink.zip bundle.
+
+7361=Only one field in the enumeration can be marked by @EnumeratedValue annotation. Check the [{0}] enum class.
+
+7362=For an ORDINAL enumerated type, only byte, short, int, log or wrapper types can be used as an attribute type marked by @EnumeratedValue. Check attribute [{0}] in the [{1}] enum class.
+
+7363=For a STRING enumerated type, only the java.lang.String type can be used as an attribute type marked by @EnumeratedValue. Check attribute [{0}] in the [{1}] enum class.
+
+7364=In the entity [{0}] in NamedNativeQuery [{1}], an implicit SqlResultSetMapping ("entities", "classes", or "columns" attribute) is used together with an external SqlResultSetMapping that is referred to by the "resultSetMapping" attribute. This combination is not allowed.
 

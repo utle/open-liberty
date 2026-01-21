@@ -1,0 +1,366 @@
+/*******************************************************************************
+ * Copyright (c) 2025, 2026 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
+package io.openliberty.mcp.internal.test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
+
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import io.openliberty.mcp.annotations.Tool;
+import io.openliberty.mcp.internal.Capabilities.ClientCapabilities;
+import io.openliberty.mcp.internal.Capabilities.Elicitation;
+import io.openliberty.mcp.internal.Capabilities.Roots;
+import io.openliberty.mcp.internal.Capabilities.Sampling;
+import io.openliberty.mcp.internal.Literals;
+import io.openliberty.mcp.internal.RequestMethod;
+import io.openliberty.mcp.internal.ToolRegistry;
+import io.openliberty.mcp.internal.exceptions.jsonrpc.JSONRPCException;
+import io.openliberty.mcp.internal.requests.McpInitializeParams;
+import io.openliberty.mcp.internal.requests.McpInitializeParams.ClientInfo;
+import io.openliberty.mcp.internal.requests.McpNotificationParams;
+import io.openliberty.mcp.internal.requests.McpRequest;
+import io.openliberty.mcp.internal.requests.McpRequestIdDeserializer;
+import io.openliberty.mcp.internal.requests.McpRequestIdSerializer;
+import io.openliberty.mcp.internal.requests.McpToolCallParams;
+import io.openliberty.mcp.internal.tools.ToolManager.ToolArgument;
+import jakarta.json.JsonException;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.JsonbException;
+
+/**
+ *
+ */
+public class MessageParsingTest {
+    private static Jsonb jsonb;
+
+    @BeforeClass
+    public static void setup() {
+        JsonbConfig jsonbConfig = new JsonbConfig().withSerializers(new McpRequestIdSerializer())
+                                                   .withDeserializers(new McpRequestIdDeserializer());
+        jsonb = JsonbBuilder.create(jsonbConfig);
+        ToolRegistry registry = new ToolRegistry();
+        ToolRegistry.set(registry);
+
+        Tool testTool = Literals.tool("echo", "Echo", "Echos the input");
+        List<ToolArgument> arguments = List.of(new ToolArgument("input", "", true, String.class, ""));
+        registry.addTool(ToolMetadataTestUtility.createFrom(testTool, arguments, Collections.emptyList()));
+
+        Tool addTestTool = Literals.tool("add", "Add", "Addition calculator");
+        List<ToolArgument> additionArgs = List.of(new ToolArgument("num1", "", true, Integer.class, ""),
+                                                  new ToolArgument("num2", "", true, Integer.class, ""));
+        registry.addTool(ToolMetadataTestUtility.createFrom(addTestTool, additionArgs, Collections.emptyList()));
+
+        Tool toogleTestTool = Literals.tool("toggle", "Toggle", "Toggle a boolean");
+        List<ToolArgument> booleanArgs = List.of(new ToolArgument("input", "boolean value", true, Boolean.class, ""));
+        registry.addTool(ToolMetadataTestUtility.createFrom(toogleTestTool, booleanArgs, Collections.emptyList()));
+    }
+
+    @Test
+    public void parseToolCallMethod() {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 2,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        assertThat(request.id().value(), equalTo(new BigDecimal(2)));
+        assertThat(request.getRequestMethod(), equalTo(RequestMethod.TOOLS_CALL));
+        McpToolCallParams toolCallRequest = request.getParams(McpToolCallParams.class, jsonb);
+        assertEquals(Map.of("input", "Hello"), toolCallRequest.getArguments(jsonb));
+    }
+
+    @Test
+    public void parseStringIdType() {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "2",
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        assertThat(request.id().value(), equalTo("2"));
+    }
+
+    @Test(expected = JSONRPCException.class)
+    public void validateFalseIdType() throws JsonException, JSONRPCException {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": false,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+
+        McpRequest.createValidMCPRequest(reader);
+    }
+
+    @Test(expected = JsonbException.class)
+    public void validateFalseIdTypeWithDeserialization() throws JsonException, JSONRPCException {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": false,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+
+        jsonb.fromJson(reader, McpRequest.class);
+    }
+
+    @Test(expected = JSONRPCException.class)
+    public void validateInvalidJSONRPCType() throws JsonException, JSONRPCException {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "1.0",
+                          "id": 2,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+
+        McpRequest.createValidMCPRequest(reader);
+    }
+
+    @Test(expected = JSONRPCException.class)
+    public void validateEmptyId() throws JsonException, JSONRPCException {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "",
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+
+        McpRequest.createValidMCPRequest(reader);
+    }
+
+    @Test(expected = JsonbException.class)
+    public void validateEmptyIdWithDeserialization() throws JsonException, JSONRPCException {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "",
+                          "method": "tools/call",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+
+        jsonb.fromJson(reader, McpRequest.class);
+    }
+
+    @Test(expected = JSONRPCException.class)
+    public void validateMissingMethod() throws JsonException, JSONRPCException {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "",
+                          "method": "",
+                          "params": {
+                            "name": "echo",
+                            "arguments": {
+                              "input": "Hello"
+                            }
+                          }
+                        }
+                        """);
+        McpRequest.createValidMCPRequest(reader);
+    }
+
+    @Test
+    public void parseInitilizationMessage() {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "1",
+                          "method": "initialize",
+                          "params": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {
+                              "roots": {
+                                "listChanged": true
+                              },
+                              "sampling": {},
+                              "elicitation": {}
+                            },
+                            "clientInfo": {
+                              "name": "ExampleClient",
+                              "title": "Example Client Display Name",
+                              "version": "1.0.0"
+                            }
+                          }
+                        }
+                        """);
+
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        assertThat(request.id().value(), equalTo("1"));
+        assertThat(request.getRequestMethod(), equalTo(RequestMethod.INITIALIZE));
+        McpInitializeParams params = request.getParams(McpInitializeParams.class, jsonb);
+        assertThat(params.getProtocolVersion(), equalTo("2024-11-05"));
+        assertThat(params.getCapabilities(),
+                   equalTo(ClientCapabilities.of(new Roots(true),
+                                                 new Sampling(),
+                                                 new Elicitation())));
+        assertThat(params.getClientInfo(),
+                   equalTo(new ClientInfo("ExampleClient",
+                                          "Example Client Display Name",
+                                          "1.0.0")));
+    }
+
+    @Test
+    public void parseInitializedNotification() throws Exception {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "method": "notifications/initialized"
+                        }
+                        """);
+
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        assertThat(request.getRequestMethod(), equalTo(RequestMethod.INITIALIZED));
+
+    }
+
+    @Test
+    public void parseCancelledNotificationWithStringId() throws Exception {
+        StringReader reader = new StringReader("""
+                        {
+                           "jsonrpc": "2.0",
+                           "method": "notifications/cancelled",
+                           "params": {
+                             "requestId": "123",
+                             "reason": "User requested cancellation"
+                           }
+                         }
+                        """);
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        assertThat(request.getRequestMethod(), equalTo(RequestMethod.CANCELLED));
+
+        McpNotificationParams notificationRequest = request.getParams(McpNotificationParams.class, jsonb);
+        assertThat(notificationRequest.getRequestId().value(), equalTo("123"));
+        assertThat(notificationRequest.getReason(), equalTo("User requested cancellation"));
+    }
+
+    @Test
+    public void parseCancelledNotificationWithNumericId() throws Exception {
+        StringReader reader = new StringReader("""
+                        {
+                           "jsonrpc": "2.0",
+                           "method": "notifications/cancelled",
+                           "params": {
+                             "requestId": 5,
+                             "reason": "User requested cancellation"
+                           }
+                         }
+                        """);
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        assertThat(request.getRequestMethod(), equalTo(RequestMethod.CANCELLED));
+
+        McpNotificationParams notificationRequest = request.getParams(McpNotificationParams.class, jsonb);
+        assertThat(notificationRequest.getRequestId().value(), equalTo(new BigDecimal(5)));
+        assertThat(notificationRequest.getReason(), equalTo("User requested cancellation"));
+    }
+
+    @Test
+    public void parseIntArgumentType() {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "2",
+                          "method": "tools/call",
+                          "params": {
+                            "name": "add",
+                            "arguments": {
+                              "num1": 111,
+                              "num2": 222
+                            }
+                          }
+                        }
+                        """);
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        McpToolCallParams toolCallRequest = request.getParams(McpToolCallParams.class, jsonb);
+
+        assertEquals(Map.of("num1", 111, "num2", 222), toolCallRequest.getArguments(jsonb));
+    }
+
+    @Test
+    public void parseBooleanArgumentType() {
+        StringReader reader = new StringReader("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": "2",
+                          "method": "tools/call",
+                          "params": {
+                            "name": "toggle",
+                            "arguments": {
+                              "input": true
+                            }
+                          }
+                        }
+                        """);
+        McpRequest request = jsonb.fromJson(reader, McpRequest.class);
+        McpToolCallParams toolCallRequest = request.getParams(McpToolCallParams.class, jsonb);
+        assertEquals(Map.of("input", true), toolCallRequest.getArguments(jsonb));
+    }
+
+}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024,2025 IBM Corporation and others.
+ * Copyright (c) 2024,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
@@ -25,8 +26,9 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import com.ibm.websphere.ras.annotation.Trivial;
 
+import io.openliberty.data.internal.AttributeConstraint;
+import io.openliberty.data.internal.QueryType;
 import io.openliberty.data.internal.version.DataVersionCompatibility;
-import io.openliberty.data.internal.version.QueryType;
 import jakarta.data.Limit;
 import jakarta.data.Order;
 import jakarta.data.Sort;
@@ -116,7 +118,7 @@ public class Data_1_0 implements DataVersionCompatibility {
     public StringBuilder appendConstraint(StringBuilder q,
                                           String o_,
                                           String attrName,
-                                          Object constraint,
+                                          AttributeConstraint constraint,
                                           int qp,
                                           boolean isCollection,
                                           Annotation[] annos) {
@@ -129,6 +131,17 @@ public class Data_1_0 implements DataVersionCompatibility {
     @Trivial
     public boolean atLeast(int major, int minor) {
         return major == 1 && minor == 0;
+    }
+
+    @Override
+    @Trivial
+    public int generateRestrictions(StringBuilder q,
+                                    String entityVar_,
+                                    Object restriction,
+                                    int jpqlParamCount,
+                                    Set<String> jpqlParamNames,
+                                    Map<Object, Object> qrParams) {
+        throw new UnsupportedOperationException("jakarta.data.restrict.Restriction");
     }
 
     @Override
@@ -163,24 +176,22 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
-    public boolean hasOrAnnotation(Annotation[] annos) {
-        return false;
-    }
-
-    @Override
-    @Trivial
     public int inspectMethodParam(int p,
                                   Class<?> paramType,
                                   Annotation[] paramAnnos,
                                   String[] attrNames,
-                                  Object[] constraints, // TODO 1.1: Class<?>[]
+                                  AttributeConstraint[] constraints,
                                   char[] updateOps,
                                   int qpNext) {
         // In Data 1.0, all constraints are the equality condition
-        // By.class serves as a marker for this because that is how it behaves
-        // absent any other constraints or annotations.
-        constraints[p] = By.class;
+        constraints[p] = AttributeConstraint.Equal;
         return qpNext + 1;
+    }
+
+    @Override
+    @Trivial
+    public boolean isRestriction(Object param) {
+        return false;
     }
 
     @Override
@@ -217,6 +228,12 @@ public class Data_1_0 implements DataVersionCompatibility {
 
     @Override
     @Trivial
+    public String persistenceFeatureName() {
+        return "persistence-3.2";
+    }
+
+    @Override
+    @Trivial
     public Set<Class<?>> resourceAccessorTypes(boolean stateful) {
         return stateful ? RESOURCE_ACCESSOR_CLASSES_STATEFUL //
                         : RESOURCE_ACCESSOR_CLASSES_STATELESS;
@@ -239,4 +256,11 @@ public class Data_1_0 implements DataVersionCompatibility {
     public Set<Class<?>> specialParamTypes() {
         return SPECIAL_PARAM_TYPES;
     }
+
+    @Override
+    @Trivial
+    public Object[] toConstraintValues(Object value) {
+        return null;
+    }
+
 }

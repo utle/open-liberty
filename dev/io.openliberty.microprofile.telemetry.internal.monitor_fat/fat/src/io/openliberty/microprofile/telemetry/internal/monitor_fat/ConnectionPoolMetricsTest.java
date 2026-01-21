@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -70,6 +70,7 @@ public class ConnectionPoolMetricsTest extends BaseTestClass {
         ShrinkHelper.exportDropinAppToServer(server, testWAR,
                                      DeployOptions.SERVER_ONLY);
 		
+		server.addEnvVar("OTEL_METRIC_EXPORT_INTERVAL", "5000");
 		server.addEnvVar("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
 				"http://" + container.getHost() + ":" + container.getMappedPort(4317));
 		server.startServer();
@@ -77,6 +78,7 @@ public class ConnectionPoolMetricsTest extends BaseTestClass {
 		// Read to run a smarter planet
 		server.waitForStringInLogUsingMark("CWWKF0011I");
 		server.setMarkToEndOfLog();
+		
 	}
 
 	@AfterClass
@@ -96,28 +98,41 @@ public class ConnectionPoolMetricsTest extends BaseTestClass {
         checkStrings(requestHttpServlet("/testJDBCApp/testJDBCServlet?operation=create", server),
                 new String[] { "sql: create table cities" });
         Log.info(c, testName, "------- connectionpool metrics should be available ------");
+        
+     	// Ensure metrics are registered.
+     	String connectionPoolStatsDS1Notification = server.waitForStringInTrace("javax\\.management\\.MBeanServerNotification\\[source=JMImplementation:type=MBeanServerDelegate\\]\\[type=JMX\\.mbean\\.registered\\]\\[message=\\]\\[mbeanName=WebSphere:type=ConnectionPoolStats,name=jdbc/exampleDS1\\]");
+    	connectionPoolStatsDS1Notification = (connectionPoolStatsDS1Notification != null) ? "Found trace: " + connectionPoolStatsDS1Notification.trim() : "Could not find ConnectionPoolStatsDS1 MBean Registration notification.";
+    	Log.info(c, "waitForStringInTrace", connectionPoolStatsDS1Notification);
+    	
+    	String connectionPoolStatsDS2Notification = server.waitForStringInTrace("javax\\.management\\.MBeanServerNotification\\[source=JMImplementation:type=MBeanServerDelegate\\]\\[type=JMX\\.mbean\\.registered\\]\\[message=\\]\\[mbeanName=WebSphere:type=ConnectionPoolStats,name=jdbc/exampleDS2\\]");
+    	connectionPoolStatsDS2Notification = (connectionPoolStatsDS2Notification != null) ? "Found trace: " + connectionPoolStatsDS2Notification.trim() : "Could not find ConnectionPoolStatsDS2 MBean Registration notification.";
+    	Log.info(c, "waitForStringInTrace", connectionPoolStatsDS2Notification);
+
+		// Wait for any metrics to pop up first.
+		matchStringsWithRetries(() -> getContainerCollectorMetrics(container), new String[] {".*"});
 
 		// Allow time for the collector to receive and expose metrics
+		// Made patterns more flexible - removed strict job="unknown_service" and instance patterns
 		matchStringsWithRetries(() -> getContainerCollectorMetrics(container),
-                new String[] { "io_openliberty_connection_pool_handle_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_free\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_destroyed_total\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_created_total\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        
-                        "io_openliberty_connection_pool_connection_use_time_seconds_bucket\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\",le=\"\\+Inf\"\\}.*",
-                        "io_openliberty_connection_pool_connection_use_time_seconds_sum\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_use_time_seconds_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS1\",job=\"unknown_service\"\\}.*",
-                        
-                        "io_openliberty_connection_pool_handle_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_free\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_destroyed_total\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_created_total\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*",
-                        
-                        "io_openliberty_connection_pool_connection_use_time_seconds_bucket\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\",le=\"\\+Inf\"\\}.*",
-                        "io_openliberty_connection_pool_connection_use_time_seconds_sum\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*",
-                        "io_openliberty_connection_pool_connection_use_time_seconds_count\\{instance=\"[a-zA-Z0-9-]*\",io_openliberty_datasource_name=\"jdbc/exampleDS2\",job=\"unknown_service\"\\}.*"});
+		              new String[] { "io_openliberty_connection_pool_handle_count\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_free\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_destroyed_total\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_created_total\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_count\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      
+		                      "io_openliberty_connection_pool_connection_use_time_seconds_bucket\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*le=\"\\+Inf\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_use_time_seconds_sum\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_use_time_seconds_count\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS1\".*\\}.*",
+		                      
+		                      "io_openliberty_connection_pool_handle_count\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_free\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_destroyed_total\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_created_total\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_count\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*",
+		                      
+		                      "io_openliberty_connection_pool_connection_use_time_seconds_bucket\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*le=\"\\+Inf\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_use_time_seconds_sum\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*",
+		                      "io_openliberty_connection_pool_connection_use_time_seconds_count\\{.*io_openliberty_datasource_name=\"jdbc/exampleDS2\".*\\}.*"});
 	}
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 IBM Corporation and others.
+ * Copyright (c) 2024,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -28,8 +28,11 @@ import jakarta.data.repository.Repository;
  * Repository for the DemographicInfo entity, which covers the basic types
  * Instant, BigDecimal, and BigInteger.
  */
-@Repository
+@Repository(dataStore = "java:app/env/data/DataStoreRef")
 public interface Demographics {
+
+    @Query("ORDER BY EXTRACT (YEAR FROM collectedOn)")
+    List<DemographicInfo> all();
 
     @Find
     Stream<DebtPerWorker> debtPerFullTimeWorker();
@@ -100,9 +103,13 @@ public interface Demographics {
     Optional<DemographicInfo> read(Instant collectedOn);
 
     @OrderBy("numFullTimeWorkers")
-    @Query("WHERE numFullTimeWorkers >= :min AND numFullTimeWorkers <= :max")
+    @Query("SELECT collectedOn WHERE numFullTimeWorkers >= :min AND numFullTimeWorkers <= :max")
     List<Instant> whenFullTimeEmploymentWithin(BigInteger min, BigInteger max);
 
     @Insert
     void write(DemographicInfo info);
+
+    @Query("SELECT EXTRACT (YEAR FROM collectedOn)" +
+           " WHERE EXTRACT (YEAR FROM collectedOn) <= :max")
+    Stream<Long> yearsUpTo(long max);
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021,2024 IBM Corporation and others.
+ * Copyright (c) 2021,2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -108,6 +108,7 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
     static final String KEY_createSession = "createSession";
     static final String KEY_useRelayStateForTarget = "useRelayStateForTarget";
     public static final String KEY_postLogoutRedirectUrl = "postLogoutRedirectUrl";
+    static final String KEY_cspHeader = "contentSecurityPolicy";
 
     static final String[] notInUseAttributes = new String[] { KEY_headerName, KEY_audiences };
 
@@ -178,6 +179,7 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
     boolean useRelayStateForTarget = true;
     String postLogoutRedirectUrl = null;
     private boolean servletRequestLogoutPerformsSamlLogout = false;
+    String cspHeader = null;
 
     static HashMap<String, String> nameIDFormatMap = new HashMap<String, String>();
     static {
@@ -194,8 +196,7 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
 
     CommonConfigUtils configUtils = new CommonConfigUtils();
 
-    public SsoConfigImpl() {
-    }
+    public SsoConfigImpl() {}
 
     /*
      * (non-Javadoc)
@@ -294,6 +295,7 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
         useRelayStateForTarget = (Boolean) props.get(KEY_useRelayStateForTarget);
         postLogoutRedirectUrl = configUtils.getConfigAttribute(props, KEY_postLogoutRedirectUrl);
         servletRequestLogoutPerformsSamlLogout = (Boolean) props.get(KEY_servletRequestLogoutPerformsSamlLogout);
+        cspHeader = (String) props.get(KEY_cspHeader);
 
         // Handle the tc debug
         processPkixTrustEngine(props);
@@ -570,7 +572,8 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
                                                           + "\nx509 cert list:" + pkixX509List.toString()
                                                           + "\ncrl list:" + pkixCrlList.toString())
                      + "\npostLogoutRedirectUrl:" + postLogoutRedirectUrl
-                     + "\nservletRequestLogoutPerformsSamlLogout: " + servletRequestLogoutPerformsSamlLogout;
+                     + "\nservletRequestLogoutPerformsSamlLogout: " + servletRequestLogoutPerformsSamlLogout
+                     + "\ncspHeader: " + cspHeader;
         }
 
         return result;
@@ -586,8 +589,23 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
         if (CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA256.equalsIgnoreCase(signatureMethodAlgorithm)) {
             return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;
         } else if (CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA1.equalsIgnoreCase(signatureMethodAlgorithm)) {
+            // FIPS 140-3: Algorithm assessment complete; no changes required.
+            // Already log insure algorithm at top of the class
             return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1;
+        } else if (CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA384.equalsIgnoreCase(signatureMethodAlgorithm)) {
+            return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA384;
+        } else if (CryptoUtils.MESSAGE_DIGEST_ALGORITHM_SHA512.equalsIgnoreCase(signatureMethodAlgorithm)) {
+            return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA512;
+        } //end RSA algos
+          //begin ECDSA algos
+        else if (CryptoUtils.SIGNATURE_ALGORITHM_ECDSAWITHSHA256.equalsIgnoreCase(signatureMethodAlgorithm)) {
+            return SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256;
+        } else if (CryptoUtils.SIGNATURE_ALGORITHM_ECDSAWITHSHA384.equalsIgnoreCase(signatureMethodAlgorithm)) {
+            return SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384;
+        } else if (CryptoUtils.SIGNATURE_ALGORITHM_ECDSAWITHSHA512.equalsIgnoreCase(signatureMethodAlgorithm)) {
+            return SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512;
         }
+        // default to sha256 otherwise
         return SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;
     }
 
@@ -951,4 +969,11 @@ public class SsoConfigImpl extends PkixTrustEngineConfig implements SsoConfig, F
 
     }
 
+    @Override
+    public String getCspHeader() {
+        if (cspHeader!=null && cspHeader.length()==0) {
+            return null;
+        }
+        return cspHeader;
+    }
 }

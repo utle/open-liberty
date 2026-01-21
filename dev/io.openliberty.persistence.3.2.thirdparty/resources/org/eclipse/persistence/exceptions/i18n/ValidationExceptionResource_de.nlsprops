@@ -187,8 +187,6 @@
 
 7111=Sie k\u00f6nnen eine HistoricalSession nicht von einer UnitOfWork, einer anderen HistoricalSession, einer ServerSession oder einem ServerSessionBroker abrufen. Sie k\u00f6nnen sie von einer regul\u00e4ren Sitzung, einer ClientSession oder einem ClientSessionBroker abrufen.
 
-7112=Sie haben angegeben, dass EclipseLink das Feature {0} verwendet, aber dieses Feature ist in der aktuell aktiven JDK-Version nicht verf\u00fcgbar: {1}.
-
 7113={0} unterst\u00fctzt keinen Aufruf mit R\u00fcckgabe.
 
 7114=Isolierte Daten werden derzeit in einem Clientsitzungsbroker nicht unterst\u00fctzt. Die Sitzung mit dem Namen {0} enth\u00e4lt Deskriptoren, die isolierte Daten darstellen.
@@ -640,4 +638,12 @@
 7359=Kein ASM-Service verf\u00fcgbar.
 
 7360=Das Datenbankkennwort wurde mit einem veralteten Algorithmus verschl\u00fcsselt. Verschl\u00fcsseln Sie es erneut durch `passwordUpdate.sh` von eclipselink.zip b\u00fcndeln.
+
+7361=Es kann nur ein Feld in der Aufz\u00e4hlung durch die Anmerkung @EnumeratedValue gekennzeichnet werden. Pr\u00fcfen Sie die Aufz\u00e4hlungsklasse [ {0} ].
+
+7362=Bei einem ORDINAL-Aufz\u00e4hlungstyp k\u00f6nnen nur Byte-, Short-, Int-, Log- oder Wrapper-Typen als Attributtyp verwendet werden, die durch @EnumeratedValue gekennzeichnet sind. Pr\u00fcfen Sie das Attribut [ {0} ] in der Aufz\u00e4hlungsklasse [ {1} ].
+
+7363=Bei einem STRING-Aufz\u00e4hlungstyp kann nur der Typ java.lang.String als Attributtyp verwendet werden, der durch @EnumeratedValue gekennzeichnet ist. Pr\u00fcfen Sie das Attribut [ {0} ] in der Aufz\u00e4hlungsklasse [ {1} ].
+
+7364=In der Entit\u00e4t [ {0} ] in NamedNativeQuery [ {1} ] wird ein implizites SqlResultSetMapping (Attribut "Entit\u00e4ten", "Klassen" oder "Spalten") zusammen mit einem externen SqlResultSetMapping verwendet, auf das durch das Attribut "resultSetMapping" verwiesen wird. Diese Kombination ist nicht zul\u00e4ssig.
 

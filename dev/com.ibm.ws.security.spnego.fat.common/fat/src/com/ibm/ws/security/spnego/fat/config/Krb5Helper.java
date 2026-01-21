@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2024 IBM Corporation and others.
+ * Copyright (c) 2014, 2025 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -28,8 +28,8 @@ import org.ietf.jgss.Oid;
 import com.ibm.websphere.security.auth.callback.WSCallbackHandlerImpl;
 import com.ibm.websphere.simplicity.log.Log;
 import com.ibm.ws.common.encoder.Base64Coder;
-import com.ibm.ws.kernel.service.util.JavaInfo;
 
+import componenttest.topology.impl.JavaInfo;
 import componenttest.topology.impl.LibertyServer;
 
 public class Krb5Helper {
@@ -44,10 +44,9 @@ public class Krb5Helper {
     public static Oid KRB5_MECH_OID = null;
     public static Oid SPNEGO_MECH_OID = null;
 
-    // When running on zOS the file format is not properly converted for the jaas.conf file currently,
-    // so we will use zjaas.conf, which is already formatted for zOS.
-    private static final String JAAS_CONF_FILE = (System.getProperty("os.name")
-                    .equals("z/OS")) ? SPNEGOConstants.ZOS_CLIENT_JAAS_CONFIG_FILE : SPNEGOConstants.CLIENT_JAAS_CONFIG_FILE;
+    // Try to use the normal jaas.conf first, and fallback to zjaas.conf if needed
+    private static final String JAAS_CONF_FILE = SPNEGOConstants.CLIENT_JAAS_CONFIG_FILE;
+    private static final String JAAS_CONF_FILE_FALLBACK = SPNEGOConstants.ZOS_CLIENT_JAAS_CONFIG_FILE;
 
     /**
      * Performs a Kerberos login on the given server using the provided login configuration and user credentials.
@@ -102,7 +101,7 @@ public class Krb5Helper {
     public Subject kerberosLogin(LibertyServer server, String userName, String password, String krb5LoginConfig, String realm, String kdcHostName,
                                  String jaasLoginContextEntry) throws Exception {
         String thisMethod = "kerberosLogin";
-        String loginContextEntry = setupLoginConfig(server, krb5LoginConfig, realm, kdcHostName, jaasLoginContextEntry);
+        String loginContextEntry = setupLoginConfig(server, krb5LoginConfig, realm, kdcHostName, jaasLoginContextEntry, false);
 
         WSCallbackHandlerImpl wscbh = new WSCallbackHandlerImpl(userName, password);
         Subject subject = null;
@@ -110,9 +109,41 @@ public class Krb5Helper {
             LoginContext lc = new LoginContext(loginContextEntry, wscbh);
             lc.login();
             subject = lc.getSubject();
-        } catch (LoginException e) {
-            Log.info(thisClass, thisMethod, "Unexpected exception: " + CommonTest.maskHostnameAndPassword(e.getMessage()));
-            throw e;
+        } catch (Exception e) {
+            String exceptionMessage = e.getMessage();
+            Log.info(thisClass, thisMethod, "Exception caught: " + CommonTest.maskHostnameAndPassword(exceptionMessage));
+            
+            // Check if this is the specific configuration error that indicates we need to use zjaas.conf
+            // The exception is: java.lang.SecurityException: java.io.IOException: Configuration Error:
+            //     Line 1: expected [{], found [null]
+            boolean isConfigError = false;
+            if (e instanceof java.lang.SecurityException ||
+                (e.getCause() != null && e.getCause() instanceof java.lang.SecurityException)) {
+                if (exceptionMessage != null &&
+                    exceptionMessage.contains("Configuration Error") &&
+                    exceptionMessage.contains("Line 1: expected [{], found [null]")) {
+                    isConfigError = true;
+                }
+            }
+            
+            if (isConfigError) {
+                Log.info(thisClass, thisMethod, "Detected jaas.conf format issue, retrying with zjaas.conf fallback");
+                
+                // Retry with the fallback configuration
+                loginContextEntry = setupLoginConfig(server, krb5LoginConfig, realm, kdcHostName, jaasLoginContextEntry, true);
+                try {
+                    LoginContext lc = new LoginContext(loginContextEntry, wscbh);
+                    lc.login();
+                    subject = lc.getSubject();
+                    Log.info(thisClass, thisMethod, "Successfully logged in using zjaas.conf fallback");
+                } catch (Exception e2) {
+                    Log.info(thisClass, thisMethod, "Fallback also failed: " + CommonTest.maskHostnameAndPassword(e2.getMessage()));
+                    throw e2;
+                }
+            } else {
+                Log.info(thisClass, thisMethod, "Not a config error, rethrowing original exception. jaasLoginContextEntry: "+ jaasLoginContextEntry);
+                throw e;
+            }
         }
         return subject;
     }
@@ -137,18 +168,22 @@ public class Krb5Helper {
      * @param krb5Config
      * @param realm
      * @param kdcHostName
+     * @param jaasLoginContextEntry
+     * @param useFallback - If true, use zjaas.conf instead of jaas.conf
      * @return jaasLoginContextEntry
      */
-    public String setupLoginConfig(LibertyServer server, String krb5Config, String realm, String kdcHostName, String jaasLoginContextEntry) {
+    public String setupLoginConfig(LibertyServer server, String krb5Config, String realm, String kdcHostName, String jaasLoginContextEntry, boolean useFallback) {
         String thisMethod = "setupLoginConfig";
-        Log.info(thisClass, thisMethod, "krb5Config: " + krb5Config + " realm: " + realm + " kdcHostName: " + InitClass.getKDCHostnameMask(kdcHostName));
+        Log.info(thisClass, thisMethod, "krb5Config: " + krb5Config + " realm: " + realm + " kdcHostName: " + InitClass.getKDCHostnameMask(kdcHostName) + " useFallback: " + useFallback);
         String loginContextEntry = IBM_JDK_KRB5_LOGIN;
-        String jaasLoginConfig = server.getServerRoot() + JAAS_CONF_FILE;
+        String jaasLoginConfig = server.getServerRoot() + (useFallback ? JAAS_CONF_FILE_FALLBACK : JAAS_CONF_FILE);
 
         if (realm != null && !realm.isEmpty()) {
-            Log.info(thisClass, thisMethod, "Setting system properties java.security.krb5.realm and java.security.krb5.kdc");
-            System.setProperty("java.security.krb5.realm", realm);
-            System.setProperty("java.security.krb5.kdc", (kdcHostName == null) ? InitClass.KDC_HOSTNAME : kdcHostName);
+            //TODO: remove this block if it is not required
+            Log.info(thisClass, thisMethod, "NOT Setting system properties java.security.krb5.realm and java.security.krb5.kdc");
+            // NOTE: do not set the kdc and realm system properties, as they should be read from the krb5.conf file instead
+            //System.setProperty("java.security.krb5.realm", realm);
+            //System.setProperty("java.security.krb5.kdc", (kdcHostName == null) ? InitClass.KDC_HOSTNAME : kdcHostName);
         } else if (krb5Config != null) {
             Log.info(thisClass, thisMethod, "Setting system property java.security.krb5.conf=" + krb5Config);
             System.setProperty("java.security.krb5.conf", krb5Config);
@@ -157,8 +192,9 @@ public class Krb5Helper {
         if (!IBM_KRB5_LOGIN_MODULE_AVAILABLE) {
             loginContextEntry = SUN_JDK_KRB5_LOGIN;
             System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
-            System.setProperty("java.security.krb5.realm", (realm == null) ? InitClass.KDC_REALM : realm);
-            System.setProperty("java.security.krb5.kdc", (kdcHostName == null) ? InitClass.KDC_HOSTNAME : kdcHostName);
+            // NOTE: do not set the kdc and realm system properties, as they should be read from the krb5.conf file instead
+            //System.setProperty("java.security.krb5.realm", (realm == null) ? InitClass.KDC_REALM : realm);
+            //System.setProperty("java.security.krb5.kdc", (kdcHostName == null) ? InitClass.KDC_HOSTNAME : kdcHostName);
         }
 
         Log.info(thisClass, thisMethod, "Setting system property java.security.auth.login.config=" + jaasLoginConfig);

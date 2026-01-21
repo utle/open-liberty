@@ -187,8 +187,6 @@
 
 7111=Non \u00e8 possibile acquisire una HistoricalSession da una unit\u00e0  di lavoro, un''altra HistoricalSession, una ServerSession o un ServerSessionBroker.  \u00c8 possibile acquisirne una da una sessione regolare, una ClientSession o un ClientSessionBroker.
 
-7112=\u00c8 stato specificato che EclipseLink utilizza la funzione: {0}, ma questa funzione non \u00e8 disponibile nella versione JDK attualmente in esecuzione: {1}.
-
 7113={0} non supporta la chiamata con ritorno.
 
 7114=I dati isolati non sono attualmente supportati all''interno di un broker della sessione client. La sessione denominata {0} contiene i descrittori che rappresentano i dati isolati.
@@ -640,4 +638,12 @@
 7359=Nessun servizio ASM disponibile.
 
 7360=La password del database \u00e8 stata crittografata da un algoritmo deprecato. Ricodificalo tramite `passwordUpdate.sh` da eclipselink.zip fascio.
+
+7361=Solo un campo dell''enumerazione pu\u00f2 essere contrassegnato dall''annotazione @EnumeratedValue. Controllare la classe enum [ {0} ].
+
+7362=Per un tipo enumerato ORDINAL, solo i tipi byte, short, int, log o wrapper possono essere utilizzati come tipo di attributo contrassegnato da @EnumeratedValue. Controllare l''attributo [ {0} ] nella classe enum [ {1} ].
+
+7363=Per un tipo enumerato STRING, solo il tipo java.lang.String pu\u00f2 essere utilizzato come tipo di attributo contrassegnato da @EnumeratedValue. Controllare l''attributo [ {0} ] nella classe enum [ {1} ].
+
+7364=Nell''entit\u00e0 [ {0} ] in NamedNativeQuery [ {1} ], viene utilizzato un SqlResultSetMapping implicito (attributo "entities", "classes" o "columns") insieme a un SqlResultSetMapping esterno a cui fa riferimento l''attributo "resultSetMapping". Questa combinazione non \u00e8 consentita.
 

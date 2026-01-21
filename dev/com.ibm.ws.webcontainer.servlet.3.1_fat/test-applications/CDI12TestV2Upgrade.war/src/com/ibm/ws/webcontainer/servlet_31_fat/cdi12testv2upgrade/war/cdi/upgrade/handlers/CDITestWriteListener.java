@@ -1,14 +1,11 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2015 IBM Corporation and others.
+ * Copyright (c) 2014, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
- * 
- * SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     IBM Corporation - initial API and implementation
+ * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package com.ibm.ws.webcontainer.servlet_31_fat.cdi12testv2upgrade.war.cdi.upgrade.handlers;
 
@@ -96,8 +93,10 @@ public class CDITestWriteListener implements WriteListener {
     public void onWritePossible() throws IOException {
         String methodName = "onWritePossible";
         logEntry(methodName);
+        logInfo(methodName, "this [" + this + "]");
 
         logBeanActivity(methodName, "Entry");
+        logInfo(methodName, "appendBeanData [WP]");
         appendBeanData("WP"); // 'W' for "WriteListener"; 'P' for "Possible"
 
         boolean nextIsNumbers = false;
@@ -164,6 +163,7 @@ public class CDITestWriteListener implements WriteListener {
         logEntry(methodName);
 
         logBeanActivity(methodName, "Entry");
+        logInfo(methodName, "appendBeanData [WE]");
         appendBeanData("WE"); // 'W' for "WriteListener"; 'E' for "Error"
 
         try {
