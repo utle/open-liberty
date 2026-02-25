@@ -528,7 +528,7 @@ public abstract class CollaboratorHelper implements ICollaboratorHelper {
             IOException, Exception {
         
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) 
-            logger.entering(CLASS_NAME, "postInvokeCollaborators");
+            logger.entering(CLASS_NAME, "postInvokeCollaborators <<UTLE>> colEnum:", colEnum);
 
         WebComponentMetaData cmd = collabMetaData.getComponentMetaData();
         HttpServletRequest httpRequest = collabMetaData.getHttpServletRequest();
@@ -542,6 +542,8 @@ public abstract class CollaboratorHelper implements ICollaboratorHelper {
         // Invoke security collaborator here because JSR 375 requires that all CDI scopes are available.
         boolean postInvokeForSecureResponseNeeded = true;
         if (colEnum != null && colEnum.contains(CollaboratorInvocationEnum.SECURITY) && securityCollaborator.isCDINeeded()) {
+            if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) 
+                logger.entering(CLASS_NAME, "postInvokeCollaborators <<UTLE>> 2: colEnum:", colEnum);
             postInvokeForSecureResponseNeeded = false;
             Object secObject = collabMetaData.getSecurityObject();
             this.securityCollaborator.postInvokeForSecureResponse(secObject);
@@ -612,6 +614,8 @@ public abstract class CollaboratorHelper implements ICollaboratorHelper {
         }
 
         if (colEnum != null && colEnum.contains(CollaboratorInvocationEnum.SECURITY)) {
+            if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) 
+                logger.entering(CLASS_NAME, "postInvokeCollaborators <<UTLE>> 3: colEnum:", colEnum);
             Object secObject = collabMetaData.getSecurityObject();
             if (postInvokeForSecureResponseNeeded) {
                 this.securityCollaborator.postInvokeForSecureResponse(secObject);

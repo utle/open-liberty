@@ -71,7 +71,7 @@ public class CollaboratorServiceImpl implements CollaboratorService {
         instance.set(this);
         
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) {
-            logger.logp(Level.FINE, CLASS_NAME, "activate", " context [" + context + "] , this [" + this + "]");
+            logger.logp(Level.FINE, CLASS_NAME, "activate <<UTLE>> ", " context [" + context + "] , this [" + this + "]");
         }
     }
 
@@ -125,11 +125,13 @@ public class CollaboratorServiceImpl implements CollaboratorService {
      */
     public void setWebAppSecurityCollaborator(ServiceReference<IWebAppSecurityCollaborator> ref) {
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) {
-            logger.logp(Level.FINE, CLASS_NAME, "setWebAppSecurityCollaborator", " this [" + this + "]");
+            logger.logp(Level.FINE, CLASS_NAME, "<<UTLE>> setWebAppSecurityCollaborator", " this [" + this + "]");
         }
         
         String securityType = getSecurityType(ref);
-
+        if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) {
+            logger.logp(Level.FINE, CLASS_NAME, "<<UTLE>> setWebAppSecurityCollaborator securityType: ", securityType);
+        }
         webAppSecurityCollaborators.putReference(securityType, ref);
     }
 
@@ -150,11 +152,15 @@ public class CollaboratorServiceImpl implements CollaboratorService {
 
     public void unsetWebAppSecurityCollaborator(ServiceReference<IWebAppSecurityCollaborator> ref) {
         if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) {
-            logger.logp(Level.FINE, CLASS_NAME, "unsetWebAppSecurityCollaborator", " this [" + this + "]");
+            logger.logp(Level.FINE, CLASS_NAME, "<<UTLE>> unsetWebAppSecurityCollaborator", " this [" + this + "]");
         }
         
         // check that this service is in the map
         String securityType = getSecurityType(ref);
+        
+        if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled() && logger.isLoggable(Level.FINE)) {
+            logger.logp(Level.FINE, CLASS_NAME, "<<UTLE>> setWebAppSecurityCollaborator securityType: ", securityType );
+        }
         webAppSecurityCollaborators.removeReference(securityType, ref);
     }
 
@@ -173,6 +179,7 @@ public class CollaboratorServiceImpl implements CollaboratorService {
             securityType = "com.ibm.ws.feature";
         if (thisService != null) {
             collab = thisService.webAppSecurityCollaborators.getService(securityType);
+            System.out.print("<<UTLE>> collab: " + (collab != null ? collab.toString(): "NULL"));
         }
 
         return collab;

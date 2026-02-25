@@ -13,28 +13,50 @@
 package com.ibm.ws.webcontainer.collaborator;
 
 import java.io.IOException;
+import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ibm.websphere.security.WSSecurityException;
+import com.ibm.websphere.security.auth.WSSubject;
 import com.ibm.wsspi.webcontainer.WCCustomProperties;
 import com.ibm.wsspi.webcontainer.collaborator.IWebAppSecurityCollaborator;
 import com.ibm.wsspi.webcontainer.extension.ExtensionProcessor;
 import com.ibm.wsspi.webcontainer.security.SecurityViolationException;
 import com.ibm.wsspi.webcontainer.servlet.IExtendedRequest;
 import com.ibm.wsspi.webcontainer.servlet.IServletContext;
+import com.ibm.wsspi.webcontainer.logging.LoggerFactory;
 
 public class WebAppSecurityCollaborator implements IWebAppSecurityCollaborator {
+    private static final String CLASS_NAME="com.ibm.ws.webcontainer.collaborator.WebAppSecurityCollaborator";
+    protected static Logger logger = LoggerFactory.getInstance().getLogger("com.ibm.ws.webcontainer.collaborator");
+    
 
     public Object preInvoke(HttpServletRequest req, HttpServletResponse resp,
                             String servletName, boolean enforceSecurity)
                         throws SecurityViolationException, IOException {
 
-        //don't allow default "TRACE" request by default - even when security is disabled
+        System.out.println("<<UTLE>> preInvoke (1) Caller Subject on thread? enforceSecurity: "+ enforceSecurity);
+        try {
+            System.out.println("<<UTLE>> preInvoke (1) Caller Subject on thread? " + WSSubject.getCallerSubject());
+            //if (WSSubject.getCallerPrincipal() != null) {
+            //    WSSubject.setCallerSubject(null);
+            //    System.out.println("<<UTLE>> preInvoke (1) After clear Subject on thread: " + WSSubject.getCallerSubject());
+            //}
+        } catch (WSSecurityException e) {
+            // TODO Auto-generated catch block
+            // Do you need FFDC here? Remember FFDC instrumentation and @FFDCIgnore
+            e.printStackTrace();
+        }
         
+        //don't allow default "TRACE" request by default - even when security is disabled
         String defaultMethod = (String) req.getAttribute("com.ibm.ws.webcontainer.security.checkdefaultmethod");
         
         if ("TRACE".equals(defaultMethod) && !WCCustomProperties.ENABLE_TRACE_REQUESTS) {
@@ -49,12 +71,33 @@ public class WebAppSecurityCollaborator implements IWebAppSecurityCollaborator {
 
     public Object preInvoke(String servletName)
                         throws SecurityViolationException, IOException {
-        // TODO Auto-generated method stub
+        System.out.println("<<UTLE>> preInvoke (2) Caller Subject on thread? ");
+        try {
+            System.out.println("<<UTLE>> preInvoke (2) Caller Subject on thread? " + WSSubject.getCallerSubject());
+        } catch (WSSecurityException e) {
+            // TODO Auto-generated catch block
+            // Do you need FFDC here? Remember FFDC instrumentation and @FFDCIgnore
+            e.printStackTrace();
+        }
         return null;
     }
 
     public Object preInvoke() throws SecurityViolationException {
-        // TODO Auto-generated method stub
+        System.out.println("<<UTLE>> preInvoke (3) Caller Subject on thread? ");
+        try {
+            System.out.println("<<UTLE>> preInvoke (3) Caller Subject on thread? " + WSSubject.getCallerSubject());
+        } catch (WSSecurityException e) {
+            // TODO Auto-generated catch block
+            // Do you need FFDC here? Remember FFDC instrumentation and @FFDCIgnore
+            e.printStackTrace();
+        }
+        //if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled()&&logger.isLoggable (Level.FINE)){
+            logger.entering(CLASS_NAME,"preInvoke");
+        //}
+        clearSubjectsOnThread();
+        //if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled()&&logger.isLoggable (Level.FINE)){
+            logger.exiting(CLASS_NAME,"preInvoke");
+        //}
         return null;
     }
 
@@ -126,5 +169,35 @@ public class WebAppSecurityCollaborator implements IWebAppSecurityCollaborator {
     public List<String> getURIsInSecurityConstraints(String appName,
                                                      String contextRoot, String host, List<String> URIs) {
         return null;
+    }
+    
+    private void clearSubjectsOnThread() {
+        try {
+         
+            /*
+            final SubjectManager sm = SubjectManager.getSubjectManager();
+            
+            if (sm != null) {
+                AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                    @Override
+                    public Object run() {
+                        sm.setInvocationSubject(null);
+                        sm.setCallerSubject(null);
+                        return null;
+                    }
+                });
+            } else {
+                WSSubject.setRunAsSubject(null);
+            } */
+            //if (com.ibm.ejs.ras.TraceComponent.isAnyTracingEnabled()&&logger.isLoggable (Level.FINE)){
+                logger.exiting(CLASS_NAME,"clearSubjectsOnThread callerSubject: "+  WSSubject.getCallerSubject() + " runAsSubject: " + WSSubject.getRunAsSubject());
+            //}
+            System.out.println("<<UTLE>> Caller Subject on thread? " + WSSubject.getCallerSubject());
+            System.out.println("<<UTLE>> RunAs Subject on thread? " + WSSubject.getRunAsSubject());
+            System.err.println("<<UTLE>> Failed to clear security subjects on thread: ");
+            WSSubject.setRunAsSubject(null);
+        } catch (Exception e) {
+            System.err.println("Failed to clear security subjects on thread: " + e.getMessage());
+        }
     }
 }
