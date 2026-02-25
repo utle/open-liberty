@@ -227,10 +227,14 @@ public class FormLoginExtensionProcessor extends WebExtensionProcessor {
             }
             ssoCookieHelper.addSSOCookiesToResponse(subject, req, res, wac.getContextRoot());
             referrerURLHandler.invalidateReferrerURLCookie(req, res, ReferrerURLCookieHandler.REFERRER_URL_COOKIENAME);
+
             if (!res.isCommitted()) {
+                Tr.debug(tc, "<<UTLE>> clearSubjects");
+                //subjectManager.clearSubjects();
                 res.sendRedirect(res.encodeURL(storedReq));
             }
         }
+
     }
 
     /**
