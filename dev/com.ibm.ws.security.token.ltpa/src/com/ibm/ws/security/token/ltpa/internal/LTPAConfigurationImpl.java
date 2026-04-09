@@ -277,8 +277,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             StringJoiner sj = new StringJoiner(", ", "debugLTPAConfig[", "]");
             sj.add("primaryKeyImportFile: " + primaryKeyImportFile);
             sj.add("keyTokenExpiration: " + keyTokenExpiration);
-            sj.add("refreshThreshold: " + refreshThreshold);
             sj.add("keyTokenMaxLifetime: " + keyTokenMaxLifetime);
+            sj.add("refreshThreshold: " + refreshThreshold);
             sj.add("monitorInterval: " + monitorInterval);
             sj.add("authFilterRef: " + authFilterRef);
             sj.add("monitorValidationKeysDir: " + monitorValidationKeysDir);
@@ -813,7 +813,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
 
     /** {@inheritDoc} */
     @Override
-    public long getmaxLifetime() {
+    public long getMaxLifetime() {
         return keyTokenMaxLifetime;
     }
 

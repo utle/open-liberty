@@ -102,9 +102,9 @@ public interface LTPAConfiguration {
     long getTokenExpiration();
 
     /**
-     * @return refresh life time
+     * @return max life time
      */
-    long getmaxLifetime();
+    long getMaxLifetime();
 
     /**
      * @return refresh threshold percentage for remains of token timeout
