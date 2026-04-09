@@ -185,7 +185,9 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
 
         try {
             loadConfig(props);
-            if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldKeyTokenMaxLifetime, oldRefreshThreshold, oldKeyTokenMaxLifetime, oldRefreshThreshold,oldExpirationDifferenceAllowed, oldMonitorValidationKeysDir, oldUpdateTrigger, oldValidationKeys)) {
+
+            if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldKeyTokenMaxLifetime, oldRefreshThreshold, oldExpirationDifferenceAllowed,
+                                    oldMonitorValidationKeysDir, oldUpdateTrigger, oldValidationKeys)) {
                 unsetFileMonitorRegistration();
                 Tr.audit(tc, "LTPA_KEYS_TO_LOAD", primaryKeyImportFile);
                 setupRuntimeLTPAInfrastructure();
@@ -672,6 +674,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
      * @param oldKeyTokenMaxLifetime
      * @param oldRefreshThreshold
      * @param oldExpirationDifferenceAllowed
+     * @param oldExpirationDifferenceAllowed2
      * @param oldMonitorValidationKeysDir
      * @param oldUpdateTrigger
      * @param oldValidationKeys
