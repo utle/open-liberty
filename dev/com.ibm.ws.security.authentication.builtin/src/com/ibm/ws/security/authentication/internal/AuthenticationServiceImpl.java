@@ -77,6 +77,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     static final String KEY_LTPA_CONFIGURATION = "ltpaConfiguration";
     private static final String LTPA_OID = "oid:1.3.18.0.2.30.2";
     private static final String JWT_OID = "oid:1.3.18.0.2.30.3"; // ?????
+    private static final long MILLIS_PER_MINUTE = 60 * 1000;
 
     private final AtomicServiceReference<AuthCacheService> authCacheServiceRef = new AtomicServiceReference<AuthCacheService>(KEY_AUTH_CACHE_SERVICE);
     private final AtomicServiceReference<UserRegistryService> userRegistryServiceRef = new AtomicServiceReference<UserRegistryService>(KEY_USER_REGISTRY_SERVICE);
@@ -93,6 +94,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private String invalidDelegationUser = "";
 
     private final AuthenticationGuard authenticationGuard = new AuthenticationGuard();
+    
+    /**
+     * Helper method to check if debug tracing is enabled.
+     *
+     * @return true if debug tracing is enabled, false otherwise
+     */
+    private boolean isDebugEnabled() {
+        return TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled();
+    }
 
     protected void setJaasService(JAASService jaasService) {
         this.jaasService = jaasService;
@@ -421,7 +431,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             // Check if the cached subject's LTPA token needs refresh
             if (subject != null && shouldRefreshCachedToken(subject)) {
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                if (isDebugEnabled()) {
                     Tr.debug(tc, "Cached subject's LTPA token needs refresh, returning null to force validation LTPA token and then refresh it");
                 }
                 return null;
@@ -437,7 +447,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @param subject The Subject retrieved from auth cache
      * @return true if token needs refresh, false otherwise
      */
-    private boolean shouldRefreshCachedToken(Subject subject) {
+    private synchronized boolean shouldRefreshCachedToken(Subject subject) {
         if (subject == null) {
             return false;
         }
@@ -446,6 +456,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // Extract WSCredential from Subject
             Set<WSCredential> wsCredentials = subject.getPublicCredentials(WSCredential.class);
             if (wsCredentials == null || wsCredentials.isEmpty()) {
+                if (isDebugEnabled()) {
+                    Tr.debug(tc, "No WSCredential found in subject");
+                }
                 return false;
             }
 
@@ -454,19 +467,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 return false;
             }
 
-            // Get the credential token (LTPA token bytes)
-            //byte[] tokenBytes = wsCredential.getCredentialToken();
-            //if (tokenBytes == null || tokenBytes.length == 0) {
-            //    return false;
-            //}
-
             // Get expiration time from WSCredential
             long expiration = wsCredential.getExpiration();
             long currentTime = System.currentTimeMillis();
 
             // Check if token is expired
             if (currentTime >= expiration) {
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                if (isDebugEnabled()) {
                     Tr.debug(tc, "Token is expired: current=" + currentTime + ", expiration=" + expiration);
                 }
                 return true;
@@ -474,23 +481,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             // Get LTPA configuration to check refresh threshold
             LTPAConfiguration ltpaConfig = ltpaConfigurationRef.getService();
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            if (isDebugEnabled()) {
                 Tr.debug(tc, "ltpaConfig: " + ltpaConfig);
             }
             if (ltpaConfig != null) {
                 long refreshThresholdInMinutes = ltpaConfig.getRefreshThreshold();
                 if (refreshThresholdInMinutes > 0) {
-                    long refreshThresholdInMillis = refreshThresholdInMinutes * 60 * 1000;
+                    long refreshThresholdInMillis = refreshThresholdInMinutes * MILLIS_PER_MINUTE;
                     long timeRemaining = expiration - currentTime;
 
-                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    if (isDebugEnabled()) {
                         Tr.debug(tc, "Checking refresh threshold: timeRemaining=" + timeRemaining +
                                      "ms, threshold=" + refreshThresholdInMillis + "ms");
                     }
 
                     // Check if token is within refresh threshold
                     if (timeRemaining <= refreshThresholdInMillis) {
-                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                        if (isDebugEnabled()) {
                             Tr.debug(tc, "Token needs refresh: remaining time (" + timeRemaining +
                                          "ms) <= threshold (" + refreshThresholdInMillis + "ms)");
                         }
@@ -498,15 +505,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     }
                 }
             } else {
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                if (isDebugEnabled()) {
                     Tr.debug(tc, "LTPA configuration not available, token refresh disabled");
                 }
             }
 
             return false;
 
+        } catch (SecurityException se) {
+            // Security exceptions should be logged at warning level
+            Tr.warning(tc, "Security exception while checking token refresh: " + se.getMessage());
+            throw se;
         } catch (Exception e) {
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            // Log other exceptions at warning level instead of just debug
+            Tr.warning(tc, "Error checking if cached token needs refresh: " + e.getMessage());
+            if (isDebugEnabled()) {
                 Tr.debug(tc, "Error checking if cached token needs refresh", e);
             }
             return false;
