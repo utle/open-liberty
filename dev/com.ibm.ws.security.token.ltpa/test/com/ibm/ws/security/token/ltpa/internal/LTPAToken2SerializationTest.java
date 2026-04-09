@@ -43,7 +43,7 @@ import test.UTLocationHelper;
 public class LTPAToken2SerializationTest {
 
     private static final String KEYIMPORTFILE = "${server.config.dir}/resources/security/security.token.ltpa.keys.correct.txt";
-    private static final byte[] KEYPASSWORD = "WebAS".getBytes();
+    private static final byte[] KEYPASSWORD = "WebAS".getBytes(); // pragma: allowlist secret
     private static final String decodedSharedKey = "Three can keep a secret when two are no longer there";
     private static final String encodedSharedKey = Base64Coder.base64Encode(decodedSharedKey);
     private static LTPAPrivateKey ltpaPrivateKey;
@@ -157,7 +157,7 @@ public class LTPAToken2SerializationTest {
         LTPAKeyInfoManager keyInfoManager = new LTPAKeyInfoManager();
         keyInfoManager.prepareLTPAKeyInfo(UTLocationHelper.getLocationManager(),
                                           KEYIMPORTFILE,
-                                          KEYPASSWORD, null);
+                                          KEYPASSWORD, null, false);
         ltpaPrivateKey = new LTPAPrivateKey(keyInfoManager.getPrivateKey(KEYIMPORTFILE));
         ltpaPublicKey = new LTPAPublicKey(keyInfoManager.getPublicKey(KEYIMPORTFILE));
         sharedKey = encodedSharedKey.getBytes();

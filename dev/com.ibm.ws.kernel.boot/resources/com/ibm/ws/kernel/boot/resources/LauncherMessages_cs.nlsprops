@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2010, 2025 IBM Corporation and others.
+# Copyright (c) 2010, 2026 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -437,7 +437,7 @@ warning.tooManySymbolicLinks.explanation=Symbolick\u00e9 odkazy jsou z\u00e1stup
 warning.tooManySymbolicLinks.useraction=Chcete-li tento probl\u00e9m vy\u0159e\u0161it, zkontrolujte symbolick\u00e9 odkazy v cest\u011b a ujist\u011bte se, \u017ee nevytv\u00e1\u0159ej\u00ed kruhov\u00e9 odkazy. M\u016f\u017eete tak\u00e9 pou\u017e\u00edt p\u0159\u00edkaz 'readlink' ke kontrole jednotliv\u00fdch odkaz\u016f v \u0159et\u011bzci.
 
 warning.javaHomeNotSet=CWWKE0097W: Prom\u011bnn\u00e1 prost\u0159ed\u00ed JAVA_HOME nen\u00ed nastavena.
-warning.javaHomeNotSet.explanation=Skript serveru nem\u016f\u017ee ur\u010dit um\u00edst\u011bn\u00ed instalace jazyka Java. K tomuto probl\u00e9mu nedoch\u00e1z\u00ed, pokud je spr\u00e1vn\u011b nastavena prom\u011bnn\u00e1 prost\u0159ed\u00ed JAVA_HOME nebo pokud je spustiteln\u00fd soubor "java", nalezen\u00fd prohled\u00e1n\u00edm PATH, um\u00edst\u011bn v kompletn\u00ed instalaci Javy. Um\u00edst\u011bn\u00ed instalace Javy je nutn\u00e9 k nalezen\u00ed konfigura\u010dn\u00edch soubor\u016f specifick\u00fdch pro danou verzi, nap\u0159\u00edklad java9.options. Pokud se instalaci Javy nepoda\u0159\u00ed naj\u00edt, tyto soubory se nena\u010dtou a aplikace, kter\u00e9 na n\u011b spol\u00e9haj\u00ed, se nemus\u00ed chovat podle o\u010dek\u00e1v\u00e1n\u00ed.
+warning.javaHomeNotSet.explanation=Skript serveru nem\u016f\u017ee ur\u010dit um\u00edst\u011bn\u00ed instalace jazyka Java. Tento probl\u00e9m se nevyskytuje, pokud je spr\u00e1vn\u011b nastavena prom\u011bnn\u00e1 prost\u0159ed\u00ed JAVA_HOME nebo pokud je spustiteln\u00fd soubor \u201ejava\u201c, nalezen\u00fd vyhled\u00e1n\u00edm v PATH, um\u00edst\u011bn v kompletn\u00ed instalaci Javy. Um\u00edst\u011bn\u00ed instalace Java je pot\u0159ebn\u00e9 k nalezen\u00ed konfigura\u010dn\u00edch soubor\u016f specifick\u00fdch pro danou verzi, jako je nap\u0159\u00edklad verze Java a mo\u017enosti. Pokud nelze naj\u00edt instalaci jazyka Java, tyto soubory se nena\u010dtou a aplikace, kter\u00e9 na nich z\u00e1vis\u00ed, nemus\u00ed fungovat podle o\u010dek\u00e1v\u00e1n\u00ed.
 warning.javaHomeNotSet.useraction=Nastavte prom\u011bnnou prost\u0159ed\u00ed JAVA_HOME.
 
 warn.packageRuntime.include.unknownOption=CWWKE0099W: Nelze pou\u017e\u00edt volbu --include={0}, m\u00edsto toho se pou\u017eije --include=wlp.
@@ -784,7 +784,15 @@ warning.manual.PPV.env.var.useraction=Chcete-li zachovat prom\u011bnnou prost\u0
 
 error.read.server.env=CWWKE0970E: Nelze \u010d\u00edst soubor server.env v um\u00edst\u011bn\u00ed {}.
 error.read.server.env.explanation=Selh\u00e1n\u00ed p\u0159i \u010dten\u00ed souboru server.env .
-error.read.server.env.useraction=Nelze \u010d\u00edst soubor server.env .  Zkontrolujte opr\u00e1vn\u011bn\u00ed k souboru a zopakujte operaci.
+error.read.server.env.useraction=Nelze na\u010d\u00edst soubor server.env. Zkontrolujte opr\u00e1vn\u011bn\u00ed k souboru a zkus to znovu.
+
+warning.java2security.stopped=CWWKE0971W: Funkce Java 2 Security je deaktivov\u00e1na, proto\u017ee Jakarta EE 11 ji nepodporuje.
+warning.java2security.stopped.explanation=V Jakarta EE 11 byla odstran\u011bna podpora pro Java 2 Security.
+warning.java2security.stopped.useraction=Pokud vyu\u017e\u00edv\u00e1te funkce Jakarta EE 11, deaktivujte zabezpe\u010den\u00ed Java 2 v konfiguraci serveru.
+
+info.java2security.restarted=CWWKE0972I: Zabezpe\u010den\u00ed Java 2 bylo znovu povoleno, proto\u017ee byly odstran\u011bny funkce Jakarta EE 11.
+info.java2security.restarted.explanation=Tato zpr\u00e1va je pouze informativn\u00ed.
+info.java2security.restarted.useraction=Nen\u00ed pot\u0159eba \u017e\u00e1dn\u00e1 akce.
 
 info.serverStarting=Spou\u0161t\u011bn\u00ed serveru {0}.
 info.serverStarted=Server {0} byl spu\u0161t\u011bn.

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -27,11 +27,11 @@ public interface TextFunctionExpression<T> extends //
                 FunctionExpression<T, String>, //
                 TextExpression<T> {
 
-    String CONCAT = "concat";
-    String LEFT = "left";
-    String LOWER = "lower";
-    String RIGHT = "right";
-    String UPPER = "upper";
+    String CONCAT = "CONCAT";
+    String LEFT = "LEFT";
+    String LOWER = "LOWER";
+    String RIGHT = "RIGHT";
+    String UPPER = "UPPER";
 
     @Override
     List<? extends ComparableExpression<? super T, ?>> arguments();
@@ -63,7 +63,7 @@ public interface TextFunctionExpression<T> extends //
 
         return new TextFunctionExpressionRecord<>(//
                         name, //
-                        List.of(left, NumericLiteral.of(literal)));
+                        List.of(left, NumericLiteral.of(Integer.class, literal)));
     }
 
     static <T> TextFunctionExpression<T> of(String name,

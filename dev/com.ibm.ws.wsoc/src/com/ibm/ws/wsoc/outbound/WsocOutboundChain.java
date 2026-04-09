@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 IBM Corporation and others.
+ * Copyright (c) 2017, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -73,6 +73,7 @@ public class WsocOutboundChain {
     protected static BootstrapExtended secureBootstrap;
     protected static Map<String, Object> currentSSLOptions;
     protected static Map<String, Object> currentHttpOptions;
+    protected static Map<String, Object> currentTcpOptions;
 
     public static VirtualConnection getVCFactory(WsocAddress addr) throws ChainException, ChannelException {
         if (addr.isSecure()) {
@@ -102,6 +103,10 @@ public class WsocOutboundChain {
         return currentHttpOptions;
     }
 
+    public static Map<String, Object> getCurrentTcpOptions() {
+        return currentTcpOptions;
+    }
+
     /**
      * DS method to activate this component.
      * Best practice: this should be a protected method, not public or private
@@ -113,7 +118,6 @@ public class WsocOutboundChain {
         sslOptions.activate(context);
         sslFactoryProvider.activate(context);
 
-        // TODO: Updated this to use constants
         useNettyTransport = ProductInfo.getBetaEdition() &&
                             MetatypeUtils.parseBoolean(WS_CHAIN_NAME, NettyConstants.USE_NETTY, properties.get(NettyConstants.USE_NETTY), true);
 

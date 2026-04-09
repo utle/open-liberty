@@ -56,7 +56,9 @@ class LTPAKeyCreateTask implements Runnable {
         LTPAKeyInfoManager keyInfoManager = new LTPAKeyInfoManager();
         keyInfoManager.prepareLTPAKeyInfo(locService,
                                           config.getPrimaryKeyFile(),
-                                          getKeyPasswordBytes(), config.getValidationKeys());
+                                          getKeyPasswordBytes(),
+                                          config.getValidationKeys(),
+                                          config.getTryToReEncryptLtpaKeys());
         return keyInfoManager;
     }
 

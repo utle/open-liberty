@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ package jakarta.data.expression;
 
 import jakarta.data.constraint.Like;
 import jakarta.data.constraint.NotLike;
+import jakarta.data.messages.Messages;
 import jakarta.data.restrict.BasicRestriction;
 import jakarta.data.restrict.Restriction;
 import jakarta.data.spi.expression.function.NumericFunctionExpression;
@@ -25,12 +26,14 @@ import jakarta.data.spi.expression.function.TextFunctionExpression;
 public interface TextExpression<T> extends ComparableExpression<T, String> {
 
     default TextExpression<T> append(String suffix) {
+        Messages.requireNonNull(suffix, "suffix");
         return TextFunctionExpression.of(TextFunctionExpression.CONCAT,
                                          this,
                                          suffix);
     }
 
     default TextExpression<T> append(TextExpression<? super T> suffixExpression) {
+        Messages.requireNonNull(suffixExpression, "suffixExpression");
         return TextFunctionExpression.of(TextFunctionExpression.CONCAT,
                                          suffixExpression,
                                          this);
@@ -54,6 +57,7 @@ public interface TextExpression<T> extends ComparableExpression<T, String> {
 
     default NumericExpression<T, Integer> length() {
         return NumericFunctionExpression.of(NumericFunctionExpression.LENGTH,
+                                            Integer.class,
                                             this);
     }
 
@@ -132,12 +136,14 @@ public interface TextExpression<T> extends ComparableExpression<T, String> {
     }
 
     default TextExpression<T> prepend(String prefix) {
+        Messages.requireNonNull(prefix, "prefix");
         return TextFunctionExpression.of(TextFunctionExpression.CONCAT,
                                          prefix,
                                          this);
     }
 
     default TextExpression<T> prepend(TextExpression<? super T> prefixExpression) {
+        Messages.requireNonNull(prefixExpression, "prefixExpression");
         return TextFunctionExpression.of(TextFunctionExpression.CONCAT,
                                          prefixExpression,
                                          this);
@@ -152,6 +158,11 @@ public interface TextExpression<T> extends ComparableExpression<T, String> {
     default Restriction<T> startsWith(String prefix) {
         Like constraint = Like.prefix(prefix);
         return BasicRestriction.of(this, constraint);
+    }
+
+    @Override
+    default Class<String> type() {
+        return String.class;
     }
 
     default TextExpression<T> upper() {

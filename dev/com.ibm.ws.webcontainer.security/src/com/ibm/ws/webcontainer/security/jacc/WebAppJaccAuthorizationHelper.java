@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 IBM Corporation and others.
+ * Copyright (c) 2015, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,9 @@
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package com.ibm.ws.webcontainer.security.jacc;
+
+import java.util.Collections;
+import java.util.Set;
 
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -34,28 +37,39 @@ import com.ibm.ws.webcontainer.security.internal.PermitReply;
 import com.ibm.ws.webcontainer.security.internal.WebReply;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.webcontainer.RequestProcessor;
-import com.ibm.wsspi.webcontainer.metadata.WebComponentMetaData;
 import com.ibm.wsspi.webcontainer.metadata.WebModuleMetaData;
 import com.ibm.wsspi.webcontainer.servlet.IExtendedRequest;
 
 public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper {
     private static final TraceComponent tc = Tr.register(WebAppJaccAuthorizationHelper.class);
 
-    private AtomicServiceReference<WebJaccService> jaccServiceRef = null;
+    private final AtomicServiceReference<WebJaccService> jaccServiceRef;
+    private final WebAppAuthorizationHelper defaultHelper;
     private static final WebReply DENY_AUTHZ_FAILED = new DenyReply("AuthorizationFailed");
 
-    public WebAppJaccAuthorizationHelper(AtomicServiceReference<WebJaccService> ref) {
+    public WebAppJaccAuthorizationHelper(AtomicServiceReference<WebJaccService> ref, WebAppAuthorizationHelper defaultHelper) {
         this.jaccServiceRef = ref;
+        this.defaultHelper = defaultHelper;
     }
 
     @Override
     public boolean isUserInRole(String role, IExtendedRequest req, Subject subject) {
+        WebJaccService webJaccService = jaccServiceRef.getService();
+        if (!webJaccService.isPolicyConfigured()) {
+            return defaultHelper.isUserInRole(role, req, subject);
+        }
         String servletName = null;
         RequestProcessor reqProc = req.getWebAppDispatcherContext().getCurrentServletReference();
         if (reqProc != null) {
             servletName = reqProc.getName();
         }
-        return jaccServiceRef.getService().isSubjectInRole(getApplicationName(), getModuleName(), servletName, role, req, subject);
+        return webJaccService.isSubjectInRole(getApplicationName(), getModuleName(), servletName, role, req, subject);
+    }
+
+    @Override
+    public boolean isUnauthenticatedAuthorizationCheckAllowed() {
+        WebJaccService webJaccService = jaccServiceRef.getService();
+        return webJaccService.isUnauthenticatedAuthorizationCheckAllowed();
     }
 
     /**
@@ -66,11 +80,14 @@ public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper 
      * @param previousCaller the previous caller, used to restore the previous state if authorization fails
      * @return true if the subject is authorized, otherwise false
      */
-
     @Override
     public boolean authorize(AuthenticationResult authResult, WebRequest webRequest, String uriName) {
+        WebJaccService webJaccService = jaccServiceRef.getService();
+        if (!webJaccService.isPolicyConfigured()) {
+            return defaultHelper.authorize(authResult, webRequest, uriName);
+        }
         HttpServletRequest req = webRequest.getHttpServletRequest();
-        boolean isAuthorized = jaccServiceRef.getService().isAuthorized(getApplicationName(), getModuleName(), uriName, req.getMethod(), req, authResult.getSubject());
+        boolean isAuthorized = webJaccService.isAuthorized(getApplicationName(), getModuleName(), uriName, req.getMethod(), req, authResult.getSubject());
         //String[] methodNameArray = new String[] { req.getMethod() };
         //WebResourcePermission webPerm = new WebResourcePermission(uriName, methodNameArray);
         WebReply reply = isAuthorized ? new PermitReply() : DENY_AUTHZ_FAILED;
@@ -92,7 +109,9 @@ public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper 
                 Tr.audit(tc, "SEC_JACC_AUTHZ_FAILED", authUserName.concat(":").concat(authRealm), appName, uriName);
             } else {
                 // We have a subject if we got this far, use it to determine the name
-                authUserName = authResult.getSubject().getPrincipals(WSPrincipal.class).iterator().next().getName();
+                Subject subject = authResult.getSubject();
+                Set<WSPrincipal> principals = subject == null ? Collections.emptySet() : subject.getPrincipals(WSPrincipal.class);
+                authUserName = principals.isEmpty() ? "UNAUTHENTICATED" : principals.iterator().next().getName();
                 //WebReply reply = isAuthorized ? new PermitReply() : DENY_AUTHZ_FAILED;
                 Tr.audit(tc, "SEC_JACC_AUTHZ_FAILED", authUserName, appName, uriName);
             }
@@ -105,10 +124,14 @@ public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper 
 
     @Override
     public boolean isSSLRequired(WebRequest webRequest, String uriName) {
+        WebJaccService webJaccService = jaccServiceRef.getService();
+        if (!webJaccService.isPolicyConfigured()) {
+            return defaultHelper.isSSLRequired(webRequest, uriName);
+        }
         HttpServletRequest req = webRequest.getHttpServletRequest();
         boolean isSSLRequired = false;
         if (!req.isSecure()) {
-            isSSLRequired = jaccServiceRef.getService().isSSLRequired(getApplicationName(), getModuleName(), uriName, req.getMethod(), req);
+            isSSLRequired = webJaccService.isSSLRequired(getApplicationName(), getModuleName(), uriName, req.getMethod(), req);
         }
         return isSSLRequired;
     }
@@ -123,6 +146,11 @@ public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper 
      */
     @Override
     public WebReply checkPrecludedAccess(WebRequest webRequest, String uriName) {
+        WebJaccService webJaccService = jaccServiceRef.getService();
+        if (!webJaccService.isPolicyConfigured()) {
+            return defaultHelper.checkPrecludedAccess(webRequest, uriName);
+        }
+
         WebReply webReply = null;
         /*
          * In order to check precluded access, WebUserDataPermission can be used,
@@ -132,7 +160,7 @@ public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper 
          */
         HttpServletRequest req = webRequest.getHttpServletRequest();
         boolean isExcluded = false;
-        isExcluded = jaccServiceRef.getService().isAccessExcluded(getApplicationName(), getModuleName(), uriName, req.getMethod(), req);
+        isExcluded = webJaccService.isAccessExcluded(getApplicationName(), getModuleName(), uriName, req.getMethod(), req);
         if (isExcluded) {
             webReply = new DenyReply("JACC provider denied the access.");
         }
@@ -141,13 +169,13 @@ public class WebAppJaccAuthorizationHelper implements WebAppAuthorizationHelper 
 
     protected String getApplicationName() {
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
-        WebModuleMetaData wmmd = (WebModuleMetaData) ((WebComponentMetaData) cmd).getModuleMetaData();
+        WebModuleMetaData wmmd = (WebModuleMetaData) cmd.getModuleMetaData();
         return wmmd.getConfiguration().getApplicationName();
     }
 
     protected String getModuleName() {
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
-        WebModuleMetaData wmmd = (WebModuleMetaData) ((WebComponentMetaData) cmd).getModuleMetaData();
+        WebModuleMetaData wmmd = (WebModuleMetaData) cmd.getModuleMetaData();
         return wmmd.getConfiguration().getModuleName();
     }
 

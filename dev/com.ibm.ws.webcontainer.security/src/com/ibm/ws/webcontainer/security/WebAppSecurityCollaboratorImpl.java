@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2024 IBM Corporation and others.
+ * Copyright (c) 2011, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -308,7 +308,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
             Tr.debug(tc, "enabling JACC service");
         }
         webJaccServiceRef.setReference(ref);
-        wasch = new WebAppJaccAuthorizationHelper(webJaccServiceRef);
+        wasch = new WebAppJaccAuthorizationHelper(webJaccServiceRef, this);
     }
 
     protected void unsetWebJaccService(ServiceReference<WebJaccService> ref) {
@@ -1009,25 +1009,46 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
                                        String uriName,
                                        WebRequest webRequest,
                                        AuthenticationResult authResult) {
+        boolean isAuthorized = false;
         WebReply reply = null;
-        if (authResult != null && authResult.getStatus() != AuthResult.SUCCESS) {
+        if (authResult != null) {
             String realm = authResult.realm;
             if (realm == null) {
                 realm = collabUtils.getUserRegistryRealm(securityServiceRef);
             }
-            reply = createReplyForAuthnFailure(authResult, realm);
-            authResult.setTargetRealm(authResult.realm != null ? authResult.realm : collabUtils.getUserRegistryRealm(securityServiceRef));
-            Audit.audit(Audit.EventID.SECURITY_AUTHN_01, webRequest, authResult, Integer.valueOf(reply.getStatusCode()));
-            return reply;
-        }
-        boolean isAuthorized = false;
 
-        if (authResult != null) {
-            authResult.setTargetRealm(authResult.realm != null ? authResult.realm : collabUtils.getUserRegistryRealm(securityServiceRef));
-            subjectManager.setCallerSubject(authResult.getSubject());
-            Audit.audit(Audit.EventID.SECURITY_AUTHN_01, webRequest, authResult, Integer.valueOf(HttpServletResponse.SC_OK));
-            isAuthorized = wasch.authorize(authResult, webRequest, uriName);
+            // If the authentication result is successful or it is an unauthenticated user with
+            // Jakarta Authorization 3.0 being active, we do an authorization check to see if the
+            // a WebResource unchecked permission is granted for the web resource.
+            if (authResult.getStatus() != AuthResult.SUCCESS) {
+                reply = createReplyForAuthnFailure(authResult, realm);
+                authResult.setTargetRealm(realm);
+                Audit.audit(Audit.EventID.SECURITY_AUTHN_01, webRequest, authResult, Integer.valueOf(reply.getStatusCode()));
+
+                // isUnauthenticatedAuthorizationCheckAllowed() returns true if using Jakarta Authorization 3.0
+                // and there is a policy defined.
+                if (wasch.isUnauthenticatedAuthorizationCheckAllowed()) {
+                    subjectManager.setCallerSubject(authResult.getSubject());
+                    isAuthorized = wasch.authorize(authResult, webRequest, uriName);
+                }
+
+                // If using Jakarta Authorization 3.0 and an unchecked permission check returns authorized, we do
+                // not send back the 401 because the unchecked permission check overrides the not authenticated
+                // behavior to now say that the caller is permitted.  This is done only for Jakarta Authorization 3.0
+                // in order to not break zero migration when using older JACC / Jakarta Authorization versions.
+                //
+                // isAuthorized == false if we didn't do the check or if the authorize() method returned false
+                if (!isAuthorized) {
+                    return reply;
+                }
+            } else {
+                authResult.setTargetRealm(realm);
+                subjectManager.setCallerSubject(authResult.getSubject());
+                Audit.audit(Audit.EventID.SECURITY_AUTHN_01, webRequest, authResult, Integer.valueOf(HttpServletResponse.SC_OK));
+                isAuthorized = wasch.authorize(authResult, webRequest, uriName);
+            }
         }
+
         // For audit set reply now but leave Subject on thread
         reply = isAuthorized ? new PermitReply() : DENY_AUTHZ_FAILED;
 
@@ -1415,13 +1436,13 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
 
     protected String getApplicationName() {
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
-        WebModuleMetaData wmmd = (WebModuleMetaData) ((WebComponentMetaData) cmd).getModuleMetaData();
+        WebModuleMetaData wmmd = (WebModuleMetaData) cmd.getModuleMetaData();
         return wmmd.getConfiguration().getApplicationName();
     }
 
     protected String getModuleName() {
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
-        WebModuleMetaData wmmd = (WebModuleMetaData) ((WebComponentMetaData) cmd).getModuleMetaData();
+        WebModuleMetaData wmmd = (WebModuleMetaData) cmd.getModuleMetaData();
         return wmmd.getConfiguration().getModuleName();
     }
 
@@ -1431,7 +1452,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
 
     protected void setSecurityMetadata(SecurityMetadata secMetadata) {
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
-        WebModuleMetaData wmmd = (WebModuleMetaData) ((WebComponentMetaData) cmd).getModuleMetaData();
+        WebModuleMetaData wmmd = (WebModuleMetaData) cmd.getModuleMetaData();
         wmmd.setSecurityMetaData(secMetadata);
     }
 
@@ -1552,7 +1573,7 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
         WebAppConfig wac = null;
         ComponentMetaData cmd = ComponentMetaDataAccessorImpl.getComponentMetaDataAccessor().getComponentMetaData();
         if (cmd instanceof WebComponentMetaData) { // Only get the header for web modules, i.e. not for EJB
-            WebModuleMetaData wmmd = (WebModuleMetaData) ((WebComponentMetaData) cmd).getModuleMetaData();
+            WebModuleMetaData wmmd = (WebModuleMetaData) cmd.getModuleMetaData();
             wac = wmmd.getConfiguration();
             if (!(wac instanceof com.ibm.ws.webcontainer.osgi.webapp.WebAppConfiguration)) {
                 wac = null;
@@ -1763,5 +1784,19 @@ public class WebAppSecurityCollaboratorImpl implements IWebAppSecurityCollaborat
                 return subject.toString();
             }
         });
+    }
+
+    @Override
+    public void setPolicyContextID() {
+        if (webJaccServiceRef.getService() != null) {
+            webJaccServiceRef.getService().setPolicyContextID(getApplicationName(), getModuleName());
+        }
+    }
+
+    @Override
+    public void resetPolicyContextID() {
+        if (webJaccServiceRef.getService() != null) {
+            webJaccServiceRef.getService().resetPolicyContextHandlerInfo();
+        }
     }
 }

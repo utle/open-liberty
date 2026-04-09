@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -34,6 +34,7 @@ import jakarta.data.page.CursoredPage;
 import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
 import jakarta.data.repository.By;
+import jakarta.data.repository.Delete;
 import jakarta.data.repository.Find;
 import jakarta.data.repository.Insert;
 import jakarta.data.repository.Is;
@@ -41,17 +42,40 @@ import jakarta.data.repository.OrderBy;
 import jakarta.data.repository.Query;
 import jakarta.data.repository.Repository;
 import jakarta.data.repository.Select;
+import jakarta.data.restrict.Restriction;
 
 /**
  * Repository for the Fraction entity
  */
-@Repository
+@Repository(dataStore = "MyDataStore")
 public interface Fractions {
+
+    Long count(Restriction<Fraction> filter);
+
+    long countByDenominatorBetween(int min,
+                                   int max,
+                                   Restriction<Fraction> filter);
+
+    int deleteByNameStartsWith(String prefix,
+                               Restriction<Fraction> filter);
+
     @Find
     Stream<Fraction> denominatoredUpTo //
     (@By(_Fraction.DENOMINATOR) NotNull<Integer> notNull,
      @By(_Fraction.DENOMINATOR) AtMost<Integer> max,
      Sort<?>... sorts);
+
+    @Delete
+    long discard(@By("denominator") AtLeast<Integer> minDenominator,
+                 @By("denominator") AtMost<Integer> maxDenominator,
+                 Restriction<Fraction> filter);
+
+    boolean exists(Restriction<Fraction> filter);
+
+    Boolean existsByDenominatorGreaterThanAndDenominatorLessThan//
+    (int exclusiveMin,
+     int exclusiveMax,
+     Restriction<Fraction> filter);
 
     @Find
     @OrderBy(_Fraction.NUMERATOR)
@@ -69,6 +93,10 @@ public interface Fractions {
     @Query("SELECT numerator, denominator - numerator" +
            " ORDER BY denominator - numerator DESC, numerator ASC")
     Page<Ratio> pageOfRatios(PageRequest pageReq);
+
+    @Delete
+    List<Fraction> remove(Like name,
+                          Restriction<Fraction> filter);
 
     @Query("SELECT NEW test.jakarta.data.v1_1.web.Ratio(" +
            "\t\tnumerator, denominator - numerator)" +
@@ -90,6 +118,11 @@ public interface Fractions {
 
     @Find
     @OrderBy(_Fraction.DENOMINATOR)
+    @OrderBy(value = _Fraction.NUMERATOR, descending = true)
+    Stream<Fraction> where(Restriction<Fraction> filter);
+
+    @Find
+    @OrderBy(_Fraction.DENOMINATOR)
     @OrderBy(_Fraction.NUMERATOR)
     Stream<Fraction> withDenominatorBetweenNamedBeforeAndNumeratorNotBetween //
     (@By(_Fraction.DENOMINATOR) Between<Integer> denominatorRange,
@@ -101,6 +134,12 @@ public interface Fractions {
     Stream<Fraction> withDenominatorButNotNumerator //
     (@By(_Fraction.DENOMINATOR) @Is(EqualTo.class) long denominator,
      @By(_Fraction.NUMERATOR) @Is(NotEqualTo.class) long excludeNumerator,
+     Order<Fraction> order);
+
+    @Find
+    Stream<Fraction> withNameLike //
+    (@By(_Fraction.NAME) @Is(Like.class) String pattern,
+     Restriction<Fraction> filter,
      Order<Fraction> order);
 
     @Find

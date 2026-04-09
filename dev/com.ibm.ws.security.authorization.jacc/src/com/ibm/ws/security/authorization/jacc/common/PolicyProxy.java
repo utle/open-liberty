@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 IBM Corporation and others.
+ * Copyright (c) 2024, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -19,7 +19,7 @@ import javax.security.auth.Subject;
 public interface PolicyProxy {
 
     default public void refresh() {
-        // Do nothing for EE 11+
+        // Do nothing for EE 11+.  The refresh logic is handled in the JakartaPolicyConfigProxy instead.
     }
 
     default public void setPolicy() {
@@ -28,13 +28,41 @@ public interface PolicyProxy {
 
     public boolean implies(String contextId, Subject subject, Permission permission);
 
+    default public boolean isResetPolicyContextID() {
+        // For pre-EE 11 scenarios, return false to not change behavior
+        return false;
+    }
+
     /**
      * In a Jakarta EE 11+ implementation this method returns the PrincipalMapper implementation
      *
      * @return PrincipalMapper implementation
      */
-    default public Object getPrincipalMapper() {
+    default public Object getPrincipalMapper(String appName) {
         // Default is to throws exception since it isn't expected to be called for pre-EE 11 scenarios
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Determines if a Policy is configured. In EE 11, we create the PolicyProxy always even if there
+     * isn't a PolicyFactory defined because it can be added dynamically by applications in their web.xml
+     * or using the PolicyFactory.setPolicyFactory() method.
+     */
+    default public boolean isPolicyConfigured() {
+        // return true for pre EE 11 versions since the PolicyProxy isn't created unless there is a Policy
+        return true;
+    }
+
+    /**
+     * Determines whether to do an authorization check for an Unauthenticated user. Before Jakarta Authorization
+     * 3.0, Liberty followed the servlet's spec behavior, but with Authorization 3.0, we are now allowing for a unchecked
+     * Permission to allow unauthenticated users to have permission to access servlets and EJBs even if there are
+     * roles constraints defined on the servlet or EJB.
+     *
+     * @return
+     */
+    default public boolean isUnauthenticatedAuthorizationCheckAllowed() {
+        // return false for pre EE 11 versions since that was the previous behavior before Authorization 3.0 behavior change
+        return false;
     }
 }

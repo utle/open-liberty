@@ -1,14 +1,11 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2023 IBM Corporation and others.
+ * Copyright (c) 2011, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-2.0/
  * 
  * SPDX-License-Identifier: EPL-2.0
- *
- * Contributors:
- *     IBM Corporation - initial API and implementation
  *******************************************************************************/
 package com.ibm.ws.sib.jfapchannel.impl;
 
@@ -85,8 +82,6 @@ public class CommsOutboundChain implements ApplicationPrereq {
     
     private static Map<String, CommsOutboundChain> chainList = new HashMap<String,CommsOutboundChain>();
 
-
-    // TODO: Check if this can be removed in favor of using requireService
     public static CommsOutboundChain getChainDetails(String chainName) {
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
             Tr.entry(tc, "getChainDetails");
@@ -261,7 +256,6 @@ public class CommsOutboundChain implements ApplicationPrereq {
             }
         }else {
         	// Use Netty Framework for transport
-        	// TODO: Verify Dynamic updates with SSL on Netty
         	try {
         		if (null == secureFacet) throw new ChainException(new Throwable(nls.getFormattedMessage("missingSslOptions.ChainNotStarted", new Object[] { chainName }, "Chain not started " + chainName)));
             	if (isAnyTracingEnabled() && tc.isDebugEnabled()) debug(this, tc, "JFAP Outbound secure chain" + chainName + " successfully started ");

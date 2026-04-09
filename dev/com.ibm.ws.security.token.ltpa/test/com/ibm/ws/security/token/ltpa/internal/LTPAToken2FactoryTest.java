@@ -70,7 +70,7 @@ public class LTPAToken2FactoryTest {
         LTPAKeyInfoManager keyInfoManager = new LTPAKeyInfoManager();
         keyInfoManager.prepareLTPAKeyInfo(UTLocationHelper.getLocationManager(),
                                           KEYIMPORTFILE_CORRECT,
-                                          KEYPASSWORD_CORRECT, null);
+                                          KEYPASSWORD_CORRECT, null, false);
         ltpaPrivateKey = new LTPAPrivateKey(keyInfoManager.getPrivateKey(KEYIMPORTFILE_CORRECT));
         ltpaPublicKey = new LTPAPublicKey(keyInfoManager.getPublicKey(KEYIMPORTFILE_CORRECT));
     }

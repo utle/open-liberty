@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025,2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -106,7 +106,7 @@ public class DataIntrospectorTest extends FATServletClient {
     @Test
     public void testOutputContainsCountQueryForPages() {
         assertLineFound("    JPQL count query: " +
-                        "SELECT COUNT(o) FROM Voter o WHERE (o.address=?1)");
+                        "SELECT COUNT(this) FROM Voter WHERE (this.address=?1)");
     }
 
     /**
@@ -262,5 +262,14 @@ public class DataIntrospectorTest extends FATServletClient {
         assertLineFound("        public abstract java.util.List<Voter> livesAt(" +
                         "@By(\"address\") java.lang.String, jakarta.data.Limit, " +
                         "jakarta.data.Order<Voter>, jakarta.data.Limit) ");
+    }
+
+    /**
+     * Verify that the Jakarta Data specification version is included in the
+     * introspector output.
+     */
+    @Test
+    public void testOutputContainsSpecVersion() {
+        assertLineFound("version: 1.0");
     }
 }
