@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="PQC SSL Test Server">
+    <featureManager>
+        <feature>componenttest-1.0</feature>
+        <feature>servlet-3.1</feature>
+        <feature>transportSecurity-1.0</feature>
+    </featureManager>
+
+    <!-- 
+        Post-Quantum Cryptography (PQC) SSL Configuration
+        
+        This configuration demonstrates PQC support in Liberty SSL:
+        1. Dilithium (ML-DSA) - Digital signature algorithm
+        2. Kyber (ML-KEM) - Key encapsulation mechanism
+        3. SPHINCS+ - Hash-based signature scheme
+        4. Hybrid mode - Both traditional and PQC algorithms
+    -->
+
+    <!-- Dilithium KeyStore Configuration -->
+    <keyStore id="dilithiumKeyStore" 
+              location="resources/security/dilithium_keystore.p12" 
+              type="PKCS12" 
+              password="pqcPassword123" />
+
+    <!-- Kyber KeyStore Configuration -->
+    <keyStore id="kyberKeyStore" 
+              location="resources/security/kyber_keystore.p12" 
+              type="PKCS12" 
+              password="pqcPassword123" />
+
+    <!-- SPHINCS+ KeyStore Configuration -->
+    <keyStore id="sphincsKeyStore" 
+              location="resources/security/sphincs_keystore.p12" 
+              type="PKCS12" 
+              password="pqcPassword123" />
+
+    <!-- Hybrid KeyStore (Traditional + PQC) -->
+    <keyStore id="hybridKeyStore" 
+              location="resources/security/hybrid_keystore.p12" 
+              type="PKCS12" 
+              password="pqcPassword123" />
+
+    <!-- Traditional KeyStore for comparison -->
+    <keyStore id="traditionalKeyStore" 
+              location="resources/security/traditional_keystore.p12" 
+              type="PKCS12" 
+              password="pqcPassword123" />
+
+    <!-- Default SSL Configuration with Dilithium -->
+    <ssl id="defaultSSLConfig" 
+         keyStoreRef="dilithiumKeyStore" 
+         trustStoreRef="dilithiumKeyStore"
+         sslProtocol="TLSv1.3" />
+
+    <!-- PQC SSL Configuration with Dilithium -->
+    <ssl id="dilithiumSSLConfig" 
+         keyStoreRef="dilithiumKeyStore" 
+         trustStoreRef="dilithiumKeyStore"
+         sslProtocol="TLSv1.3" />
+
+    <!-- PQC SSL Configuration with Kyber -->
+    <ssl id="kyberSSLConfig" 
+         keyStoreRef="kyberKeyStore" 
+         trustStoreRef="kyberKeyStore"
+         sslProtocol="TLSv1.3" />
+
+    <!-- PQC SSL Configuration with SPHINCS+ -->
+    <ssl id="sphincsSSLConfig" 
+         keyStoreRef="sphincsKeyStore" 
+         trustStoreRef="sphincsKeyStore"
+         sslProtocol="TLSv1.3" />
+
+    <!-- Hybrid SSL Configuration (Traditional + PQC) -->
+    <ssl id="hybridSSLConfig" 
+         keyStoreRef="hybridKeyStore" 
+         trustStoreRef="hybridKeyStore"
+         sslProtocol="TLSv1.3" />
+
+    <!-- PQC-specific SSL Configuration with custom cipher suites -->
+    <ssl id="pqcSSLConfig" 
+         keyStoreRef="hybridKeyStore" 
+         trustStoreRef="hybridKeyStore"
+         sslProtocol="TLSv1.3"
+         enabledCiphers="TLS_AES_256_GCM_SHA384 TLS_AES_128_GCM_SHA256" />
+
+    <!-- HTTP Endpoint Configuration -->
+    <httpEndpoint id="defaultHttpEndpoint"
+                  httpPort="${bvt.prop.HTTP_default}"
+                  httpsPort="${bvt.prop.HTTP_default.secure}"
+                  host="*">
+        <tcpOptions soReuseAddr="true" />
+        <sslOptions sslRef="defaultSSLConfig" />
+    </httpEndpoint>
+
+    <!-- Additional HTTP Endpoint for PQC testing -->
+    <httpEndpoint id="pqcHttpEndpoint"
+                  httpPort="${bvt.prop.HTTP_secondary}"
+                  httpsPort="${bvt.prop.HTTP_secondary.secure}"
+                  host="*">
+        <tcpOptions soReuseAddr="true" />
+        <sslOptions sslRef="pqcSSLConfig" />
+    </httpEndpoint>
+
+    <!-- Quick Start Security for testing -->
+    <quickStartSecurity userName="pqcTestUser" userPassword="pqcTestPassword" />
+
+    <!-- Include test ports -->
+    <include location="../fatTestPorts.xml"/>
+    
+    <!-- Java permissions for testing -->
+    <javaPermission className="java.security.AllPermission"/>
+
+    <!-- Logging configuration for PQC debugging -->
+    <logging traceSpecification="*=info:SSL=all:com.ibm.ws.ssl.*=all:com.ibm.ws.channel.ssl.*=all" 
+             maxFileSize="100" 
+             maxFiles="10" />
+
+</server>
+
+<!-- Made with Bob -->

@@ -1,0 +1,5 @@
+logs/
+workarea/
+apps/
+dropins/
+*.log
