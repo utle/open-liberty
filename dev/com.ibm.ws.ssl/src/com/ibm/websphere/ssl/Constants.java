@@ -76,6 +76,38 @@ public class Constants {
     public static final String SSLPROP_USE_DEFAULTCERTS = "com.ibm.ws.ssl.trustDefaultCerts";
     public static final String SSLPROP_ENFORCE_CIPHER_ORDER = "com.ibm.ws.ssl.enforceCipherOrder";
 
+    /*** POST-QUANTUM CRYPTOGRAPHY (PQC) PROPERTIES ***/
+    public static final String SSLPROP_PQC_ENABLED = "com.ibm.ssl.pqc.enabled";
+    public static final String SSLPROP_PQC_MODE = "com.ibm.ssl.pqc.mode";
+    public static final String SSLPROP_PQC_KEM_ALGORITHM = "com.ibm.ssl.pqc.kemAlgorithm";
+    public static final String SSLPROP_PQC_SIGNATURE_ALGORITHM = "com.ibm.ssl.pqc.signatureAlgorithm";
+    public static final String SSLPROP_PQC_HYBRID_CIPHERS = "com.ibm.ssl.pqc.hybridCipherSuites";
+
+    /*** PQC ALGORITHM CONSTANTS ***/
+    // ML-KEM (Kyber) - Key Encapsulation Mechanism
+    public static final String PQC_ALGORITHM_MLKEM512 = "ML-KEM-512";
+    public static final String PQC_ALGORITHM_MLKEM768 = "ML-KEM-768";
+    public static final String PQC_ALGORITHM_MLKEM1024 = "ML-KEM-1024";
+    
+    // ML-DSA (Dilithium) - Digital Signature Algorithm
+    public static final String PQC_ALGORITHM_MLDSA44 = "ML-DSA-44";
+    public static final String PQC_ALGORITHM_MLDSA65 = "ML-DSA-65";
+    public static final String PQC_ALGORITHM_MLDSA87 = "ML-DSA-87";
+
+    /*** PQC CIPHER SUITE CONSTANTS (Hybrid Mode) ***/
+    public static final String TLS_AES_128_GCM_SHA256_X25519_MLKEM768 = "TLS_AES_128_GCM_SHA256_X25519_MLKEM768";
+    public static final String TLS_AES_256_GCM_SHA384_P256_MLKEM768 = "TLS_AES_256_GCM_SHA384_P256_MLKEM768";
+    public static final String TLS_CHACHA20_POLY1305_SHA256_X25519_MLKEM768 = "TLS_CHACHA20_POLY1305_SHA256_X25519_MLKEM768";
+
+    /*** PQC PROVIDER CONSTANTS ***/
+    public static final String BOUNCYCASTLE_PQC_PROVIDER = "BCPQC";
+    public static final String BOUNCYCASTLE_PQC_PROVIDER_CLASS = "org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider";
+
+    /*** PQC MODE CONSTANTS ***/
+    public static final String PQC_MODE_HYBRID = "hybrid";
+    public static final String PQC_MODE_PURE = "pure";
+    public static final String PQC_MODE_DISABLED = "disabled";
+
     private static boolean issuedBetaMessage = false;
 
     public static final String SSLPROP_AUTOACCEPT_SERVER_CERT = "com.ibm.ssl.autoaccept.server.certificates";

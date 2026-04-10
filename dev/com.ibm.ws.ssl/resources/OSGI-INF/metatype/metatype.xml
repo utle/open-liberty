@@ -132,8 +132,36 @@
         <AD id="trustDefaultCerts" name="%repertoire.trustDefaultCerts" description="%repertoire.trustDefaultCerts.desc" 
             required="false" type="Boolean" default="false" />
             
-        <AD id="enforceCipherOrder" name="%repertoire.enforceCipherOrder" description="%repertoire.enforceCipherOrder.desc" 
+        <AD id="enforceCipherOrder" name="%repertoire.enforceCipherOrder" description="%repertoire.enforceCipherOrder.desc"
             required="false" type="Boolean" default="false" />
+        
+        <!-- Post-Quantum Cryptography (PQC) Configuration -->
+        <AD id="pqcEnabled" name="%repertoire.pqcEnabled" description="%repertoire.pqcEnabled.desc"
+            required="false" type="Boolean" default="false" />
+        
+        <AD id="pqcMode" name="%repertoire.pqcMode" description="%repertoire.pqcMode.desc"
+            required="false" type="String" default="hybrid">
+            <Option label="%repertoire.pqcMode.hybrid" value="hybrid"/>
+            <Option label="%repertoire.pqcMode.pure" value="pure"/>
+            <Option label="%repertoire.pqcMode.disabled" value="disabled"/>
+        </AD>
+        
+        <AD id="pqcKemAlgorithm" name="%repertoire.pqcKemAlgorithm" description="%repertoire.pqcKemAlgorithm.desc"
+            required="false" type="String" default="ML-KEM-768">
+            <Option label="ML-KEM-512" value="ML-KEM-512"/>
+            <Option label="ML-KEM-768 (Recommended)" value="ML-KEM-768"/>
+            <Option label="ML-KEM-1024" value="ML-KEM-1024"/>
+        </AD>
+        
+        <AD id="pqcSignatureAlgorithm" name="%repertoire.pqcSignatureAlgorithm" description="%repertoire.pqcSignatureAlgorithm.desc"
+            required="false" type="String" default="ML-DSA-65">
+            <Option label="ML-DSA-44" value="ML-DSA-44"/>
+            <Option label="ML-DSA-65 (Recommended)" value="ML-DSA-65"/>
+            <Option label="ML-DSA-87" value="ML-DSA-87"/>
+        </AD>
+        
+        <AD id="pqcHybridCipherSuites" name="%repertoire.pqcHybridCipherSuites" description="%repertoire.pqcHybridCipherSuites.desc"
+            required="false" type="String" cardinality="2147483647" />
                                  
     </OCD>
 
