@@ -674,15 +674,13 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
      * @param oldKeyTokenMaxLifetime
      * @param oldRefreshThreshold
      * @param oldExpirationDifferenceAllowed
-     * @param oldExpirationDifferenceAllowed2
      * @param oldMonitorValidationKeysDir
      * @param oldUpdateTrigger
      * @param oldValidationKeys
      */
     private boolean isKeysConfigChanged(String oldKeyImportFile, Long oldKeyTokenExpiration, Long oldKeyTokenMaxLifetime, Long oldRefreshThreshold,
                                         Long oldExpirationDifferenceAllowed, boolean oldMonitorValidationKeysDir,
-                                        String oldUpdateTrigger,
-                                        @Sensitive List<Properties> oldValidationKeys) {
+                                        String oldUpdateTrigger, @Sensitive List<Properties> oldValidationKeys) {
         return ((oldKeyImportFile.equals(primaryKeyImportFile) == false)
                 || (oldKeyTokenExpiration != keyTokenExpiration)
                 || (oldKeyTokenMaxLifetime != keyTokenMaxLifetime)

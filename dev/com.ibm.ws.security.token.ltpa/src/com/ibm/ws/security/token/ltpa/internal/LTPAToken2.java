@@ -91,21 +91,23 @@ public class LTPAToken2 implements Token, Serializable {
      * @param sharedKey                 The LTPA shared key
      * @param privateKey                The LTPA private key
      * @param publicKey                 The LTPA public key
+     * @param expDiffAllowed            The LTPA expiration different
+     * @param expirationInMinutes       The LTPA token expiration in minutes
      * @param maxLifetimeInMinutes      The LTPA token max lifetime
      * @param refreshThresholdInMinutes The LTPA token expiration remaining threshold
-     * @param expirationInMinutes       The LTPA token expiration in minutes
      */
+
     public LTPAToken2(byte[] tokenBytes, @Sensitive byte[] sharedKey, LTPAPrivateKey privateKey, LTPAPublicKey publicKey, long expDiffAllowed,
-                      long maxLifetimeInMinutes, long refreshThresholdInMinutes, long expirationInMinutes) throws InvalidTokenException {
+                      long expirationInMinutes, long maxLifetimeInMinutes, long refreshThresholdInMinutes) throws InvalidTokenException {
         checkTokenBytes(tokenBytes);
         this.signature = null;
         this.encryptedBytes = tokenBytes.clone();
         this.sharedKey = sharedKey.clone();
         this.privateKey = privateKey;
         this.publicKey = publicKey;
+        this.expirationInMinutes = expirationInMinutes;
         this.maxLifetimeInMinutes = maxLifetimeInMinutes;
         this.refreshThresholdInMinutes = refreshThresholdInMinutes;
-        this.expirationInMinutes = expirationInMinutes;
         this.expirationInMilliseconds = 0;
         this.maxLifetimeInMilliseconds = 0;
         this.cipher = CryptoUtils.AES_CBC_CIPHER;
@@ -120,13 +122,13 @@ public class LTPAToken2 implements Token, Serializable {
      * @param sharedKey                 The LTPA shared key
      * @param privateKey                The LTPA private key
      * @param publicKey                 The LTPA public key
+     * @param expirationInMinutes       The LTPA token expiration in minutes
      * @param maxLifetimeInMinutes      The LTPA token max lifetime
      * @param refreshThresholdInMinutes The LTPA token expiration time remaining threshold
-     * @param expirationInMinutes       The LTPA token expiration in minutes
      * @param attributes                The list of attributes will be removed from the LTPA2 token
      */
     public LTPAToken2(byte[] tokenBytes, @Sensitive byte[] sharedKey, LTPAPrivateKey privateKey, LTPAPublicKey publicKey, long expDiffAllowed,
-                      long maxLifetimeInMinutes, long refreshThresholdInMinutes, long expirationInMinutes,
+                      long expirationInMinutes, long maxLifetimeInMinutes, long refreshThresholdInMinutes,
                       String... attributes) throws InvalidTokenException, TokenExpiredException {
         checkTokenBytes(tokenBytes);
         this.signature = null;
@@ -135,10 +137,10 @@ public class LTPAToken2 implements Token, Serializable {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.expirationInMinutes = expirationInMinutes;
-        this.expirationInMilliseconds = 0;
-        this.maxLifetimeInMilliseconds = 0;
         this.maxLifetimeInMinutes = maxLifetimeInMinutes;
         this.refreshThresholdInMinutes = refreshThresholdInMinutes;
+        this.expirationInMilliseconds = 0;
+        this.maxLifetimeInMilliseconds = 0;
         this.cipher = CryptoUtils.AES_CBC_CIPHER;
         this.expirationDifferenceAllowed = expDiffAllowed;
         decrypt();
@@ -156,14 +158,15 @@ public class LTPAToken2 implements Token, Serializable {
      *
      * @param accessID                  The unique user identifier
      * @param expirationInMinutes       Expiration limit of the LTPA2 token in minutes
+     * @param maxLifetimeInMinutes      Max lifetime of the LTPA2 token in minutes
+     * @param refreshThresholdInMinutes Refresh threshold in minutes
      * @param sharedKey                 The LTPA shared key
      * @param privateKey                The LTPA private key
      * @param publicKey                 The LTPA public key
-     * @param maxLifetimeInMinutes      TODO
-     * @param refreshThresholdInMinutes TODO
      */
-    protected LTPAToken2(String accessID, long expirationInMinutes, @Sensitive byte[] sharedKey, LTPAPrivateKey privateKey, LTPAPublicKey publicKey, long maxLifetimeInMinutes,
-                         long refreshThresholdInMinutes) {
+    protected LTPAToken2(String accessID, long expirationInMinutes, long maxLifetimeInMinutes, long refreshThresholdInMinutes, @Sensitive byte[] sharedKey,
+                         LTPAPrivateKey privateKey,
+                         LTPAPublicKey publicKey) {
         this.signature = null;
         this.encryptedBytes = null;
         this.sharedKey = sharedKey.clone();
@@ -171,8 +174,8 @@ public class LTPAToken2 implements Token, Serializable {
         this.publicKey = publicKey;
         this.userData = new UserData(accessID);
         this.expirationInMinutes = expirationInMinutes;
-        this.refreshThresholdInMinutes = refreshThresholdInMinutes;
         this.maxLifetimeInMinutes = maxLifetimeInMinutes;
+        this.refreshThresholdInMinutes = refreshThresholdInMinutes;
         setMaxLifetime(maxLifetimeInMinutes);
         setExpiration(expirationInMinutes);
         this.cipher = CryptoUtils.AES_CBC_CIPHER;
@@ -182,15 +185,16 @@ public class LTPAToken2 implements Token, Serializable {
      * An LTPA2 token constructor (Used for the clone).
      *
      * @param expirationInMinutes       Expiration limit of the LTPA2 token in minutes
+     * @param maxLifetimeInMinutes      The LTPA token max lifetime in minutes
+     * @param refreshThresholdInMinutes The LTPA token expiration time remaining threshold
      * @param sharedKey                 The LTPA shared key
      * @param privateKey                The LTPA private key
      * @param publicKey                 The LTPA public key
      * @param userdata                  The UserData
-     * @param maxLifetimeInMinutes      The LTPA token max lifetime
-     * @param refreshThresholdInMinutes The LTPA token expiration time remaining threshold
      */
-    protected LTPAToken2(long expirationInMinutes, @Sensitive byte[] sharedKey, LTPAPrivateKey privateKey, LTPAPublicKey publicKey, UserData userdata, long maxLifetimeInMinutes,
-                         long refreshThresholdInMinutes) {
+    protected LTPAToken2(long expirationInMinutes, long maxLifetimeInMinutes, long refreshThresholdInMinutes, @Sensitive byte[] sharedKey, LTPAPrivateKey privateKey,
+                         LTPAPublicKey publicKey,
+                         UserData userdata) {
         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
             Tr.entry(this, tc, "call by the clone() method, userData: " + userdata);
             Tr.debug(this, tc, "expire: " + new Date(expirationInMinutes * MILLIS_PER_MINUTE));
@@ -538,10 +542,10 @@ public class LTPAToken2 implements Token, Serializable {
             Tr.entry(this, tc, "userData: " + userData);
         }
         userData.removeAttributes("expire");
-        userData.removeAttributes("lastUsed");
+        userData.removeAttributes("maxLifetime");
         UserData ud = (UserData) userData.clone();
 
-        return new LTPAToken2(expirationInMinutes, sharedKey, privateKey, publicKey, ud, maxLifetimeInMinutes, refreshThresholdInMinutes);
+        return new LTPAToken2(expirationInMinutes, maxLifetimeInMinutes, refreshThresholdInMinutes, sharedKey, privateKey, publicKey, ud);
     }
 
     /**
@@ -601,6 +605,11 @@ public class LTPAToken2 implements Token, Serializable {
         }
     }
 
+    /**
+     * Set max life time of the LTPA2 token
+     *
+     * @param maxLifetimeInMinutes the max lifetime of the LTPA2 token in minutes
+     */
     private final void setMaxLifetime(long maxLifetimeInMinutes) {
         maxLifetimeInMilliseconds = System.currentTimeMillis() + maxLifetimeInMinutes * MILLIS_PER_MINUTE;
         signature = null;
