@@ -98,6 +98,12 @@ public class SSOAuthenticatorRefreshTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.refresh");
+        //server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat");
+        try {
+            server.copyFileToLibertyInstallRoot("lib/features", "internalFeatureForFat/ltpafattestlibertyinternals-1.0.mf");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         server.addInstalledAppForValidation(APP_NAME);
     }
 
@@ -455,6 +461,7 @@ public class SSOAuthenticatorRefreshTest {
         Log.info(thisClass, testName, "Waiting " + FULL_EXPIRATION_WAIT_MS + "ms for token to expire completely");
         Thread.sleep(FULL_EXPIRATION_WAIT_MS);
 
+        Log.info(thisClass, testName, "making a request with cookie ");
         // Try to use expired cookie - should fail or require re-auth
         HttpURLConnection conn2 = makeRequestWithCookie(servletUrl, cookie);
         int responseCode = conn2.getResponseCode();
@@ -540,7 +547,7 @@ public class SSOAuthenticatorRefreshTest {
 
         conn.setRequestProperty("Cookie", LTPA_COOKIE_NAME + "=" + cookie);
 
-        conn.connect();
+        // Don't call connect() - let consumeResponse trigger the request
         consumeResponse(conn);
 
         return conn;
@@ -548,18 +555,42 @@ public class SSOAuthenticatorRefreshTest {
 
     /**
      * Consume the HTTP response body to complete the request.
-     * Note: IOException is expected and acceptable for error responses (401, 403, etc.)
+     * Handles both success (2xx) and error (4xx, 5xx) responses properly.
      */
     private void consumeResponse(HttpURLConnection conn) {
-        try (InputStream is = conn.getInputStream();
-                        BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                // Just consume the response
+        InputStream is = null;
+        try {
+            // Get response code first - this triggers the actual HTTP request
+            int responseCode = conn.getResponseCode();
+
+            Log.info(thisClass, "consumeResponse", "response code: " + responseCode);
+            // Use error stream for error responses, input stream for success
+            if (responseCode >= 400) {
+                is = conn.getErrorStream();
+            } else {
+                is = conn.getInputStream();
+            }
+            Log.info(thisClass, "consumeResponse", "response code: " + responseCode);
+            // Consume the response body
+            if (is != null) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        // Just consume the response
+                    }
+                }
             }
         } catch (IOException e) {
-            // Expected for error responses (e.g., 401, 403) - connection is still valid
+            // Log but don't fail - connection is still valid for getting headers/response code
             Log.info(thisClass, "consumeResponse", "IOException while consuming response: " + e.getMessage());
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    // Ignore close errors
+                }
+            }
         }
     }
 

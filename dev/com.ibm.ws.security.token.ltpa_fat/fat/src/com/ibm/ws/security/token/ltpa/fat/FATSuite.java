@@ -26,7 +26,7 @@ import componenttest.rules.repeater.RepeatTests;
                 FATTest.class,
                 LTPAKeyRotationTests.class,
                 LTPAValidationKeyTests.class,
-                LTPAKeyPasswordTests.class,   
+                LTPAKeyPasswordTests.class,
                 LTPATokenRefreshTest.class,
                 SSOAuthenticatorRefreshTest.class
 })
