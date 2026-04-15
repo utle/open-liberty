@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2010, 2025 IBM Corporation and others.
+# Copyright (c) 2010, 2026 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -437,7 +437,7 @@ warning.tooManySymbolicLinks.explanation=I collegamenti simbolici sono collegame
 warning.tooManySymbolicLinks.useraction=Per risolvere questo problema, controllare i link simbolici nel percorso e assicurarsi che non creino riferimenti circolari. \u00c8 inoltre possibile utilizzare il comando 'readlink' per esaminare singoli collegamenti nella catena.
 
 warning.javaHomeNotSet=CWWKE0097W: La variabile d'ambiente JAVA_HOME non \u00e8 impostata.
-warning.javaHomeNotSet.explanation=Lo script del server non \u00e8 in grado di determinare la posizione dell'installazione di Java. Questo problema non si verifica se la variabile d'ambiente JAVA_HOME \u00e8 impostata correttamente o se l'eseguibile "java", trovato cercando nel PATH, si trova in un'installazione Java completa. Il percorso di installazione di Java \u00e8 necessario per trovare i file di configurazione specifici della versione, come java9.options. Se l'installazione di Java non viene trovata, questi file non vengono caricati e le applicazioni che si basano su di essi potrebbero non comportarsi come previsto.
+warning.javaHomeNotSet.explanation=Lo script del server non \u00e8 in grado di determinare la posizione dell'installazione Java. Questo problema non si verifica se la variabile di ambiente JAVA_HOME \u00e8 impostata correttamente o se l'eseguibile "java", trovato cercando nel PATH, si trova in un'installazione Java completa. La posizione di installazione di Java \u00e8 necessaria per trovare i file di configurazione specifici della versione, come la release e le opzioni di Java. Se l'installazione Java non viene trovata, questi file non vengono caricati e le applicazioni che li utilizzano potrebbero non funzionare come previsto.
 warning.javaHomeNotSet.useraction=Impostare la variabile d'ambiente JAVA_HOME.
 
 warn.packageRuntime.include.unknownOption=CWWKE0099W: Impossibile utilizzare l''opzione --include={0}; verr\u00e0 invece utilizzata --include=wlp.
@@ -784,7 +784,15 @@ warning.manual.PPV.env.var.useraction=Per conservare la variabile di ambiente PR
 
 error.read.server.env=CWWKE0970E: Impossibile leggere il file server.env nell'ubicazione {}.
 error.read.server.env.explanation=Lettura del file server.env non riuscita.
-error.read.server.env.useraction=Impossibile leggere il file server.env .  Controllare i permessi del file e ritentare l'operazione.
+error.read.server.env.useraction=Impossibile leggere il file server.env. Controlla i permessi del file e riprova l'operazione.
+
+warning.java2security.stopped=CWWKE0971W: La sicurezza Java 2 \u00e8 disabilitata perch\u00e9 Jakarta EE 11 non la supporta.
+warning.java2security.stopped.explanation=In Jakarta EE 11 \u00e8 stato eliminato il supporto per Java 2 Security.
+warning.java2security.stopped.useraction=Disattivare la sicurezza Java 2 nella configurazione del server quando si utilizzano le funzionalit\u00e0 di Jakarta EE 11.
+
+info.java2security.restarted=CWWKE0972I: La sicurezza Java 2 \u00e8 stata riattivata poich\u00e9 le funzionalit\u00e0 di Jakarta EE 11 sono state rimosse.
+info.java2security.restarted.explanation=Questo messaggio \u00e8 solo a scopo informativo.
+info.java2security.restarted.useraction=Non \u00e8 richiesta alcuna azione.
 
 info.serverStarting=Avvio del server {0} in corso.
 info.serverStarted=Server {0} avviato.

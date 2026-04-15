@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2010, 2025 IBM Corporation and others.
+# Copyright (c) 2010, 2026 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -443,7 +443,7 @@ warning.tooManySymbolicLinks.explanation=Symbolic links are shortcuts that point
 warning.tooManySymbolicLinks.useraction=To resolve this issue, check the symbolic links in the path and ensure that they do not create circular references. You might also use the 'readlink' command to inspect individual links in the chain.
 
 warning.javaHomeNotSet=CWWKE0097W: The JAVA_HOME environment variable is not set.
-warning.javaHomeNotSet.explanation=The server script cannot determine the location of the Java installation. This issue does not occur if the JAVA_HOME environment variable is set properly, or if the "java" executable, found by searching the PATH, is located in a complete Java installation. The Java installation location is needed to find version-specific configuration files, such as java9.options. If the Java installation cannot be found, these files are not loaded, and applications that rely on them might not behave as expected.
+warning.javaHomeNotSet.explanation=The server script cannot determine the location of the Java installation. This issue does not occur if the JAVA_HOME environment variable is set properly, or if the "java" executable, found by searching the PATH, is located in a complete Java installation. The Java installation location is needed to find version-specific configuration files, such as the Java release and options. If the Java installation cannot be found, these files are not loaded, and applications that rely on them might not behave as expected.
 warning.javaHomeNotSet.useraction=Set the JAVA_HOME environment variable.
 
 warn.packageRuntime.include.unknownOption=CWWKE0099W: Unable to use option --include={0}, will use --include=wlp instead.
@@ -798,7 +798,15 @@ warning.manual.PPV.env.var.useraction=To retain the PREFERRED_PLATFORM_VERSION e
 
 error.read.server.env=CWWKE0970E: Unable to read the server.env file at the {} location.
 error.read.server.env.explanation=Failure to read the server.env file.
-error.read.server.env.useraction=Unable to read the server.env file.  Check file permissions and retry the operation.
+error.read.server.env.useraction=Unable to read the server.env file. Check file permissions and retry the operation.
+
+warning.java2security.stopped=CWWKE0971W: Java 2 Security is disabled because Jakarta EE 11 does not support it.
+warning.java2security.stopped.explanation=Jakarta EE 11 removed support for Java 2 Security.
+warning.java2security.stopped.useraction=Disable Java 2 Security in the server configuration when you are using Jakarta EE 11 features.
+
+info.java2security.restarted=CWWKE0972I: Java 2 Security is re-enabled because Jakarta EE 11 features were removed.
+info.java2security.restarted.explanation=This message is for informational purposes only.
+info.java2security.restarted.useraction=No action is required.
 
 info.serverStarting=Starting server {0}.
 info.serverStarted=Server {0} started.

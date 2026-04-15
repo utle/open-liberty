@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 IBM Corporation and others.
+ * Copyright (c) 2023, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -9,6 +9,7 @@
  *******************************************************************************/
 package com.ibm.ws.http.netty.message;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -50,6 +51,7 @@ import com.ibm.wsspi.http.ee8.Http2PushBuilder;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.VoidChannelPromise;
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -359,18 +361,15 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
     public String getMethod() {
         if (Objects.isNull(method)) {
             method = MethodValues.find(request.method().name());
-
         }
         return method.getName();
     }
 
     @Override
     public MethodValues getMethodValue() {
-
         if (Objects.isNull(method)) {
             method = MethodValues.find(request.method().name());
         }
-
         return method;
     }
 
@@ -440,9 +439,7 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
 
     @Override
     public String getQueryString() {
-
         return Objects.isNull(parameters) || parameters.isEmpty() ? null : query.rawQuery();
-
     }
 
     @Override
@@ -452,9 +449,7 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
 
     @Override
     public String getParameter(String name) {
-
         return parameters.containsKey(name) ? parameters.get(name)[0] : null;
-
     }
 
     @Override
@@ -626,7 +621,6 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
                 Tr.debug(tc, "getVirtualHost: No host header: [" + host + "]");
             }
             return null;
-//            host = host.substring(0, host.indexOf(":"));
         }
         int index = -1;
         if (LEFT_BRACKET == host.charAt(0)) {
@@ -750,7 +744,6 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
 
     @Override
     public String getScheme() {
-
         return Objects.isNull(scheme) ? null : scheme.getName();
     }
 
@@ -770,7 +763,6 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
             throw new UnsupportedSchemeException("Illegal scheme " + scheme);
         }
         setScheme(value);
-
     }
 
     @Override
@@ -781,13 +773,10 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
             throw new UnsupportedSchemeException("Illegal scheme " + GenericUtils.getEnglishString(scheme));
         }
         setScheme(value);
-
     }
 
     @Override
     public HttpTrailers getTrailers() {
-//        if (request.trailingHeaders().isEmpty())
-//            return null;
         return new NettyTrailers(this.request.trailingHeaders());
     }
 
@@ -878,37 +867,23 @@ public class NettyRequestMessage extends NettyBaseMessage implements HttpRequest
             }
         }
 
-        this.nettyContext.channel().eventLoop().execute(new Runnable() {
-            @Override
-            public void run() {
-                ChannelFuture promise = handler.encoder().writePushPromise(nettyContext, currentStreamId, nextPromisedStreamId, headers, 0,
-                                                                           new VoidChannelPromise(nettyContext.channel(), true));
-                promise.addListener(future -> {
-                    if (future.isSuccess()) {
-                        // Should we process the new request here when we ensure we wrote out a push promise?
-                        // Follow up issue https://github.com/OpenLiberty/open-liberty/issues/31439
-                    }
-                });
-            }
-        });
-
         DefaultFullHttpRequest newRequest = new DefaultFullHttpRequest(request.protocolVersion(), HttpMethod.GET, pbPath);
         newRequest.headers().set(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), nextPromisedStreamId);
         newRequest.headers().set(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), scheme);
         HttpUtil.setContentLength(newRequest, 0);
-        HttpDispatcher.getExecutorService().execute(new Runnable() {
 
-            @Override
-            public void run() {
-                try {
-                    ((HttpDispatcherHandler) nettyContext.channel().pipeline().get(HttpPipelineInitializer.HTTP_DISPATCHER_HANDLER_NAME)).channelRead(nettyContext,
-                                                                                                                                                      newRequest);
-                } catch (Exception e) {
-                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                        Tr.debug(tc, "pushNewRequest() Unable to dispatch push request: " + e.getMessage(), e);
-                    }
+        this.nettyContext.channel().eventLoop().execute(() -> {
+            ChannelFuture promise = handler.encoder().writePushPromise(nettyContext, currentStreamId, nextPromisedStreamId, headers, 0,
+                                                                       new VoidChannelPromise(nettyContext.channel(), true));
+            promise.addListener(future -> {
+                if (!(future.isDone() && future.isSuccess())){
+                    if(future.cause() == null)
+                        newRequest.setDecoderResult(DecoderResult.failure(new IOException("Failed to properly finish writing push promise!")));
+                    else
+                        newRequest.setDecoderResult(DecoderResult.failure(future.cause()));
                 }
-            }
+                nettyContext.pipeline().get(HttpDispatcherHandler.class).channelRead(nettyContext, newRequest);
+            });
         });
     }
 

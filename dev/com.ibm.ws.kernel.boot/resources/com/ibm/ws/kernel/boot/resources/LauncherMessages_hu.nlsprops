@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2010, 2025 IBM Corporation and others.
+# Copyright (c) 2010, 2026 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -437,7 +437,7 @@ warning.tooManySymbolicLinks.explanation=A szimbolikus hivatkoz\u00e1sok m\u00e1
 warning.tooManySymbolicLinks.useraction=A probl\u00e9ma megold\u00e1s\u00e1hoz ellen\u0151rizze az \u00fatvonal szimbolikus hivatkoz\u00e1sait, \u00e9s gy\u0151z\u0151dj\u00f6n meg r\u00f3la, hogy nem hoznak l\u00e9tre k\u00f6rk\u00f6r\u00f6s hivatkoz\u00e1sokat. A 'readlink' parancsot is haszn\u00e1lhatja a l\u00e1nc egyes hivatkoz\u00e1sainak megvizsg\u00e1l\u00e1s\u00e1ra.
 
 warning.javaHomeNotSet=CWWKE0097W: A JAVA_HOME k\u00f6rnyezeti v\u00e1ltoz\u00f3 nincs be\u00e1ll\u00edtva.
-warning.javaHomeNotSet.explanation=A kiszolg\u00e1l\u00f3szkript nem tudja meghat\u00e1rozni a Java-telep\u00edt\u00e9s hely\u00e9t. Ez a probl\u00e9ma nem jelentkezik, ha a JAVA_HOME k\u00f6rnyezeti v\u00e1ltoz\u00f3 megfelel\u0151en van be\u00e1ll\u00edtva, vagy ha a PATH keres\u00e9s\u00e9vel megtal\u00e1lt "java" futtathat\u00f3 f\u00e1jl egy teljes Java telep\u00edt\u00e9sben tal\u00e1lhat\u00f3. A Java telep\u00edt\u00e9si helye sz\u00fcks\u00e9ges a verzi\u00f3-specifikus konfigur\u00e1ci\u00f3s f\u00e1jlok megtal\u00e1l\u00e1s\u00e1hoz, mint p\u00e9ld\u00e1ul a java9.options. Ha a Java-telep\u00edt\u00e9s nem tal\u00e1lhat\u00f3 meg, ezek a f\u00e1jlok nem t\u00f6lt\u0151dnek be, \u00e9s az ezekre t\u00e1maszkod\u00f3 alkalmaz\u00e1sok esetleg nem az elv\u00e1rt m\u00f3don viselkednek.
+warning.javaHomeNotSet.explanation=A szerver szkript nem tudja meghat\u00e1rozni a Java telep\u00edt\u00e9s\u00e9nek hely\u00e9t. Ez a probl\u00e9ma nem jelentkezik, ha a JAVA_HOME k\u00f6rnyezeti v\u00e1ltoz\u00f3 megfelel\u0151en van be\u00e1ll\u00edtva, vagy ha a PATH keres\u00e9ssel megtal\u00e1lt \u201ejava\u201d v\u00e9grehajthat\u00f3 f\u00e1jl egy teljes Java telep\u00edt\u00e9sben tal\u00e1lhat\u00f3. A Java telep\u00edt\u00e9si helye sz\u00fcks\u00e9ges a verzi\u00f3-specifikus konfigur\u00e1ci\u00f3s f\u00e1jlok, p\u00e9ld\u00e1ul a Java kiad\u00e1s \u00e9s opci\u00f3k megtal\u00e1l\u00e1s\u00e1hoz. Ha a Java telep\u00edt\u00e9se nem tal\u00e1lhat\u00f3, ezek a f\u00e1jlok nem ker\u00fclnek bet\u00f6lt\u00e9sre, \u00e9s az ezekre t\u00e1maszkod\u00f3 alkalmaz\u00e1sok nem biztos, hogy a v\u00e1rt m\u00f3don m\u0171k\u00f6dnek.
 warning.javaHomeNotSet.useraction=\u00c1ll\u00edtsa be a JAVA_HOME k\u00f6rnyezeti v\u00e1ltoz\u00f3t.
 
 warn.packageRuntime.include.unknownOption=CWWKE0099W: Az --include={0} param\u00e9ter nem haszn\u00e1lhat\u00f3, helyette az --include=wlp ker\u00fcl felhaszn\u00e1l\u00e1sra.
@@ -784,7 +784,15 @@ warning.manual.PPV.env.var.useraction=A PREFERRED_PLATFORM_VERSION k\u00f6rnyeze
 
 error.read.server.env=CWWKE0970E: A (z) {} helyen tal\u00e1lhat\u00f3 server.env f\u00e1jl nem olvashat\u00f3.
 error.read.server.env.explanation=Nem siker\u00fclt beolvasni a server.env f\u00e1jlt.
-error.read.server.env.useraction=A server.env f\u00e1jl nem olvashat\u00f3.  Ellen\u0151rizze a f\u00e1jl enged\u00e9lyeit, majd pr\u00f3b\u00e1lkozzon \u00fajra a m\u0171velettel.
+error.read.server.env.useraction=Nem siker\u00fclt beolvasni az \u201e server.env \u201d f\u00e1jlt. Ellen\u0151rizze a f\u00e1jl jogosults\u00e1gait, majd pr\u00f3b\u00e1lja meg \u00fajra a m\u0171veletet.
+
+warning.java2security.stopped=CWWKE0971W: A Java 2 Security le van tiltva, mivel a Jakarta EE 11 nem t\u00e1mogatja.
+warning.java2security.stopped.explanation=A Jakarta EE 11 megsz\u00fcntette a Java 2 Security t\u00e1mogat\u00e1s\u00e1t.
+warning.java2security.stopped.useraction=Ha a Jakarta EE 11 funkci\u00f3it haszn\u00e1lja, tiltsa le a Java 2 Security funkci\u00f3t a szerverkonfigur\u00e1ci\u00f3ban.
+
+info.java2security.restarted=CWWKE0972I: A Java 2 Security \u00fajra enged\u00e9lyezve van, mivel a Jakarta EE 11 funkci\u00f3i elt\u00e1vol\u00edt\u00e1sra ker\u00fcltek.
+info.java2security.restarted.explanation=Ez az \u00fczenet csak inform\u00e1ci\u00f3s c\u00e9lt szolg\u00e1l.
+info.java2security.restarted.useraction=Nincs teend\u0151.
 
 info.serverStarting=A(z) {0} kiszolg\u00e1l\u00f3 ind\u00edt\u00e1sa.
 info.serverStarted=A(z) {0} kiszolg\u00e1l\u00f3 elindult.

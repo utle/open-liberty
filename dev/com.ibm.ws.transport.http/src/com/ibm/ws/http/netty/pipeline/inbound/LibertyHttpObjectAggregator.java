@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -8,6 +8,10 @@
  * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
 package com.ibm.ws.http.netty.pipeline.inbound;
+
+import com.ibm.websphere.ras.Tr;
+import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.http.channel.internal.HttpMessages;
 
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -24,6 +28,8 @@ import io.netty.util.ReferenceCountUtil;
 
 public class LibertyHttpObjectAggregator extends SimpleChannelInboundHandler<HttpObject> {
 
+    private static final TraceComponent tc = Tr.register(LibertyHttpObjectAggregator.class, HttpMessages.HTTP_TRACE_NAME, HttpMessages.HTTP_BUNDLE);
+
     private long maxContentLength = Long.MAX_VALUE;
 
     // AttributeKey to store the current HttpRequest in progress
@@ -33,7 +39,6 @@ public class LibertyHttpObjectAggregator extends SimpleChannelInboundHandler<Htt
     private static final AttributeKey<CompositeByteBuf> COMPOSITE_CONTENT = AttributeKey.valueOf("compositeContent");
 
     public LibertyHttpObjectAggregator(long maxContentLength) {
-        super(false); //  messages should NOT be released automatically, we will handle reference counting manually instead (i.e ReferenceCountUtil.release )
         if (maxContentLength <= 0) {
             throw new IllegalArgumentException("maxContentLength must be a positive integer.");
         }
@@ -42,9 +47,6 @@ public class LibertyHttpObjectAggregator extends SimpleChannelInboundHandler<Htt
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
-        if (msg.decoderResult().isFinished() && msg.decoderResult().isFailure()) {
-            exceptionCaught(ctx, msg.decoderResult().cause());
-        }
         if (msg instanceof FullHttpRequest) {
             // Already have a Full HTTP Request so just need to forward here
             ctx.fireChannelRead(ReferenceCountUtil.retain(msg, 1));
@@ -55,6 +57,15 @@ public class LibertyHttpObjectAggregator extends SimpleChannelInboundHandler<Htt
         }
         if (msg instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) msg;
+            if(msg.decoderResult().isFinished() && msg.decoderResult().isFailure()) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Found http request with decoding failure!");
+                }
+                FullHttpRequest fullRequest = new DefaultFullHttpRequest(request.protocolVersion(), request.method(), request.uri());
+                fullRequest.setDecoderResult(request.decoderResult());
+                ctx.fireChannelRead(fullRequest);
+                return;
+            }
             ctx.channel().attr(CURRENT_REQUEST).set(request);
 
             CompositeByteBuf content = ctx.alloc().compositeBuffer();
@@ -78,7 +89,6 @@ public class LibertyHttpObjectAggregator extends SimpleChannelInboundHandler<Htt
 
                 if (sizeOfCurrentChunk > maxContentLength ||
                     (content.readableBytes() + sizeOfCurrentChunk) > maxContentLength) {
-                    ReferenceCountUtil.release(msg);
                     throw new TooLongFrameException("Content length exceeded max of " + maxContentLength + " bytes.");
                 }
 
@@ -87,6 +97,7 @@ public class LibertyHttpObjectAggregator extends SimpleChannelInboundHandler<Htt
                 if (msg instanceof LastHttpContent) {
                     HttpRequest request = ctx.channel().attr(CURRENT_REQUEST).get();
                     FullHttpRequest fullRequest = new DefaultFullHttpRequest(request.protocolVersion(), request.method(), request.uri(), content, request.headers(), ((LastHttpContent) msg).trailingHeaders());
+                    fullRequest.setDecoderResult(httpContent.decoderResult());
 
                     ctx.fireChannelRead(fullRequest);
 

@@ -15,12 +15,14 @@ package com.ibm.ws.cdi.liberty;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 
 import com.ibm.ws.cdi.CDIService;
+import com.ibm.ws.cdi.impl.weld.WebSphereCDIDeploymentImpl;
 import com.ibm.ws.cdi.internal.archive.liberty.RuntimeFactory;
 import com.ibm.ws.cdi.internal.interfaces.Application;
 import com.ibm.ws.cdi.internal.interfaces.WebSphereBeanDeploymentArchive;
@@ -63,7 +65,14 @@ public class CDIIntrospector implements Introspector {
                 Optional<WebSphereCDIDeployment> deploymentOptional = getWebSphereCDIDeploymentFromApplication(application, cdiRuntimeImpl);
                 if (deploymentOptional.isPresent()) {
                     WebSphereCDIDeployment deployment = deploymentOptional.get();
-                    deployment.getApplicationBDAs();
+
+                    if (deployment instanceof WebSphereCDIDeploymentImpl) {
+                        WebSphereCDIDeploymentImpl deploymentImpl = (WebSphereCDIDeploymentImpl) deployment;
+
+                        out.println("Deployment contains the following BDAs: " +
+                                    deploymentImpl.getOrderedBDAs().stream().map((bda) -> bda.getId()).collect(Collectors.joining(", ")));
+
+                    }
 
                     Collection<WebSphereBeanDeploymentArchive> bdas = deployment.getWebSphereBeanDeploymentArchives();
 

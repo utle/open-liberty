@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 IBM Corporation and others.
+ * Copyright (c) 2025, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import io.openliberty.cdi.spi.CDIExtensionMetadata;
+import io.openliberty.mcp.internal.config.McpConfigProducer;
 import io.openliberty.mcp.internal.encoders.EncoderRegistry;
 import io.openliberty.mcp.internal.encoders.JsonTextContentEncoder;
 import io.openliberty.mcp.internal.sessions.McpSessionStore;
@@ -33,7 +34,9 @@ public class McpCdiExtensionMetadata implements CDIExtensionMetadata {
         return Set.of(McpRequestTracker.class,
                       McpSessionStore.class,
                       JsonTextContentEncoder.class,
-                      EncoderRegistry.class);
+                      EncoderRegistry.class,
+                      McpCdiProducers.class,
+                      McpConfigProducer.class);
     }
 
 }

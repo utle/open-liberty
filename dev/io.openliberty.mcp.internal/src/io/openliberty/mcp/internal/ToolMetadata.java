@@ -30,6 +30,7 @@ import io.openliberty.mcp.annotations.ToolArg;
 import io.openliberty.mcp.annotations.WrapBusinessError;
 import io.openliberty.mcp.content.Content;
 import io.openliberty.mcp.internal.exceptions.GenericArgumentException;
+import io.openliberty.mcp.internal.exceptions.UnsupportedTypeException;
 import io.openliberty.mcp.internal.requests.DefaultValueResolver;
 import io.openliberty.mcp.internal.schemas.SchemaRegistry;
 import io.openliberty.mcp.internal.schemas.TypeUtility;
@@ -37,10 +38,10 @@ import io.openliberty.mcp.internal.security.SecurityRequirement;
 import io.openliberty.mcp.internal.tools.AsyncBeanMethodHandler;
 import io.openliberty.mcp.internal.tools.BeanMethodHandler.MethodMetadata;
 import io.openliberty.mcp.internal.tools.SyncBeanMethodHandler;
-import io.openliberty.mcp.internal.tools.ToolManager;
-import io.openliberty.mcp.internal.tools.ToolManager.ToolAnnotations;
-import io.openliberty.mcp.internal.tools.ToolManager.ToolArgument;
-import io.openliberty.mcp.internal.tools.ToolManager.ToolArguments;
+import io.openliberty.mcp.tools.ToolManager;
+import io.openliberty.mcp.tools.ToolManager.ToolAnnotations;
+import io.openliberty.mcp.tools.ToolManager.ToolArgument;
+import io.openliberty.mcp.tools.ToolManager.ToolArguments;
 import io.openliberty.mcp.tools.ToolResponse;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedParameter;
@@ -155,6 +156,11 @@ public record ToolMetadata(String name,
 
         outputSchema = (outputSchema == null || outputSchema.isEmpty()) ? null : outputSchema;
 
+        if (outputSchema != null && !(method.isAnnotationPresent(Schema.class) && method.getAnnotation(Schema.class).value() != Schema.UNSET)
+            && !checkConcreteType(outputSchema).equals("object")) {
+            throw new UnsupportedTypeException(unwrappedOutputType);
+        }
+
         Optional<ToolAnnotations> annotations = readAnnotations(annotation.annotations());
 
         MethodMetadata methodMetadata = new MethodMetadata(name,
@@ -187,6 +193,24 @@ public record ToolMetadata(String name,
                                 Optional.of(methodMetadata),
                                 SecurityRequirement.createFrom(method),
                                 Instant.now());
+    }
+
+    /**
+     *
+     * @param outputSchema the JSON schema generated to validate (will not work with custom schemas based JSON)
+     * @return type of object
+     */
+    public static String checkConcreteType(JsonObject outputSchema) {
+        if (outputSchema.containsKey("type")) {
+            return outputSchema.getString("type");
+        } else {
+            if (outputSchema.containsKey("$ref")) {
+                String[] path = outputSchema.getString("$ref").split("/");
+                JsonObject curJsonObj = outputSchema.getJsonObject("$defs").getJsonObject(path[path.length - 1]);
+                return curJsonObj.getString("type");
+            }
+        }
+        return "";
     }
 
     private static String[] getArgNameArray(AnnotatedMethod<?> method, List<ToolMethodArgument> toolMethodArgs) {
@@ -341,7 +365,7 @@ public record ToolMetadata(String name,
      * Used for error reporting cases, such as locating Duplicate Tools and ToolArgs
      */
     public String getToolQualifiedName() {
-        return methodMetadata.map(m -> m.bean().getBeanClass().toString() + "." + m.method().getName())
+        return methodMetadata.map(m -> m.bean().getBeanClass().getName() + "." + m.method().getName())
                              .orElse("User-defined tool: " + name);
     }
 
