@@ -25,6 +25,7 @@ import com.ibm.websphere.security.auth.TokenExpiredException;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAPrivateKey;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAPublicKey;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.token.ltpa.LTPAValidationKeysInfo;
 import com.ibm.wsspi.security.ltpa.Token;
 import com.ibm.wsspi.security.ltpa.TokenFactory;
@@ -108,7 +109,8 @@ public class LTPAToken2Factory implements TokenFactory {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                         Tr.debug(tc, "validateTokenBytes with primary keys (success)");
                     }
-                    if (validatedToken.shouldRefreshToken()) {
+                    // Beta guard: Token refresh is only available in beta edition
+                    if (ProductInfo.getBetaEdition() && validatedToken.shouldRefreshToken()) {
                         returnToken = (Token) validatedToken.clone();
                         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                             debugMeasureTime(startTime, true);
@@ -162,7 +164,8 @@ public class LTPAToken2Factory implements TokenFactory {
                                     Tr.debug(tc, "validateTokenBytes with validationKeys (success)");
                                 }
 
-                                if (validatedToken.shouldRefreshToken())
+                                // Beta guard: Token refresh is only available in beta edition
+                                if (ProductInfo.getBetaEdition() && validatedToken.shouldRefreshToken())
                                     return (Token) validatedToken.clone();
                                 else
                                     return validatedToken;

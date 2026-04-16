@@ -51,9 +51,12 @@ public interface Token extends java.lang.Cloneable {
     public long getExpiration();
 
     /**
-     * Should refresh token or not.
+     * Determines whether this token should be refreshed based on its remaining lifetime
+     * and the configured refresh threshold. This is a beta feature and is only available
+     * when running in beta mode.
      *
-     * @return boolean
+     * @return true if the token should be refreshed, false otherwise
+     * @ibm-api
      */
     public boolean shouldRefreshToken();
 

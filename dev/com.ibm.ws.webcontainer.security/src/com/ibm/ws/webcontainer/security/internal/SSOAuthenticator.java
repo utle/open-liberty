@@ -24,6 +24,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.security.audit.AuditEvent;
 import com.ibm.ws.common.encoder.Base64Coder;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.authentication.AuthenticationData;
 import com.ibm.ws.security.authentication.AuthenticationException;
 import com.ibm.ws.security.authentication.AuthenticationService;
@@ -118,8 +119,9 @@ public class SSOAuthenticator implements WebAuthenticator {
             // Add JWT SSO cookies if present
             ssoCookieHelper.addJwtSsoCookiesToResponse(authResult.getSubject(), req, res, null);
 
-            // Check if LTPA token was refreshed and update cookie if needed
-            if (shouldUpdateSSOCookie(req, authResult.getSubject())) {
+            // Beta guard: Check if LTPA token was refreshed and update cookie if needed
+            // Token refresh is only available in beta edition
+            if (ProductInfo.getBetaEdition() && shouldUpdateSSOCookie(req, authResult.getSubject())) {
                 if (isDebugEnabled()) {
                     Tr.debug(tc, "LTPA token was refreshed, adding new SSO cookie to response");
                 }

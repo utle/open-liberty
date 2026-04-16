@@ -116,12 +116,21 @@ public interface LTPAConfiguration {
     long getTokenExpiration();
 
     /**
-     * @return max life time
+     * Returns the maximum lifetime for LTPA tokens in minutes.
+     * This is a beta feature and is only available when running in beta mode.
+     *
+     * @return max life time in minutes
+     * @ibm-api
      */
     long getMaxLifetime();
 
     /**
-     * @return refresh threshold percentage for remains of token timeout
+     * Returns the refresh threshold for LTPA tokens in minutes.
+     * When a token's remaining lifetime falls below this threshold, it will be refreshed.
+     * This is a beta feature and is only available when running in beta mode.
+     *
+     * @return refresh threshold in minutes
+     * @ibm-api
      */
     long getRefreshThreshold();
 

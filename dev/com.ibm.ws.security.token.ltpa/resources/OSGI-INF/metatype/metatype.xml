@@ -24,13 +24,13 @@
             required="false" type="String" ibm:type="password" />
         <AD id="expiration"  name="%expiration" description="%expiration.desc"
             required="false" type="String" ibm:type="duration(m)"
-            default="15m" />
+            default="120m" />
         <AD id="refreshThreshold"  name="%refreshThreshold" description="%refreshThreshold.desc"
             required="false" type="String" ibm:type="duration(m)"
-            default="5m" />
+            ibm:beta="true" />
         <AD id="maxLifetime"  name="%maxLifetime" description="%maxLifetime.desc"
         	required="false" type="String" ibm:type="duration(m)"
-        	default="60m" />
+            ibm:beta="true" />
         <AD id="monitorInterval" name="%ltpa.monitorInterval" description="%ltpa.monitorInterval.desc"
             required="false" type="String" ibm:type="duration" 
             default="0ms" />

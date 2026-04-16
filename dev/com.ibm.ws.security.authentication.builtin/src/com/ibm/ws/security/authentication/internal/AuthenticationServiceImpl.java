@@ -55,6 +55,7 @@ import com.ibm.ws.security.jwtsso.token.proxy.JwtSSOTokenHelper;
 import com.ibm.ws.security.registry.RegistryException;
 import com.ibm.ws.security.registry.UserRegistry;
 import com.ibm.ws.security.registry.UserRegistryService;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.token.ltpa.LTPAConfiguration;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.security.token.AttributeNameConstants;
@@ -448,6 +449,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @return true if token needs refresh, false otherwise
      */
     private synchronized boolean shouldRefreshCachedToken(Subject subject) {
+        // Beta guard: Token refresh is only available in beta edition
+        if (!ProductInfo.getBetaEdition()) {
+            return false;
+        }
+        
         if (subject == null) {
             return false;
         }

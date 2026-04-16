@@ -40,6 +40,7 @@ import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.ws.config.xml.nester.Nester;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.filemonitor.FileBasedActionable;
 import com.ibm.ws.security.filemonitor.LTPAFileMonitor;
 import com.ibm.ws.security.token.ltpa.LTPAConfiguration;
@@ -206,11 +207,22 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         primaryKeyImportFile = (String) props.get(CFG_KEY_IMPORT_FILE);
         primaryKeyPassword = resolvePrimaryKeyPassword(props);
         keyTokenExpiration = (Long) props.get(CFG_KEY_TOKEN_EXPIRATION);
-        keyTokenMaxLifetime = (Long) props.get(CFG_KEY_TOKEN_MAX_LIFE_TIME);
-        refreshThreshold = (Long) props.get(CFG_KEY_TOKEN_REFRESH_THRESHOLD);
+        
+        // Beta guard: refreshThreshold and maxLifetime are only available in beta edition
+        if (ProductInfo.getBetaEdition()) {
+            keyTokenMaxLifetime = (Long) props.get(CFG_KEY_TOKEN_MAX_LIFE_TIME);
+            refreshThreshold = (Long) props.get(CFG_KEY_TOKEN_REFRESH_THRESHOLD);
+        } else {
+            // In non-beta mode, set to default values that disable refresh functionality
+            keyTokenMaxLifetime = keyTokenExpiration; // Same as expiration, no refresh
+            refreshThreshold = 0L; // No refresh threshold
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "LTPA token refresh is only available in beta edition. Setting maxLifetime=expiration and refreshThreshold=0");
+            }
+        }
 
         // Validate that keyTokenMaxLifetime is greater than expiration to allow token refresh
-        if (keyTokenMaxLifetime <= keyTokenExpiration) {
+        if (ProductInfo.getBetaEdition() && keyTokenMaxLifetime <= keyTokenExpiration) {
             Tr.warning(tc, "LTPA_MAX_LIFETIME_MUST_BE_GREATER_THAN_EXPIRATION", keyTokenMaxLifetime, keyTokenExpiration);
             // Adjust keyTokenMaxLifetime to be at least 2x the expiration to allow meaningful refresh
             // Check for potential overflow before multiplication
@@ -228,7 +240,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         }
 
         // Validate that refreshThreshold is less than or equal to expiration
-        if (refreshThreshold >= keyTokenExpiration) {
+        if (ProductInfo.getBetaEdition() && refreshThreshold >= keyTokenExpiration) {
             Tr.warning(tc, "LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_EXPIRATION", refreshThreshold, keyTokenExpiration);
             // Adjust refreshThreshold to be 1/3 of expiration
             refreshThreshold = keyTokenExpiration / 3;

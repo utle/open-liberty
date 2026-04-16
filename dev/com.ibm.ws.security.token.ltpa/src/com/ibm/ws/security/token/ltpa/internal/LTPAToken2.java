@@ -28,6 +28,7 @@ import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.websphere.security.auth.InvalidTokenException;
 import com.ibm.websphere.security.auth.TokenExpiredException;
 import com.ibm.ws.common.crypto.CryptoUtils;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.common.encoder.Base64Coder;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAKeyUtil;
 import com.ibm.ws.crypto.ltpakeyutil.LTPAPrivateKey;
@@ -424,6 +425,15 @@ public class LTPAToken2 implements Token, Serializable {
      */
     private void isRefreshNeeded() {
         triggerRefresh = false;
+        
+        // Beta guard: Token refresh is only available in beta edition
+        if (!ProductInfo.getBetaEdition()) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "LTPA token refresh is only available in beta edition");
+            }
+            return;
+        }
+        
         long expireTime = getExpiration();
         long currentTime = System.currentTimeMillis();
         long timeRemaining = expireTime - currentTime;
