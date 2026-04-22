@@ -142,4 +142,39 @@ public interface LTPAConfiguration {
      */
     List<Properties> getValidationKeys();
     
+    /**
+     * @return keystore reference ID
+     */
+    String getKeyStoreRef();
+    
+    /**
+     * @return key alias (used when all keys share same prefix)
+     */
+    String getKeyAlias();
+    
+    /**
+     * @return private key alias
+     */
+    String getPrivateKeyAlias();
+    
+    /**
+     * @return public key alias
+     */
+    String getPublicKeyAlias();
+    
+    /**
+     * @return secret key alias
+     */
+    String getSecretKeyAlias();
+    
+    /**
+     * @return true if keystore mode is enabled
+     */
+    boolean isUseKeyStore();
+    
+    /**
+     * @return true if both keystore and file-based keys are configured (hybrid mode)
+     */
+    boolean isHybridMode();
+    
 }

@@ -107,3 +107,16 @@ LTPA_KEYS_REENCRYPT_SUCCESS.useraction=If you are sharing the LTPA keys between 
 LTPA_KEYS_REENCRYPT_ERROR=CWWKS4121E: Failed to re-encrypt the {0} LTPA keys. Exception: {1}
 LTPA_KEYS_REENCRYPT_ERROR.explanation=The LTPA keys could not be re-encrypted. For more information, see the exception in the message.
 LTPA_KEYS_REENCRYPT_ERROR.useraction=Ensure that the LTPA keys file and its directory are not read-only. If the LTPA keys file and its directory are not read-only, then see the exception in the message for more information.
+
+
+LTPA_KEYSTORE_LOAD_ERROR=CWWKS4122E: Failed to load LTPA keys from keystore {0}. Exception: {1}
+LTPA_KEYSTORE_LOAD_ERROR.explanation=The LTPA keys could not be loaded from the specified keystore.
+LTPA_KEYSTORE_LOAD_ERROR.useraction=Verify that the keystore exists, is accessible, and contains the required LTPA key entries. Check the keystore password and key aliases in the LTPA configuration.
+
+LTPA_KEYSTORE_CERT_ERROR=CWWKS4123E: Failed to load certificate from keystore {0}. Exception: {1}
+LTPA_KEYSTORE_CERT_ERROR.explanation=The certificate containing the LTPA public key could not be loaded from the specified keystore.
+LTPA_KEYSTORE_CERT_ERROR.useraction=Verify that the keystore contains a certificate entry with the specified alias. Check the keystore configuration and ensure the certificate is properly stored.
+
+LTPA_KEYSTORE_LOAD_FAILED_FALLBACK=CWWKS4124W: Failed to load LTPA keys from keystore {0}. Falling back to file-based keys. Exception: {1}
+LTPA_KEYSTORE_LOAD_FAILED_FALLBACK.explanation=The LTPA keys could not be loaded from the keystore, so the system is falling back to loading keys from the file-based configuration.
+LTPA_KEYSTORE_LOAD_FAILED_FALLBACK.useraction=If keystore-based keys are required, verify the keystore configuration and ensure the keystore is accessible and contains the required key entries.

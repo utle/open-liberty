@@ -70,6 +70,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     static final String KEY_LOCATION_SERVICE = "locationService";
     static final String KEY_EXECUTOR_SERVICE = "executorService";
     static final String KEY_CHANGE_SERVICE = "ltpaKeysChangeNotifier";
+    static final String KEY_KEYSTORE_SERVICE = "keyStoreService";
     static final String DEFAULT_CONFIG_LOCATION = "${server.config.dir}/resources/security/ltpa.keys";
     static final String DEFAULT_CONFIG_DIRECTORY = "${server.config.dir}/resources/security/";
     static final String DEFAULT_OUTPUT_LOCATION = "${server.output.dir}/resources/security/ltpa.keys";
@@ -79,6 +80,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private final AtomicServiceReference<WsLocationAdmin> locationService = new AtomicServiceReference<WsLocationAdmin>(KEY_LOCATION_SERVICE);
     private final AtomicServiceReference<ExecutorService> executorService = new AtomicServiceReference<ExecutorService>(KEY_EXECUTOR_SERVICE);
     private final AtomicServiceReference<LTPAKeysChangeNotifier> ltpaKeysChangeNotifierService = new AtomicServiceReference<LTPAKeysChangeNotifier>(KEY_CHANGE_SERVICE);
+    private final AtomicServiceReference<com.ibm.ws.ssl.KeyStoreService> keyStoreServiceRef = new AtomicServiceReference<com.ibm.ws.ssl.KeyStoreService>(KEY_KEYSTORE_SERVICE);
     private ServiceRegistration<LTPAConfiguration> registration = null;
     private volatile ComponentContext cc = null;
     private LTPAKeyCreateTask createTask;
@@ -101,6 +103,14 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private boolean monitorValidationKeysDir;
     private String updateTrigger;
     private final List<Properties> validationKeys = new CopyOnWriteArrayList<Properties>();
+    
+    // Keystore configuration fields
+    private String keyStoreRef;
+    private String keyAlias;
+    private String privateKeyAlias;
+    private String publicKeyAlias;
+    private String secretKeyAlias;
+    private boolean useKeyStore;
     // configValidationKeys are specified in the server xml configuration
     private List<Properties> configValidationKeys = null;
     // nonConfigValidationKeys are not specified in the server xml configuration
@@ -133,6 +143,14 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     protected void unsetLtpaKeysChangeNotifier(ServiceReference<LTPAKeysChangeNotifier> ref) {
         ltpaKeysChangeNotifierService.unsetReference(ref);
     }
+    
+    protected void setKeyStoreService(ServiceReference<com.ibm.ws.ssl.KeyStoreService> ref) {
+        keyStoreServiceRef.setReference(ref);
+    }
+    
+    protected void unsetKeyStoreService(ServiceReference<com.ibm.ws.ssl.KeyStoreService> ref) {
+        keyStoreServiceRef.unsetReference(ref);
+    }
 
     /*
      * When FileMonitor is enabled, its onBaseline method will call performFileBasedAction(baselineFiles)
@@ -143,6 +161,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         locationService.activate(context);
         executorService.activate(context);
         ltpaKeysChangeNotifierService.activate(context);
+        keyStoreServiceRef.activate(context);
 
         try {
             loadConfig(props);
@@ -208,6 +227,15 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         expirationDifferenceAllowed = (Long) props.get(KEY_EXP_DIFF_ALLOWED);
         monitorValidationKeysDir = (Boolean) props.get(CFG_KEY_MONITOR_VALIDATION_KEYS_DIR);
         updateTrigger = (String) props.get(CFG_KEY_UPDATE_TRIGGER);
+        
+        // Load keystore configuration
+        keyStoreRef = (String) props.get("keyStoreRef");
+        keyAlias = (String) props.get("keyAlias");
+        privateKeyAlias = (String) props.get("privateKeyAlias");
+        publicKeyAlias = (String) props.get("publicKeyAlias");
+        secretKeyAlias = (String) props.get("secretKeyAlias");
+        Boolean useKeyStoreObj = (Boolean) props.get("useKeyStore");
+        useKeyStore = (useKeyStoreObj != null) ? useKeyStoreObj : false;
 
         //get all validationKeys elements
         Map<String, List<Map<String, Object>>> validationKeysElements = Nester.nest(props, CFG_KEY_VALIDATION_KEYS);
@@ -861,6 +889,69 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     @Override
     public List<Properties> getValidationKeys() {
         return validationKeys;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getKeyStoreRef() {
+        return keyStoreRef;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getKeyAlias() {
+        return keyAlias;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getPrivateKeyAlias() {
+        // If individual alias not specified, use keyAlias with "Private" suffix
+        if (privateKeyAlias != null && !privateKeyAlias.isEmpty()) {
+            return privateKeyAlias;
+        }
+        return (keyAlias != null) ? keyAlias + "Private" : null;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getPublicKeyAlias() {
+        // If individual alias not specified, use keyAlias with "Public" suffix
+        if (publicKeyAlias != null && !publicKeyAlias.isEmpty()) {
+            return publicKeyAlias;
+        }
+        return (keyAlias != null) ? keyAlias + "Public" : null;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getSecretKeyAlias() {
+        // If individual alias not specified, use keyAlias with "Secret" suffix
+        if (secretKeyAlias != null && !secretKeyAlias.isEmpty()) {
+            return secretKeyAlias;
+        }
+        return (keyAlias != null) ? keyAlias + "Secret" : null;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public boolean isUseKeyStore() {
+        return useKeyStore;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public boolean isHybridMode() {
+        // Hybrid mode is when both keystore and file-based keys are configured
+        return useKeyStore && keyStoreRef != null && primaryKeyImportFile != null;
+    }
+    
+    /**
+     * Get the KeyStoreService instance
+     * @return KeyStoreService or null if not available
+     */
+    protected com.ibm.ws.ssl.KeyStoreService getKeyStoreService() {
+        return keyStoreServiceRef.getService();
     }
 
     /*

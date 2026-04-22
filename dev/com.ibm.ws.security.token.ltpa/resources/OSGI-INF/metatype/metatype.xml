@@ -47,9 +47,26 @@
         <AD id="expirationDifferenceAllowed" name="internal" description="internal use only"
             required="false" type="String" ibm:type="duration(ms)" 
             default="3000ms" /> 
-        <AD id="validationKeys" ibm:type="pid" ibm:reference="com.ibm.ws.security.token.ltpa.validationKeys" 
-           	required="false" type="String" 
-            ibm:flat="true" cardinality="2147483647"/>        
+        <AD id="validationKeys" ibm:type="pid" ibm:reference="com.ibm.ws.security.token.ltpa.validationKeys"
+           	required="false" type="String"
+            ibm:flat="true" cardinality="2147483647"/>
+        <AD id="keyStoreRef" name="%keyStoreRef" description="%keyStoreRef.desc"
+            required="false" type="String" ibm:type="pid"
+            ibm:reference="com.ibm.ws.ssl.keystore" />
+        <AD id="keyAlias" name="%keyAlias" description="%keyAlias.desc"
+            required="false" type="String" />
+        <AD id="privateKeyAlias" name="%privateKeyAlias" description="%privateKeyAlias.desc"
+            required="false" type="String" />
+        <AD id="publicKeyAlias" name="%publicKeyAlias" description="%publicKeyAlias.desc"
+            required="false" type="String" />
+        <AD id="secretKeyAlias" name="%secretKeyAlias" description="%secretKeyAlias.desc"
+            required="false" type="String" />
+        <AD id="useKeyStore" name="%useKeyStore" description="%useKeyStore.desc"
+            required="false" type="Boolean"
+            default="false" />
+        <AD id="keyStore.target" name="internal" description="internal use only"
+            required="false" type="String"
+            default="(service.pid=${keyStoreRef})" />
     </OCD>
 
     <Designate pid="com.ibm.ws.security.token.ltpa.LTPAConfiguration">
@@ -57,9 +74,20 @@
     </Designate>
     
     <OCD id="com.ibm.ws.security.token.ltpa.validationKeys.metatype" name="%validationKeys" description="%validationKeys.desc">
-       	<AD id="fileName" name="%fileName" description="%fileName.desc" required="true" type="String"  />
-    	<AD id="password" name="%password" description="%password.desc" required="true" type="String" ibm:type="password" />
+       	<AD id="fileName" name="%fileName" description="%fileName.desc" required="false" type="String"  />
+    	<AD id="password" name="%password" description="%password.desc" required="false" type="String" ibm:type="password" />
     	<AD id="validUntilDate" name="%validUntilDate" description="%validUntilDate.desc" required="false" type="String"  />
+    	<AD id="keyStoreRef" name="%validationKeys.keyStoreRef" description="%validationKeys.keyStoreRef.desc"
+            required="false" type="String" ibm:type="pid"
+            ibm:reference="com.ibm.ws.ssl.keystore" />
+        <AD id="keyAlias" name="%validationKeys.keyAlias" description="%validationKeys.keyAlias.desc"
+            required="false" type="String" />
+        <AD id="privateKeyAlias" name="%validationKeys.privateKeyAlias" description="%validationKeys.privateKeyAlias.desc"
+            required="false" type="String" />
+        <AD id="publicKeyAlias" name="%validationKeys.publicKeyAlias" description="%validationKeys.publicKeyAlias.desc"
+            required="false" type="String" />
+        <AD id="secretKeyAlias" name="%validationKeys.secretKeyAlias" description="%validationKeys.secretKeyAlias.desc"
+            required="false" type="String" />
     </OCD>
 
     <Designate factoryPid="com.ibm.ws.security.token.ltpa.validationKeys">

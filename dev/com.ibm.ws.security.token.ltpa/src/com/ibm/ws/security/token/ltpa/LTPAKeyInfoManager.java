@@ -549,4 +549,277 @@ public class LTPAKeyInfoManager {
         return ltpaValidationKeysInfos;
     }
 
+    /**
+     * Load LTPA keys from a keystore instead of a file.
+     *
+     * @param keyStoreService The KeyStoreService to use for loading keys
+     * @param keyStoreRef The keystore reference ID
+     * @param secretKeyAlias The alias for the secret key
+     * @param privateKeyAlias The alias for the private key
+     * @param publicKeyAlias The alias for the public key (certificate)
+     * @param keyPassword The password for accessing the keys
+     * @throws Exception if keys cannot be loaded
+     */
+    @Sensitive
+    public synchronized void prepareLTPAKeyInfoFromKeyStore(
+            com.ibm.ws.ssl.KeyStoreService keyStoreService,
+            String keyStoreRef,
+            String secretKeyAlias,
+            String privateKeyAlias,
+            String publicKeyAlias,
+            @Sensitive String keyPassword) throws Exception {
+        
+        if (keyStoreService == null) {
+            throw new IllegalStateException("KeyStoreService not available");
+        }
+        
+        if (keyStoreRef == null || keyStoreRef.isEmpty()) {
+            throw new IllegalArgumentException("keyStoreRef cannot be null or empty");
+        }
+        
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Loading LTPA keys from keystore: " + keyStoreRef);
+        }
+        
+        try {
+            // Load secret key
+            javax.crypto.SecretKey secretKey = keyStoreService.getSecretKeyFromKeyStore(
+                keyStoreRef, secretKeyAlias, keyPassword);
+            
+            if (secretKey == null) {
+                throw new IllegalStateException("Secret key not found in keystore: " + secretKeyAlias);
+            }
+            
+            // Load private key
+            java.security.PrivateKey privateKey = keyStoreService.getPrivateKeyFromKeyStore(
+                keyStoreRef, privateKeyAlias, keyPassword);
+            
+            if (privateKey == null) {
+                throw new IllegalStateException("Private key not found in keystore: " + privateKeyAlias);
+            }
+            
+            // Load public key from certificate
+            java.security.cert.Certificate cert = keyStoreService.getCertificateFromKeyStore(
+                keyStoreRef, publicKeyAlias);
+            
+            if (cert == null) {
+                throw new IllegalStateException("Certificate not found in keystore: " + publicKeyAlias);
+            }
+            
+            java.security.PublicKey publicKey = cert.getPublicKey();
+            
+            // Cache keys using keystore reference as the cache key
+            String cacheKey = keyStoreRef + ":" + secretKeyAlias;
+            this.keyCache.put(cacheKey + SECRETKEY, secretKey.getEncoded());
+            this.keyCache.put(cacheKey + PRIVATEKEY, privateKey.getEncoded());
+            this.keyCache.put(cacheKey + PUBLICKEY, publicKey.getEncoded());
+            
+            // Extract realm from certificate DN if available
+            String realm = extractRealmFromCertificate(cert);
+            if (realm != null) {
+                this.realmCache.put(cacheKey, realm);
+            }
+            
+            // Add to import file cache to track that keys have been loaded
+            this.importFileCache.add(cacheKey);
+            
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+                Tr.event(this, tc, "Successfully loaded LTPA keys from keystore: " + keyStoreRef);
+            }
+            
+        } catch (java.security.KeyStoreException e) {
+            Tr.error(tc, "LTPA_KEYSTORE_LOAD_ERROR", keyStoreRef, e.getMessage());
+            throw new Exception("Failed to load LTPA keys from keystore: " + keyStoreRef, e);
+        } catch (java.security.cert.CertificateException e) {
+            Tr.error(tc, "LTPA_KEYSTORE_CERT_ERROR", keyStoreRef, e.getMessage());
+            throw new Exception("Failed to load certificate from keystore: " + keyStoreRef, e);
+        }
+    }
+    
+    /**
+     * Extract realm from certificate Distinguished Name (DN).
+     * Looks for CN (Common Name) in the subject DN.
+     *
+     * @param cert The certificate to extract realm from
+     * @return The realm name, or "defaultRealm" if not found
+     */
+    private String extractRealmFromCertificate(java.security.cert.Certificate cert) {
+        if (cert instanceof java.security.cert.X509Certificate) {
+            java.security.cert.X509Certificate x509Cert = (java.security.cert.X509Certificate) cert;
+            String dn = x509Cert.getSubjectX500Principal().getName();
+            
+            // Parse DN to extract CN
+            String[] parts = dn.split(",");
+            for (String part : parts) {
+                String trimmed = part.trim();
+                if (trimmed.startsWith("CN=")) {
+                    return trimmed.substring(3);
+                }
+            }
+        }
+        return "defaultRealm";
+    }
+    
+    /**
+     * Hybrid mode: Try keystore first, fall back to file if keystore fails.
+     *
+     * @param keyStoreService The KeyStoreService to use
+     * @param keyStoreRef The keystore reference ID
+     * @param secretKeyAlias The alias for the secret key
+     * @param privateKeyAlias The alias for the private key
+     * @param publicKeyAlias The alias for the public key
+     * @param keystorePassword The keystore password
+     * @param locService The location service for file-based fallback
+     * @param keyImportFile The file path for fallback
+     * @param filePassword The file password for fallback
+     * @param tryToReEncryptLtpaKeys Whether to try re-encryption
+     * @throws Exception if both keystore and file loading fail
+     */
+    @Sensitive
+    public synchronized void prepareLTPAKeyInfoHybrid(
+            com.ibm.ws.ssl.KeyStoreService keyStoreService,
+            String keyStoreRef,
+            String secretKeyAlias,
+            String privateKeyAlias,
+            String publicKeyAlias,
+            @Sensitive String keystorePassword,
+            WsLocationAdmin locService,
+            String keyImportFile,
+            @Sensitive byte[] filePassword,
+            boolean tryToReEncryptLtpaKeys) throws Exception {
+        
+        // Try keystore first
+        if (keyStoreRef != null && !keyStoreRef.isEmpty() && keyStoreService != null) {
+            try {
+                prepareLTPAKeyInfoFromKeyStore(
+                    keyStoreService, keyStoreRef, secretKeyAlias,
+                    privateKeyAlias, publicKeyAlias, keystorePassword);
+                
+                if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+                    Tr.event(this, tc, "Loaded LTPA keys from keystore in hybrid mode");
+                }
+                return;
+            } catch (Exception e) {
+                Tr.warning(tc, "LTPA_KEYSTORE_LOAD_FAILED_FALLBACK", keyStoreRef, e.getMessage());
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(this, tc, "Keystore load failed, falling back to file", e);
+                }
+            }
+        }
+        
+        // Fall back to file-based loading
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Falling back to file-based LTPA keys: " + keyImportFile);
+        }
+        prepareLTPAKeyInfo(locService, keyImportFile, filePassword, null, tryToReEncryptLtpaKeys);
+    }
+    
+    /**
+     * Load LTPA validation keys from a keystore.
+     *
+     * @param keyStoreService The KeyStoreService to use for loading keys
+     * @param keyStoreRef The keystore reference ID
+     * @param secretKeyAlias The alias for the secret key
+     * @param privateKeyAlias The alias for the private key
+     * @param publicKeyAlias The alias for the public key (certificate)
+     * @param keyPassword The password for accessing the keys
+     * @param validUntilDateOdt The date until which these validation keys are valid
+     * @throws Exception if keys cannot be loaded
+     */
+    @Sensitive
+    public synchronized void prepareValidationKeysFromKeyStore(
+            com.ibm.ws.ssl.KeyStoreService keyStoreService,
+            String keyStoreRef,
+            String secretKeyAlias,
+            String privateKeyAlias,
+            String publicKeyAlias,
+            @Sensitive String keyPassword,
+            OffsetDateTime validUntilDateOdt) throws Exception {
+        
+        if (keyStoreService == null) {
+            throw new IllegalStateException("KeyStoreService not available");
+        }
+        
+        if (keyStoreRef == null || keyStoreRef.isEmpty()) {
+            throw new IllegalArgumentException("keyStoreRef cannot be null or empty");
+        }
+        
+        // Check if validation keys are expired
+        if (validUntilDateOdt != null && isValidUntilDateExpired(keyStoreRef, validUntilDateOdt)) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+                Tr.event(this, tc, "Skipping expired validation keys from keystore: " + keyStoreRef);
+            }
+            return;
+        }
+        
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Loading LTPA validation keys from keystore: " + keyStoreRef);
+        }
+        
+        try {
+            // Load secret key
+            javax.crypto.SecretKey secretKey = keyStoreService.getSecretKeyFromKeyStore(
+                keyStoreRef, secretKeyAlias, keyPassword);
+            
+            if (secretKey == null) {
+                throw new IllegalStateException("Validation secret key not found in keystore: " + secretKeyAlias);
+            }
+            
+            // Load private key
+            java.security.PrivateKey privateKey = keyStoreService.getPrivateKeyFromKeyStore(
+                keyStoreRef, privateKeyAlias, keyPassword);
+            
+            if (privateKey == null) {
+                throw new IllegalStateException("Validation private key not found in keystore: " + privateKeyAlias);
+            }
+            
+            // Load public key from certificate
+            java.security.cert.Certificate cert = keyStoreService.getCertificateFromKeyStore(
+                keyStoreRef, publicKeyAlias);
+            
+            if (cert == null) {
+                throw new IllegalStateException("Validation certificate not found in keystore: " + publicKeyAlias);
+            }
+            
+            java.security.PublicKey publicKey = cert.getPublicKey();
+            
+            // Get encoded keys
+            byte[] secretKeyBytes = secretKey.getEncoded();
+            byte[] privateKeyBytes = privateKey.getEncoded();
+            byte[] publicKeyBytes = publicKey.getEncoded();
+            
+            // Cache keys using keystore reference as the cache key
+            String cacheKey = keyStoreRef + ":" + secretKeyAlias;
+            this.keyCache.put(cacheKey + SECRETKEY, secretKeyBytes);
+            this.keyCache.put(cacheKey + PRIVATEKEY, privateKeyBytes);
+            this.keyCache.put(cacheKey + PUBLICKEY, publicKeyBytes);
+            
+            // Extract realm from certificate DN if available
+            String realm = extractRealmFromCertificate(cert);
+            if (realm != null) {
+                this.realmCache.put(cacheKey, realm);
+            }
+            
+            // Add to import file cache to track that keys have been loaded
+            this.importFileCache.add(cacheKey);
+            
+            // Add to validation keys list
+            ltpaValidationKeysInfos.add(new LTPAValidationKeysInfo(
+                cacheKey, secretKeyBytes, privateKeyBytes, publicKeyBytes, validUntilDateOdt));
+            
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+                Tr.event(this, tc, "Successfully loaded LTPA validation keys from keystore: " + keyStoreRef);
+                Tr.event(this, tc, "ValidationKeys: " + cacheKey + " validUntilDate: " + validUntilDateOdt);
+                Tr.event(this, tc, "LTPAValidationKeysInfo size: " + ltpaValidationKeysInfos.size());
+            }
+            
+        } catch (java.security.KeyStoreException e) {
+            Tr.error(tc, "LTPA_KEYSTORE_LOAD_ERROR", keyStoreRef, e.getMessage());
+            throw new Exception("Failed to load LTPA validation keys from keystore: " + keyStoreRef, e);
+        } catch (java.security.cert.CertificateException e) {
+            Tr.error(tc, "LTPA_KEYSTORE_CERT_ERROR", keyStoreRef, e.getMessage());
+            throw new Exception("Failed to load validation certificate from keystore: " + keyStoreRef, e);
+        }
+    }
+
 }
