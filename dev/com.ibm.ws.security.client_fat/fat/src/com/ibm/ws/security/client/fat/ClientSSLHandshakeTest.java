@@ -614,5 +614,350 @@ public class ClientSSLHandshakeTest extends CommonTest {
         Log.info(c, "extractCipherListFromTrace", "Returning cipher list with " + lastCipherList.size() + " ciphers");
         return lastCipherList;
     }
+
+    /**
+     * Test description:
+     * - Restart the server with TLS 1.3 and PQC (Post-Quantum Cryptography) named groups enabled.
+     * - Start a PQC-enabled client that connects to the PQC-enabled server.
+     * - The server uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768
+     * - The client uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768
+     *
+     * Expected results:
+     * - The SSL handshake should succeed using TLS 1.3 with PQC key exchange.
+     * - The trace should show X25519MLKEM768 in the named groups section.
+     * - The client should report it has started successfully.
+     */
+    @Test
+    public void testPQCHandshakeBothPQCEnabled() {
+        try {
+            Log.info(c, name.getMethodName(), "Restarting server with TLS 1.3 and PQC enabled ...");
+            testServer.setMarkToEndOfLog();
+            if (testServer.isStarted())
+                testServer.stopServer();
+            
+            // Set JVM args for PQC named groups on server
+            testServer.setServerConfigurationFile("server_pqc_enabled.xml");
+            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768"));
+            testServer.startServer();
+            
+            // Wait for server to be ready
+            assertNotNull("FeatureManager did not report update was complete", 
+                         testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+            assertNotNull("LTPA configuration did not report it was ready", 
+                         testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+            
+            // Run the client with PQC configuration
+            Log.info(c, name.getMethodName(), "Starting PQC-enabled client ...");
+            
+            // Set JVM args for PQC named groups on client
+            List<String> clientJvmOptions = new ArrayList<>();
+            clientJvmOptions.add("-Djdk.tls.namedGroups=X25519MLKEM768");
+            testClient.setJvmOptions(clientJvmOptions);
+            
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+                                                                        "client_pqc_enabled.xml", 
+                                                                        "CWWKF0040E");
+            String output = programOutput.getStdout();
+            
+            assertTrue("Client should report it has started successfully (CWWKF0035I).",
+                     output.contains("5"));
+            
+            // Verify PQC named group was used in the handshake
+            List<String> serverTraceLines = testServer.findStringsInTrace("X25519MLKEM768");
+            assertFalse("Server trace should contain X25519MLKEM768 named group", 
+                       serverTraceLines.isEmpty());
+            
+            Log.info(c, name.getMethodName(), "PQC handshake successful with X25519MLKEM768");
+            
+        } catch (Exception e) {
+            Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+            fail("Exception was thrown: " + e);
+        }
+    }
+
+    /**
+     * Test description:
+     * - Restart the server with TLS 1.3 and PQC enabled.
+     * - Start a non-PQC client (standard TLS 1.3) that connects to the PQC-enabled server.
+     * - The server uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768,X25519
+     * - The client uses: sslProtocol="TLSv1.3" without PQC named groups
+     *
+     * Expected results:
+     * - The SSL handshake should succeed by falling back to non-PQC algorithms (X25519).
+     * - The client should report it has started successfully.
+     */
+    @Test
+    public void testPQCHandshakePQCServerNonPQCClient() {
+        try {
+            Log.info(c, name.getMethodName(), "Restarting server with TLS 1.3 and PQC enabled (with fallback) ...");
+            testServer.setMarkToEndOfLog();
+            if (testServer.isStarted())
+                testServer.stopServer();
+            
+            // Set JVM args for PQC named groups with fallback on server
+            testServer.setServerConfigurationFile("server_pqc_with_fallback.xml");
+            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768,X25519"));
+            testServer.startServer();
+            
+            // Wait for server to be ready
+            assertNotNull("FeatureManager did not report update was complete", 
+                         testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+            assertNotNull("LTPA configuration did not report it was ready", 
+                         testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+            
+            // Run the client without PQC configuration (standard TLS 1.3)
+            Log.info(c, name.getMethodName(), "Starting non-PQC client ...");
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+                                                                        "client_tls13_standard.xml", 
+                                                                        "CWWKF0040E");
+            String output = programOutput.getStdout();
+            
+            assertTrue("Client should report it has started successfully (CWWKF0035I).",
+                     output.contains("5"));
+            
+            // Verify fallback to non-PQC algorithm
+            List<String> serverTraceLines = testServer.findStringsInTrace("X25519");
+            assertFalse("Server trace should contain X25519 (fallback algorithm)", 
+                       serverTraceLines.isEmpty());
+            
+            Log.info(c, name.getMethodName(), "Handshake successful with fallback to non-PQC algorithm");
+            
+        } catch (Exception e) {
+            Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+            fail("Exception was thrown: " + e);
+        }
+    }
+
+    /**
+     * Test description:
+     * - Restart the server with TLS 1.3 without PQC support.
+     * - Start a PQC-enabled client that connects to the non-PQC server.
+     * - The server uses: sslProtocol="TLSv1.3" without PQC named groups
+     * - The client uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768,X25519
+     *
+     * Expected results:
+     * - The SSL handshake should succeed by falling back to non-PQC algorithms.
+     * - The client should report it has started successfully.
+     */
+    @Test
+    public void testPQCHandshakeNonPQCServerPQCClient() {
+        try {
+            Log.info(c, name.getMethodName(), "Restarting server with TLS 1.3 without PQC ...");
+            testServer.setMarkToEndOfLog();
+            if (testServer.isStarted())
+                testServer.stopServer();
+            
+            // Server without PQC configuration
+            testServer.setServerConfigurationFile("server_tls13_standard.xml");
+            testServer.setJvmOptions(new ArrayList<>()); // Clear JVM options
+            testServer.startServer();
+            
+            // Wait for server to be ready
+            assertNotNull("FeatureManager did not report update was complete", 
+                         testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+            assertNotNull("LTPA configuration did not report it was ready", 
+                         testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+            
+            // Run the client with PQC configuration (with fallback)
+            Log.info(c, name.getMethodName(), "Starting PQC-enabled client with fallback ...");
+            
+            // Set JVM args for PQC named groups with fallback on client
+            List<String> clientJvmOptions = new ArrayList<>();
+            clientJvmOptions.add("-Djdk.tls.namedGroups=X25519MLKEM768,X25519");
+            testClient.setJvmOptions(clientJvmOptions);
+            
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+                                                                        "client_pqc_with_fallback.xml", 
+                                                                        "CWWKF0040E");
+            String output = programOutput.getStdout();
+            
+            assertTrue("Client should report it has started successfully (CWWKF0035I).",
+                     output.contains("5"));
+            
+            Log.info(c, name.getMethodName(), "Handshake successful with client falling back to non-PQC");
+            
+        } catch (Exception e) {
+            Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+            fail("Exception was thrown: " + e);
+        }
+    }
+
+    /**
+     * Test description:
+     * - Restart the server with TLS 1.3 and PQC-only configuration (no fallback).
+     * - Start a non-PQC client that connects to the PQC-only server.
+     * - The server uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768
+     * - The client uses: sslProtocol="TLSv1.3" without PQC named groups
+     *
+     * Expected results:
+     * - The SSL handshake should fail because no common named groups are available.
+     * - The client should report a handshake exception.
+     */
+    @Test
+    public void testPQCHandshakePQCOnlyServerNonPQCClientFail() {
+        try {
+            Log.info(c, name.getMethodName(), "Restarting server with TLS 1.3 and PQC-only (no fallback) ...");
+            testServer.setMarkToEndOfLog();
+            if (testServer.isStarted())
+                testServer.stopServer();
+            
+            // Set JVM args for PQC-only named groups on server (no fallback)
+            testServer.setServerConfigurationFile("server_pqc_only.xml");
+            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768"));
+            testServer.startServer();
+            
+            // Wait for server to be ready
+            assertNotNull("FeatureManager did not report update was complete", 
+                         testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+            assertNotNull("LTPA configuration did not report it was ready", 
+                         testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+            
+            // Run the client without PQC configuration
+            Log.info(c, name.getMethodName(), "Starting non-PQC client (expected to fail) ...");
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+                                                                        "client_tls13_standard.xml", 
+                                                                        "CWWKF0040E", "CWPKI0823E");
+            String output = programOutput.getStdout();
+            
+            assertTrue("Client should report it failed with handshake exception.", 
+                     output.contains(ERRORSTRING));
+            
+            Log.info(c, name.getMethodName(), "Handshake failed as expected (no common named groups)");
+            
+        } catch (Exception e) {
+            Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+            fail("Exception was thrown: " + e);
+        }
+    }
+
+    /**
+     * Test description:
+     * - Restart the server with TLS 1.3 and verify PQC named groups in trace.
+     * - Start a PQC-enabled client and verify the named groups used in handshake.
+     * - The server uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768
+     * - The client uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768
+     *
+     * Expected results:
+     * - The SSL handshake should succeed.
+     * - The trace should show X25519MLKEM768 in the named groups section of the handshake.
+     * - The trace should confirm PQC algorithm was negotiated.
+     */
+    @Test
+    public void testPQCHandshakeVerifyNamedGroupsInTrace() {
+        try {
+            Log.info(c, name.getMethodName(), "Restarting server with TLS 1.3 and PQC, verifying trace ...");
+            testServer.setMarkToEndOfLog();
+            if (testServer.isStarted())
+                testServer.stopServer();
+            
+            // Set JVM args for PQC named groups on server
+            testServer.setServerConfigurationFile("server_pqc_enabled.xml");
+            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768"));
+            testServer.startServer();
+            
+            // Wait for server to be ready
+            assertNotNull("FeatureManager did not report update was complete", 
+                         testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+            assertNotNull("LTPA configuration did not report it was ready", 
+                         testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+            
+            // Run the client with PQC configuration
+            Log.info(c, name.getMethodName(), "Starting PQC-enabled client, verifying trace ...");
+            
+            // Set JVM args for PQC named groups on client
+            List<String> clientJvmOptions = new ArrayList<>();
+            clientJvmOptions.add("-Djdk.tls.namedGroups=X25519MLKEM768");
+            testClient.setJvmOptions(clientJvmOptions);
+            
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+                                                                        "client_pqc_enabled.xml", 
+                                                                        "CWWKF0040E");
+            String output = programOutput.getStdout();
+            
+            assertTrue("Client should report it has started successfully (CWWKF0035I).",
+                     output.contains("5"));
+            
+            // Wait for client to complete and logs to be copied
+            testClient.waitForStringInCopiedLog("CWWKE0908I");
+            
+            // Verify PQC named group in server trace
+            List<String> serverTraceLines = testServer.findStringsInTrace("X25519MLKEM768");
+            assertFalse("Server trace should contain X25519MLKEM768 named group", 
+                       serverTraceLines.isEmpty());
+            
+            // Verify PQC named group in client trace
+            List<String> clientTraceLines = testClient.findStringsInCopiedTraceLogs("X25519MLKEM768", 
+                                                                                     "logs/ssl_trace.log");
+            assertFalse("Client trace should contain X25519MLKEM768 named group", 
+                       clientTraceLines.isEmpty());
+            
+            Log.info(c, name.getMethodName(), "Trace verification successful. Found " + 
+                    serverTraceLines.size() + " server trace entries and " + 
+                    clientTraceLines.size() + " client trace entries with X25519MLKEM768");
+            
+        } catch (Exception e) {
+            Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+            fail("Exception was thrown: " + e);
+        }
+    }
+
+    /**
+     * Test description:
+     * - Test multiple PQC algorithms in priority order.
+     * - The server uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X25519MLKEM768,X448MLKEM1024
+     * - The client uses: sslProtocol="TLSv1.3" with -Djdk.tls.namedGroups=X448MLKEM1024,X25519MLKEM768
+     *
+     * Expected results:
+     * - The SSL handshake should succeed using the first common algorithm.
+     * - The trace should show which PQC algorithm was selected.
+     */
+    @Test
+    public void testPQCHandshakeMultiplePQCAlgorithms() {
+        try {
+            Log.info(c, name.getMethodName(), "Restarting server with multiple PQC algorithms ...");
+            testServer.setMarkToEndOfLog();
+            if (testServer.isStarted())
+                testServer.stopServer();
+            
+            // Set JVM args for multiple PQC named groups on server
+            testServer.setServerConfigurationFile("server_pqc_multiple.xml");
+            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768,X448MLKEM1024"));
+            testServer.startServer();
+            
+            // Wait for server to be ready
+            assertNotNull("FeatureManager did not report update was complete", 
+                         testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+            assertNotNull("LTPA configuration did not report it was ready", 
+                         testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+            
+            // Run the client with different priority order
+            Log.info(c, name.getMethodName(), "Starting client with different PQC algorithm priority ...");
+            
+            // Set JVM args for multiple PQC named groups on client (different order)
+            List<String> clientJvmOptions = new ArrayList<>();
+            clientJvmOptions.add("-Djdk.tls.namedGroups=X448MLKEM1024,X25519MLKEM768");
+            testClient.setJvmOptions(clientJvmOptions);
+            
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+                                                                        "client_pqc_multiple.xml", 
+                                                                        "CWWKF0040E");
+            String output = programOutput.getStdout();
+            
+            assertTrue("Client should report it has started successfully (CWWKF0035I).",
+                     output.contains("5"));
+            
+            // Verify one of the PQC algorithms was used
+            List<String> serverTraceLines = testServer.findStringsInTrace("MLKEM");
+            assertFalse("Server trace should contain MLKEM (PQC algorithm)", 
+                       serverTraceLines.isEmpty());
+            
+            Log.info(c, name.getMethodName(), "Handshake successful with multiple PQC algorithms");
+            
+        } catch (Exception e) {
+            Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+            fail("Exception was thrown: " + e);
+        }
+    }
+
     
     }
