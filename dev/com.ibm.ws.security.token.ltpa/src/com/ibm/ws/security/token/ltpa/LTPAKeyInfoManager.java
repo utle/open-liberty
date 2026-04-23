@@ -12,6 +12,7 @@
  *******************************************************************************/
 package com.ibm.ws.security.token.ltpa;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
@@ -222,6 +223,19 @@ public class LTPAKeyInfoManager {
         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
             Tr.event(this, tc, "Loading LTPA " + (validationKey == true ? "validation" : "primary") + "Keys file: " + keyImportFile);
         }
+        
+        // Check if this is a keystore file AND it exists
+        WsResource keystoreResource = null;
+        if (isKeystoreFile(keyImportFile)) {
+            keystoreResource = getLTPAKeyFileResource(locService, keyImportFile);
+            if (keystoreResource != null) {
+                // Keystore file exists, load keys from it
+                loadLtpaKeysFromKeystore(locService, keyImportFile, keyPassword, validationKey, validUntilDateOdt);
+                return;
+            }
+            // Keystore file doesn't exist yet - fall through to key generation logic
+        }
+        
         Properties props = null;
         //Check to see if the LTPA key import file exists, create the keys and file if not
         WsResource ltpaKeyFileResource = getLTPAKeyFileResource(locService, keyImportFile);
@@ -483,6 +497,103 @@ public class LTPAKeyInfoManager {
     }
 
     /**
+     * Create a primary LTPA keystore file with generated keys.
+     *
+     * @param locService The location service
+     * @param keystoreFile The keystore file path
+     * @param keystorePassword The keystore password
+     * @throws Exception if keystore cannot be created
+     */
+    @Sensitive
+    public void createPrimaryKeystore(WsLocationAdmin locService, String keystoreFile, @Sensitive byte[] keystorePassword) throws Exception {
+        long start = System.currentTimeMillis();
+        Tr.info(tc, "LTPA_CREATE_KEYS_START");
+
+        // Generate LTPA keys using existing utility
+        LTPAKeyFileCreator creator = new LTPAKeyFileCreatorImpl();
+        Properties props = creator.createLTPAKeysFile(locService, keystoreFile + ".tmp", keystorePassword);
+
+        // Extract the generated key bytes from properties
+        byte[] secretKeyBytes = extractKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_SECRETKEY, keystorePassword);
+        byte[] privateKeyBytes = extractKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_PRIVATEKEY, keystorePassword);
+        byte[] publicKeyBytes = extractPublicKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_PUBLICKEY);
+
+        // Create LTPAKeys object
+        LTPAKeys ltpaKeys = new LTPAKeys(secretKeyBytes, privateKeyBytes, publicKeyBytes);
+
+        // Get the actual file path
+        String resolvedPath = locService.resolveString(keystoreFile);
+        File ksFile = new File(resolvedPath);
+
+        // Ensure parent directory exists
+        File parentDir = ksFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // Convert password bytes to char array
+        String passwordStr = new String(keystorePassword);
+        char[] password = passwordStr.toCharArray();
+
+        try {
+            // Create keystore using LTPAKeystoreManager
+            LTPAKeystoreManager keystoreManager = new LTPAKeystoreManager();
+            keystoreManager.createKeystore(ksFile, password, ltpaKeys);
+
+            // Store keys in cache
+            this.keyCache.put(keystoreFile + SECRETKEY, secretKeyBytes);
+            this.keyCache.put(keystoreFile + PRIVATEKEY, privateKeyBytes);
+            this.keyCache.put(keystoreFile + PUBLICKEY, publicKeyBytes);
+
+            // Add to import file cache
+            this.importFileCache.add(keystoreFile);
+
+            Tr.audit(tc, "LTPA_KEYSTORE_CREATED", TimestampUtils.getElapsedTime(start), keystoreFile);
+
+        } finally {
+            // Clear password from memory
+            Arrays.fill(password, ' ');
+
+            // Clean up temporary .keys file
+            try {
+                WsResource tmpFile = locService.resolveResource(keystoreFile + ".tmp");
+                if (tmpFile != null && tmpFile.exists()) {
+                    tmpFile.delete();
+                }
+            } catch (Exception e) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(this, tc, "Failed to delete temporary keys file", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Extract and decrypt a key from properties.
+     */
+    @Sensitive
+    private byte[] extractKeyBytes(Properties props, String keyName, @Sensitive byte[] password) throws Exception {
+        String keyStr = props.getProperty(keyName);
+        if (keyStr == null || keyStr.isEmpty()) {
+            throw new IllegalArgumentException("Missing key: " + keyName);
+        }
+        KeyEncryptor encryptor = new KeyEncryptor(password);
+        byte[] keyEncoded = Base64Coder.base64DecodeString(keyStr);
+        return encryptor.decrypt(keyEncoded);
+    }
+
+    /**
+     * Extract public key (not encrypted).
+     */
+    private byte[] extractPublicKeyBytes(Properties props, String keyName) {
+        String keyStr = props.getProperty(keyName);
+        if (keyStr == null || keyStr.isEmpty()) {
+            throw new IllegalArgumentException("Missing key: " + keyName);
+        }
+        return Base64Coder.base64DecodeString(keyStr);
+    }
+
+    /**
      * Given the path to the LTPA key file return the WsResource for the file
      * if the file exists.
      *
@@ -547,6 +658,95 @@ public class LTPAKeyInfoManager {
 
     public final List<LTPAValidationKeysInfo> getValidationLTPAKeys() {
         return ltpaValidationKeysInfos;
+    }
+
+    /**
+     * Check if the file is a keystore file based on extension.
+     *
+     * @param keyImportFile The file path to check
+     * @return true if the file has a keystore extension (.p12, .pfx, .jks)
+     */
+    private boolean isKeystoreFile(String keyImportFile) {
+        if (keyImportFile == null) {
+            return false;
+        }
+        String lowerCaseFile = keyImportFile.toLowerCase();
+        return lowerCaseFile.endsWith(".p12") ||
+               lowerCaseFile.endsWith(".pfx") ||
+               lowerCaseFile.endsWith(".jks");
+    }
+
+    /**
+     * Load LTPA keys from a keystore file.
+     *
+     * @param locService The location service
+     * @param keystoreFile The keystore file path
+     * @param keystorePassword The keystore password
+     * @param validationKey Whether this is a validation key
+     * @param validUntilDateOdt The valid until date for validation keys
+     * @throws Exception if keys cannot be loaded
+     */
+    @Sensitive
+    private void loadLtpaKeysFromKeystore(WsLocationAdmin locService, String keystoreFile, @Sensitive byte[] keystorePassword,
+                                          boolean validationKey, OffsetDateTime validUntilDateOdt) throws Exception {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
+            Tr.event(this, tc, "Loading LTPA keys from keystore: " + keystoreFile);
+        }
+
+        // Convert password bytes to char array
+        String passwordStr = new String(keystorePassword);
+        char[] password = passwordStr.toCharArray();
+
+        try {
+            // Get the actual file path
+            String resolvedPath = locService.resolveString(keystoreFile);
+            File ksFile = new File(resolvedPath);
+            
+            // Use LTPAKeystoreManager to load keys
+            LTPAKeystoreManager keystoreManager = new LTPAKeystoreManager();
+            LTPAKeys ltpaKeys = keystoreManager.loadKeysFromKeystore(ksFile, password);
+
+            // Store keys in cache
+            byte[] secretKey = ltpaKeys.getSecretKeyBytes();
+            byte[] privateKey = ltpaKeys.getPrivateKeyBytes();
+            byte[] publicKey = ltpaKeys.getPublicKeyBytes();
+
+            if (secretKey != null) {
+                this.keyCache.put(keystoreFile + SECRETKEY, secretKey);
+            }
+            if (privateKey != null) {
+                this.keyCache.put(keystoreFile + PRIVATEKEY, privateKey);
+            }
+            if (publicKey != null) {
+                this.keyCache.put(keystoreFile + PUBLICKEY, publicKey);
+            }
+
+            // Add to import file cache
+            this.importFileCache.add(keystoreFile);
+
+            // If validation key, add to validation keys list
+            if (validationKey) {
+                ltpaValidationKeysInfos.add(new LTPAValidationKeysInfo(keystoreFile, secretKey, privateKey, publicKey, validUntilDateOdt));
+                if (tc.isDebugEnabled()) {
+                    Tr.debug(this, tc, "ValidationKeys from keystore: " + keystoreFile + " validUntilDate: " + validUntilDateOdt);
+                    Tr.debug(this, tc, "LTPAValidationKeysInfo size: " + ltpaValidationKeysInfos.size());
+                }
+            }
+
+            // Log successful keystore loading
+            Tr.info(tc, "LTPA_KEYSTORE_LOADED", keystoreFile);
+
+        } catch (Exception e) {
+            // Log keystore error with details
+            Tr.error(tc, "LTPA_KEYSTORE_ERROR", keystoreFile, e.getMessage());
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(this, tc, "Error loading keys from keystore: " + keystoreFile, e);
+            }
+            throw e;
+        } finally {
+            // Clear password from memory
+            Arrays.fill(password, ' ');
+        }
     }
 
 }

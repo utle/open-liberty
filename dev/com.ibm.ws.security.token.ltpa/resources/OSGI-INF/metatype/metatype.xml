@@ -22,6 +22,14 @@
             default="${server.output.dir}/resources/security/ltpa.keys" />
         <AD id="keysPassword" name="%keysPassword" description="%keysPassword.desc"
             required="false" type="String" ibm:type="password" />
+        <AD id="useKeystore" name="%useKeystore" description="%useKeystore.desc"
+            required="false" type="Boolean"
+            default="false" />
+        <AD id="keystoreFile" name="%keystoreFile" description="%keystoreFile.desc"
+            required="false" type="String" ibm:type="location(file)"
+            default="${server.output.dir}/resources/security/ltpa.p12" />
+        <AD id="keystorePassword" name="%keystorePassword" description="%keystorePassword.desc"
+            required="false" type="String" ibm:type="password" />
         <AD id="expiration"  name="%expiration" description="%expiration.desc"
             required="false" type="String" ibm:type="duration(m)"
             default="120m" />

@@ -83,6 +83,21 @@ public interface LTPAConfiguration {
     static final String INTERNAL_KEY_IS_CONFIGURED_VALIDATION_KEY = "isConfiguredValidationKey";
 
     /**
+     * The LTPA keystore file location.
+     */
+    public static final String CFG_KEY_KEYSTORE_FILE = "keystoreFile";
+
+    /**
+     * The LTPA keystore password.
+     */
+    public static final String CFG_KEY_KEYSTORE_PASSWORD = "keystorePassword";
+
+    /**
+     * Whether to use keystore format instead of .keys file.
+     */
+    public static final String CFG_KEY_USE_KEYSTORE = "useKeystore";
+
+    /**
      * @return TokenFactory instance corresponding to this LTPA configuration
      */
     TokenFactory getTokenFactory();
@@ -141,5 +156,20 @@ public interface LTPAConfiguration {
      * @return validation Keys
      */
     List<Properties> getValidationKeys();
+
+    /**
+     * @return LTPA keystore file location
+     */
+    String getKeystoreFile();
+
+    /**
+     * @return LTPA keystore password
+     */
+    String getKeystorePassword();
+
+    /**
+     * @return whether to use keystore format
+     */
+    boolean getUseKeystore();
     
 }

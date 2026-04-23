@@ -54,12 +54,43 @@ class LTPAKeyCreateTask implements Runnable {
 
     private LTPAKeyInfoManager getPreparedLtpaKeyInfoManager() throws Exception {
         LTPAKeyInfoManager keyInfoManager = new LTPAKeyInfoManager();
-        keyInfoManager.prepareLTPAKeyInfo(locService,
-                                          config.getPrimaryKeyFile(),
-                                          getKeyPasswordBytes(),
-                                          config.getValidationKeys(),
-                                          config.getTryToReEncryptLtpaKeys());
+        
+        // Check if keystore mode is enabled
+        if (config.getUseKeystore()) {
+            // Use keystore format
+            String keystoreFile = config.getKeystoreFile();
+            if (keystoreFile == null || keystoreFile.isEmpty()) {
+                // Default keystore location if not specified
+                keystoreFile = "${server.output.dir}/resources/security/ltpa.p12";
+            }
+            
+            byte[] keystorePassword = getKeystorePasswordBytes();
+            
+            keyInfoManager.prepareLTPAKeyInfo(locService,
+                                              keystoreFile,
+                                              keystorePassword,
+                                              config.getValidationKeys(),
+                                              config.getTryToReEncryptLtpaKeys());
+        } else {
+            // Use traditional .keys file format
+            keyInfoManager.prepareLTPAKeyInfo(locService,
+                                              config.getPrimaryKeyFile(),
+                                              getKeyPasswordBytes(),
+                                              config.getValidationKeys(),
+                                              config.getTryToReEncryptLtpaKeys());
+        }
+        
         return keyInfoManager;
+    }
+
+    @Sensitive
+    byte[] getKeystorePasswordBytes() {
+        String keystorePassword = config.getKeystorePassword();
+        if (keystorePassword != null && !keystorePassword.isEmpty()) {
+            return PasswordUtil.passwordDecode(keystorePassword).getBytes();
+        }
+        // Fall back to primary key password if keystore password not specified
+        return getKeyPasswordBytes();
     }
 
     @Sensitive
