@@ -168,6 +168,11 @@ public interface LTPAConfiguration {
     String getSecretKeyAlias();
     
     /**
+     * @return key password for accessing private keys in the keystore
+     */
+    String getKeyPassword();
+    
+    /**
      * @return true if keystore mode is enabled
      */
     boolean isUseKeyStore();

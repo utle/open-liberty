@@ -110,6 +110,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private String privateKeyAlias;
     private String publicKeyAlias;
     private String secretKeyAlias;
+    @Sensitive
+    private String keyPassword;
     private boolean useKeyStore;
     // configValidationKeys are specified in the server xml configuration
     private List<Properties> configValidationKeys = null;
@@ -234,6 +236,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         privateKeyAlias = (String) props.get("privateKeyAlias");
         publicKeyAlias = (String) props.get("publicKeyAlias");
         secretKeyAlias = (String) props.get("secretKeyAlias");
+        keyPassword = getPasswordFromProps(props, "keyPassword");
         Boolean useKeyStoreObj = (Boolean) props.get("useKeyStore");
         useKeyStore = (useKeyStoreObj != null) ? useKeyStoreObj : false;
 
@@ -293,6 +296,27 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
 
         String formattedMessage = Tr.formatMessage(tc, "LTPA_KEYS_PASSWORD_ERROR");
         throw new IllegalArgumentException(formattedMessage);
+    }
+
+    /**
+     * Get password from properties with fallback to environment variables.
+     * This follows the same pattern as SSL keystore password handling.
+     *
+     * @param props Configuration properties
+     * @param key The property key to look up
+     * @return The password string, or null if not found
+     */
+    @Sensitive
+    private String getPasswordFromProps(Map<String, Object> props, String key) {
+        // First check the configuration property
+        SerializableProtectedString sps = (SerializableProtectedString) props.get(key);
+        String password = sps == null ? null : new String(sps.getChars());
+        if (password != null && !password.isEmpty()) {
+            return password;
+        }
+        
+        // If not in config, return null (will fall back to keystore password)
+        return null;
     }
 
     /**
@@ -924,6 +948,11 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
     
     /** {@inheritDoc} */
+    @Override
+    public String getKeyPassword() {
+        return keyPassword;
+    }
+    
     @Override
     public String getSecretKeyAlias() {
         // If individual alias not specified, use keyAlias with "Secret" suffix

@@ -61,6 +61,8 @@
             required="false" type="String" />
         <AD id="secretKeyAlias" name="%secretKeyAlias" description="%secretKeyAlias.desc"
             required="false" type="String" />
+        <AD id="keyPassword" name="%keyPassword" description="%keyPassword.desc"
+            required="false" type="String" ibm:type="password" />
         <AD id="useKeyStore" name="%useKeyStore" description="%useKeyStore.desc"
             required="false" type="Boolean"
             default="false" />
@@ -88,6 +90,8 @@
             required="false" type="String" />
         <AD id="secretKeyAlias" name="%validationKeys.secretKeyAlias" description="%validationKeys.secretKeyAlias.desc"
             required="false" type="String" />
+        <AD id="keyPassword" name="%validationKeys.keyPassword" description="%validationKeys.keyPassword.desc"
+            required="false" type="String" ibm:type="password" />
     </OCD>
 
     <Designate factoryPid="com.ibm.ws.security.token.ltpa.validationKeys">
