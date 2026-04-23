@@ -20,6 +20,10 @@ Bundle-Description: LTPA Key Crypto Utilities; version=${bVersion}
 Export-Package: \
   com.ibm.ws.crypto.ltpakeyutil;provide:=true
 
+# BouncyCastle PQC provider for ML-DSA (Dilithium) support
+Private-Package: \
+  org.bouncycastle.pqc.*
+
 Import-Package: !*.internal.*, !com.ibm.ws.kernel.boot.cmdline, *
 
 instrument.disabled: true
@@ -31,13 +35,21 @@ Service-Component:\
     properties:="\
       service.vendor=IBM,\
       classes=com.ibm.ws.crypto.ltpakeyutil.LTPAPrivateKey|\
-              com.ibm.ws.crypto.ltpakeyutil.LTPAPublicKey"
+              com.ibm.ws.crypto.ltpakeyutil.LTPAPublicKey|\
+              com.ibm.ws.crypto.ltpakeyutil.LTPAMLDSAPrivateKey|\
+              com.ibm.ws.crypto.ltpakeyutil.LTPAMLDSAPublicKey|\
+              com.ibm.ws.crypto.ltpakeyutil.LTPAMLDSAKeyPair|\
+              com.ibm.ws.crypto.ltpakeyutil.LTPAHybridKeyPair"
 
 -buildpath: \
 	com.ibm.ws.logging;version=latest, \
 	com.ibm.ws.kernel.service;version=latest, \
 	com.ibm.ws.kernel.boot.core;version=latest, \
-	com.ibm.ws.org.osgi.annotation.versioning;version=latest
+	com.ibm.ws.org.osgi.annotation.versioning;version=latest, \
+	org.bouncycastle:bcprov-jdk18on;version=1.78, \
+	org.bouncycastle:bcpkix-jdk18on;version=1.78, \
+	org.bouncycastle:bcutil-jdk18on;version=1.78, \
+	org.bouncycastle:bcprov-ext-jdk18on;version=1.78
 
 -testpath: \
 	../build.sharedResources/lib/junit/old/junit.jar;version=file, \
