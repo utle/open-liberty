@@ -637,7 +637,6 @@ public class ClientSSLHandshakeTest extends CommonTest {
             
             // Set JVM args for PQC named groups on server
             testServer.setServerConfigurationFile("server_pqc_enabled.xml");
-            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768"));
             testServer.startServer();
             
             // Wait for server to be ready
@@ -692,7 +691,6 @@ public class ClientSSLHandshakeTest extends CommonTest {
             
             // Set JVM args for PQC named groups with fallback on server
             testServer.setServerConfigurationFile("server_pqc_with_fallback.xml");
-            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768,X25519"));
             testServer.startServer();
             
             // Wait for server to be ready
@@ -745,7 +743,6 @@ public class ClientSSLHandshakeTest extends CommonTest {
             
             // Server without PQC configuration
             testServer.setServerConfigurationFile("server_tls13_standard.xml");
-            testServer.setJvmOptions(new ArrayList<>()); // Clear JVM options
             testServer.startServer();
             
             // Wait for server to be ready
@@ -795,7 +792,6 @@ public class ClientSSLHandshakeTest extends CommonTest {
             
             // Set JVM args for PQC-only named groups on server (no fallback)
             testServer.setServerConfigurationFile("server_pqc_only.xml");
-            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768"));
             testServer.startServer();
             
             // Wait for server to be ready
@@ -844,7 +840,6 @@ public class ClientSSLHandshakeTest extends CommonTest {
             
             // Set JVM args for PQC named groups on server
             testServer.setServerConfigurationFile("server_pqc_enabled.xml");
-            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768"));
             testServer.startServer();
             
             // Wait for server to be ready
@@ -909,7 +904,6 @@ public class ClientSSLHandshakeTest extends CommonTest {
             
             // Set JVM args for multiple PQC named groups on server
             testServer.setServerConfigurationFile("server_pqc_multiple.xml");
-            testServer.setJvmOptions(Arrays.asList("-Djdk.tls.namedGroups=X25519MLKEM768,X448MLKEM1024"));
             testServer.startServer();
             
             // Wait for server to be ready
