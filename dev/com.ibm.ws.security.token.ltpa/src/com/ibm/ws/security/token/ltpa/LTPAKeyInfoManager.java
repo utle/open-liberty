@@ -233,7 +233,14 @@ public class LTPAKeyInfoManager {
                 loadLtpaKeysFromKeystore(locService, keyImportFile, keyPassword, validationKey, validUntilDateOdt);
                 return;
             }
-            // Keystore file doesn't exist yet - fall through to key generation logic
+            // Keystore file doesn't exist yet - create it as a proper PKCS12 keystore
+            if (!validationKey) {
+                createPrimaryKeystore(locService, keyImportFile, keyPassword);
+                return;
+            } else {
+                Tr.error(tc, "LTPA_KEYS_FILE_DOES_NOT_EXIST", keyImportFile);
+                return;
+            }
         }
         
         Properties props = null;
@@ -517,6 +524,7 @@ public class LTPAKeyInfoManager {
         byte[] secretKeyBytes = extractKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_SECRETKEY, keystorePassword);
         byte[] privateKeyBytes = extractKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_PRIVATEKEY, keystorePassword);
         byte[] publicKeyBytes = extractPublicKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_PUBLICKEY);
+        String realm = props.getProperty(LTPAKeyFileUtility.KEYIMPORT_REALM);
 
         // Create LTPAKeys object
         LTPAKeys ltpaKeys = new LTPAKeys(secretKeyBytes, privateKeyBytes, publicKeyBytes);
@@ -540,10 +548,11 @@ public class LTPAKeyInfoManager {
             LTPAKeystoreManager keystoreManager = new LTPAKeystoreManager();
             keystoreManager.createKeystore(ksFile, password, ltpaKeys);
 
-            // Store keys in cache
+            // Store keys and realm in cache
             this.keyCache.put(keystoreFile + SECRETKEY, secretKeyBytes);
             this.keyCache.put(keystoreFile + PRIVATEKEY, privateKeyBytes);
             this.keyCache.put(keystoreFile + PUBLICKEY, publicKeyBytes);
+            this.realmCache.put(keystoreFile, realm);
 
             // Add to import file cache
             this.importFileCache.add(keystoreFile);

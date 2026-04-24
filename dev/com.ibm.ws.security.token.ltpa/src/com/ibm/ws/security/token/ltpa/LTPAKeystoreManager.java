@@ -75,12 +75,10 @@ public class LTPAKeystoreManager {
                 Tr.debug(tc, "Stored secret key with alias: " + SECRET_KEY_ALIAS);
             }
 
-            // Store private key (RSA) with NULL certificate chain
-            KeyFactory keyFactory = KeyFactory.getInstance(ASYMMETRIC_KEY_ALGORITHM);
-            PrivateKey privateKey = keyFactory.generatePrivate(
-                new PKCS8EncodedKeySpec(ltpaKeys.getPrivateKeyBytes())
-            );
-            keystore.setKeyEntry(PRIVATE_KEY_ALIAS, privateKey, password, null);
+            // Store private key bytes as AES SecretKey (avoids certificate requirement)
+            SecretKey privateKeyAsSecret = new SecretKeySpec(ltpaKeys.getPrivateKeyBytes(), SECRET_KEY_ALGORITHM);
+            KeyStore.SecretKeyEntry privateKeyEntry = new KeyStore.SecretKeyEntry(privateKeyAsSecret);
+            keystore.setEntry(PRIVATE_KEY_ALIAS, privateKeyEntry, passwordProtection);
 
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Stored private key with alias: " + PRIVATE_KEY_ALIAS);
@@ -113,7 +111,7 @@ public class LTPAKeystoreManager {
             }
 
         } catch (KeyStoreException | IOException | NoSuchAlgorithmException |
-                 CertificateException | InvalidKeySpecException e) {
+                 CertificateException e) {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Failed to create keystore", e);
             }
@@ -156,12 +154,12 @@ public class LTPAKeystoreManager {
                 Tr.debug(tc, "Loaded secret key from keystore");
             }
 
-            // Retrieve private key
-            PrivateKey privateKey = (PrivateKey) keystore.getKey(PRIVATE_KEY_ALIAS, password);
-            if (privateKey == null) {
+            // Retrieve private key (stored as a SecretKey entry)
+            SecretKey privateKeyAsSecret = (SecretKey) keystore.getKey(PRIVATE_KEY_ALIAS, password);
+            if (privateKeyAsSecret == null) {
                 throw new Exception("Private key not found in keystore with alias: " + PRIVATE_KEY_ALIAS);
             }
-            byte[] privateKeyBytes = privateKey.getEncoded();
+            byte[] privateKeyBytes = privateKeyAsSecret.getEncoded();
 
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Loaded private key from keystore");
