@@ -650,11 +650,7 @@ public class ClientSSLHandshakeTest extends CommonTest {
             Log.info(c, name.getMethodName(), "Starting PQC-enabled client ...");
             
             // Set JVM args for PQC named groups on client
-            List<String> clientJvmOptions = new ArrayList<>();
-            clientJvmOptions.add("-Djdk.tls.namedGroups=X25519MLKEM768");
-            testClient.setJvmOptions(clientJvmOptions);
-            
-            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher",
                                                                         "client_pqc_enabled.xml", 
                                                                         "CWWKF0040E");
             String output = programOutput.getStdout();
@@ -762,11 +758,7 @@ public class ClientSSLHandshakeTest extends CommonTest {
             Log.info(c, name.getMethodName(), "Starting PQC-enabled client with fallback ...");
             
             // Set JVM args for PQC named groups with fallback on client
-            List<String> clientJvmOptions = new ArrayList<>();
-            clientJvmOptions.add("-Djdk.tls.namedGroups=X25519MLKEM768,X25519");
-            testClient.setJvmOptions(clientJvmOptions);
-            
-            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher",
                                                                         "client_pqc_with_fallback.xml", 
                                                                         "CWWKF0040E");
             String output = programOutput.getStdout();
@@ -865,11 +857,7 @@ public class ClientSSLHandshakeTest extends CommonTest {
             Log.info(c, name.getMethodName(), "Starting PQC-enabled client, verifying trace ...");
             
             // Set JVM args for PQC named groups on client
-            List<String> clientJvmOptions = new ArrayList<>();
-            clientJvmOptions.add("-Djdk.tls.namedGroups=X25519MLKEM768");
-            testClient.setJvmOptions(clientJvmOptions);
-            
-            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher",
                                                                         "client_pqc_enabled.xml", 
                                                                         "CWWKF0040E");
             String output = programOutput.getStdout();
@@ -934,11 +922,7 @@ public class ClientSSLHandshakeTest extends CommonTest {
             Log.info(c, name.getMethodName(), "Starting client with different PQC algorithm priority ...");
             
             // Set JVM args for multiple PQC named groups on client (different order)
-            List<String> clientJvmOptions = new ArrayList<>();
-            clientJvmOptions.add("-Djdk.tls.namedGroups=X448MLKEM1024,X25519MLKEM768");
-            testClient.setJvmOptions(clientJvmOptions);
-            
-            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher", 
+            ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher",
                                                                         "client_pqc_multiple.xml", 
                                                                         "CWWKF0040E");
             String output = programOutput.getStdout();
