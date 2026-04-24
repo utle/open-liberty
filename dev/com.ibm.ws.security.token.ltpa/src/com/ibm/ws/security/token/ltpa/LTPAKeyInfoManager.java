@@ -86,6 +86,7 @@ public class LTPAKeyInfoManager {
     private static final String PUBLICKEY = "publickey";
 
     private static final String LTPA_KEYS_BACKUP_EXTENSION = ".defaultpassword.backup";
+    private static final String LTPA_KEYS_FILE_BACKUP_EXTENSION = ".file.backup";
 
     private final List<String> importFileCache = new ArrayList<String>();
     private final Map<String, byte[]> keyCache = new Hashtable<String, byte[]>();
@@ -224,27 +225,92 @@ public class LTPAKeyInfoManager {
             Tr.event(this, tc, "Loading LTPA " + (validationKey == true ? "validation" : "primary") + "Keys file: " + keyImportFile);
         }
         
-        // Check if this is a keystore file AND it exists
-        WsResource keystoreResource = null;
+        Properties props = null;
+        
+        // New strategy for keystore files (.p12):
+        // 1. Check if ltpa.keys exists - if yes, load it, convert to ltpa.p12, and backup ltpa.keys
+        // 2. If ltpa.keys doesn't exist, check if ltpa.p12 exists - if yes, load from it
+        // 3. If neither exists, create ltpa.p12 directly
+        
         if (isKeystoreFile(keyImportFile)) {
-            keystoreResource = getLTPAKeyFileResource(locService, keyImportFile);
-            if (keystoreResource != null) {
-                // Keystore file exists, load keys from it
-                loadLtpaKeysFromKeystore(locService, keyImportFile, keyPassword, validationKey, validUntilDateOdt);
-                return;
-            }
-            // Keystore file doesn't exist yet - create it as a proper PKCS12 keystore
-            if (!validationKey) {
-                createPrimaryKeystore(locService, keyImportFile, keyPassword);
-                return;
+            // This is a .p12 file path
+            // First, check if corresponding ltpa.keys file exists
+            String keysFilePath = keyImportFile.replace(".p12", ".keys");
+            WsResource ltpaKeyFileResource = getLTPAKeyFileResource(locService, keysFilePath);
+            
+            if (ltpaKeyFileResource != null) {
+                // ltpa.keys exists - load it, convert to ltpa.p12, and backup ltpa.keys
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(this, tc, "Found ltpa.keys file, will convert to ltpa.p12 and backup");
+                }
+                
+                props = loadPropertiesFile(ltpaKeyFileResource);
+                String version = props.getProperty(LTPAKeyFileUtility.LTPA_VERSION_PROPERTY);
+                if (tc.isDebugEnabled()) {
+                    Tr.debug(this, tc, "LTPA key version: " + version);
+                }
+                
+                // Handle version mismatch
+                if ((CryptoUtils.isFips140_3Enabled() && "1.0".equals(version)) ||
+                    (!CryptoUtils.isFips140_3Enabled() && "2.0".equals(version))) {
+                    if (validationKey) {
+                        if ("1.0".equals(version))
+                            Tr.warning(tc, "LTPA_VALIDATION_KEYS_NEED_TO_REGENERATE", keysFilePath);
+                        else
+                            Tr.warning(tc, "LTPA_FIPS_VALIDATION_KEYS_NEED_TO_REGENERATE", keysFilePath);
+                        return;
+                    } else {
+                        backupLtpaKeyFile(locService, keysFilePath, ltpaKeyFileResource, version);
+                        if (restoreLtpaKeyFile(locService, keysFilePath, ltpaKeyFileResource)) {
+                            props = loadPropertiesFile(ltpaKeyFileResource);
+                        } else {
+                            // Regenerate the primary key as keystore
+                            createPrimaryKeystore(locService, keyImportFile, keyPassword);
+                            return;
+                        }
+                    }
+                }
+                
+                // Convert ltpa.keys to ltpa.p12
+                if (!validationKey) {
+                    convertPropertiesToKeystore(locService, keyImportFile, keyPassword, props);
+                    
+                    // Backup the ltpa.keys file with .file.backup extension
+                    backupLtpaKeysFile(locService, ltpaKeyFileResource, keysFilePath);
+                    
+                    // Delete the original ltpa.keys file after successful conversion
+                    try {
+                        ltpaKeyFileResource.delete();
+                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                            Tr.debug(this, tc, "Deleted original ltpa.keys file after conversion: " + keysFilePath);
+                        }
+                    } catch (Exception e) {
+                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                            Tr.debug(this, tc, "Failed to delete ltpa.keys file after conversion", e);
+                        }
+                    }
+                    return;
+                }
+                // For validation keys, just load from properties
             } else {
-                Tr.error(tc, "LTPA_KEYS_FILE_DOES_NOT_EXIST", keyImportFile);
-                return;
+                // ltpa.keys doesn't exist, check if ltpa.p12 exists
+                WsResource keystoreResource = getLTPAKeyFileResource(locService, keyImportFile);
+                if (keystoreResource != null) {
+                    // ltpa.p12 exists, load keys from it
+                    loadLtpaKeysFromKeystore(locService, keyImportFile, keyPassword, validationKey, validUntilDateOdt);
+                    return;
+                } else if (!validationKey) {
+                    // Neither ltpa.keys nor ltpa.p12 exists - create ltpa.p12 directly
+                    createPrimaryKeystore(locService, keyImportFile, keyPassword);
+                    return;
+                } else {
+                    Tr.error(tc, "LTPA_KEYS_FILE_DOES_NOT_EXIST", keyImportFile);
+                    return;
+                }
             }
         }
         
-        Properties props = null;
-        //Check to see if the LTPA key import file exists, create the keys and file if not
+        // Original flow for non-keystore files (ltpa.keys)
         WsResource ltpaKeyFileResource = getLTPAKeyFileResource(locService, keyImportFile);
 
         if (ltpaKeyFileResource != null) {
@@ -436,6 +502,40 @@ public class LTPAKeyInfoManager {
     }
 
     /**
+     * Backup the ltpa.keys file with .file.backup extension when converting to keystore.
+     * If the backup file already exists, try .file.backup-1, .file.backup-2, etc.
+     *
+     * @param locService The location service
+     * @param ltpaKeyFileResource The resource to backup
+     * @param keyImportFile The path to the keys file
+     * @throws IOException if backup fails
+     */
+    @FFDCIgnore(Throwable.class)
+    private void backupLtpaKeysFile(WsLocationAdmin locService, WsResource ltpaKeyFileResource, String keyImportFile) throws IOException {
+        for (int i = 0; i < 100; i++) {
+            String ltpaFileBackupLocation = keyImportFile + LTPA_KEYS_FILE_BACKUP_EXTENSION;
+            if (i > 0) {
+                ltpaFileBackupLocation += ("-" + i);
+            }
+            WsResource ltpaFileBackup = locService.resolveResource(ltpaFileBackupLocation);
+            if (ltpaFileBackup.exists()) {
+                continue;
+            }
+            if (tc.isDebugEnabled()) {
+                Tr.debug(this, tc, "Backup the LTPA keys file before conversion: " + keyImportFile + " to: " + ltpaFileBackupLocation);
+            }
+            try (InputStream in = ltpaKeyFileResource.get()) {
+                ltpaFileBackup.put(in);
+            }
+            Tr.info(tc, "LTPA_KEYS_FILE_BACKED_UP", keyImportFile, ltpaFileBackupLocation);
+            return;
+        }
+        if (tc.isDebugEnabled()) {
+            Tr.debug(this, tc, "Could not find available location to backup the LTPA keys file: " + keyImportFile);
+        }
+    }
+
+    /**
      * @param locService
      * @param keyImportFile
      * @param ltpaKeyFileResource
@@ -574,6 +674,66 @@ public class LTPAKeyInfoManager {
                     Tr.debug(this, tc, "Failed to delete temporary keys file", e);
                 }
             }
+        }
+    }
+
+    /**
+     * Convert an existing ltpa.keys properties file to a PKCS12 keystore format.
+     * This method reads the keys from the properties file and creates a new keystore.
+     *
+     * @param locService The location service
+     * @param keystoreFile The path to the keystore file to create
+     * @param keystorePassword The password for the keystore
+     * @param props The properties containing the LTPA keys
+     * @throws Exception if conversion fails
+     */
+    private void convertPropertiesToKeystore(WsLocationAdmin locService, String keystoreFile, @Sensitive byte[] keystorePassword, Properties props) throws Exception {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+            Tr.debug(this, tc, "Converting ltpa.keys properties to keystore: " + keystoreFile);
+        }
+
+        // Extract the key bytes from properties
+        byte[] secretKeyBytes = extractKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_SECRETKEY, keystorePassword);
+        byte[] privateKeyBytes = extractKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_PRIVATEKEY, keystorePassword);
+        byte[] publicKeyBytes = extractPublicKeyBytes(props, LTPAKeyFileUtility.KEYIMPORT_PUBLICKEY);
+        String realm = props.getProperty(LTPAKeyFileUtility.KEYIMPORT_REALM);
+
+        // Create LTPAKeys object
+        LTPAKeys ltpaKeys = new LTPAKeys(secretKeyBytes, privateKeyBytes, publicKeyBytes);
+
+        // Get the actual file path
+        String resolvedPath = locService.resolveString(keystoreFile);
+        File ksFile = new File(resolvedPath);
+
+        // Ensure parent directory exists
+        File parentDir = ksFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+
+        // Convert password bytes to char array
+        String passwordStr = new String(keystorePassword);
+        char[] password = passwordStr.toCharArray();
+
+        try {
+            // Create keystore using LTPAKeystoreManager
+            LTPAKeystoreManager keystoreManager = new LTPAKeystoreManager();
+            keystoreManager.createKeystore(ksFile, password, ltpaKeys);
+
+            // Store keys and realm in cache
+            this.keyCache.put(keystoreFile + SECRETKEY, secretKeyBytes);
+            this.keyCache.put(keystoreFile + PRIVATEKEY, privateKeyBytes);
+            this.keyCache.put(keystoreFile + PUBLICKEY, publicKeyBytes);
+            this.realmCache.put(keystoreFile, realm);
+
+            // Add to import file cache
+            this.importFileCache.add(keystoreFile);
+
+            Tr.info(tc, "LTPA_KEYSTORE_CREATED_FROM_KEYS", keystoreFile);
+
+        } finally {
+            // Clear password from memory
+            Arrays.fill(password, ' ');
         }
     }
 

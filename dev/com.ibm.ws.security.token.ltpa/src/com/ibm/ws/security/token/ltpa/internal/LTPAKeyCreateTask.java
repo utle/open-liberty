@@ -55,30 +55,13 @@ class LTPAKeyCreateTask implements Runnable {
     private LTPAKeyInfoManager getPreparedLtpaKeyInfoManager() throws Exception {
         LTPAKeyInfoManager keyInfoManager = new LTPAKeyInfoManager();
         
-        // Check if keystore mode is enabled
-        if (config.getUseKeystore()) {
-            // Use keystore format
-            String keystoreFile = config.getKeystoreFile();
-            if (keystoreFile == null || keystoreFile.isEmpty()) {
-                // Default keystore location if not specified
-                keystoreFile = "${server.output.dir}/resources/security/ltpa.p12";
-            }
-            
-            byte[] keystorePassword = getKeystorePasswordBytes();
-            
-            keyInfoManager.prepareLTPAKeyInfo(locService,
-                                              keystoreFile,
-                                              keystorePassword,
-                                              config.getValidationKeys(),
-                                              config.getTryToReEncryptLtpaKeys());
-        } else {
-            // Use traditional .keys file format
-            keyInfoManager.prepareLTPAKeyInfo(locService,
-                                              config.getPrimaryKeyFile(),
-                                              getKeyPasswordBytes(),
-                                              config.getValidationKeys(),
-                                              config.getTryToReEncryptLtpaKeys());
-        }
+        // Use the primary key file (which may be .keys or .p12)
+        // The LTPAKeyInfoManager will automatically detect the format
+        keyInfoManager.prepareLTPAKeyInfo(locService,
+                                          config.getPrimaryKeyFile(),
+                                          getKeyPasswordBytes(),
+                                          config.getValidationKeys(),
+                                          config.getTryToReEncryptLtpaKeys());
         
         return keyInfoManager;
     }

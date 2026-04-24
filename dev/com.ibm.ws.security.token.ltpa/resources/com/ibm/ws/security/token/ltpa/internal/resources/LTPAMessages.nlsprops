@@ -131,3 +131,10 @@ LTPA_KEYSTORE_PASSWORD_ERROR.useraction=Configure the keystorePassword attribute
 LTPA_KEYSTORE_MISSING_KEYS=CWWKS4127E: The LTPA keystore does not contain the required keys. Missing keys: {0}
 LTPA_KEYSTORE_MISSING_KEYS.explanation=The keystore file exists but does not contain all three required LTPA keys (secret key, private key, and public key).
 LTPA_KEYSTORE_MISSING_KEYS.useraction=Ensure the keystore was created properly with all required LTPA keys. If the keystore is incomplete, delete it and allow the server to generate a new one.
+LTPA_KEYSTORE_CREATED_FROM_KEYS=CWWKS4128I: LTPA keystore created from existing ltpa.keys file: {0}
+LTPA_KEYSTORE_CREATED_FROM_KEYS.explanation=The LTPA keys were successfully converted from the ltpa.keys properties file format to a PKCS12 keystore format.
+LTPA_KEYSTORE_CREATED_FROM_KEYS.useraction=No action is required.
+
+LTPA_KEYS_FILE_BACKED_UP=CWWKS4129I: LTPA keys file {0} backed up to {1} before conversion to keystore format.
+LTPA_KEYS_FILE_BACKED_UP.explanation=The original ltpa.keys file was backed up before being converted to keystore format and then deleted.
+LTPA_KEYS_FILE_BACKED_UP.useraction=No action is required. The backup file can be used to restore the original ltpa.keys file if needed.

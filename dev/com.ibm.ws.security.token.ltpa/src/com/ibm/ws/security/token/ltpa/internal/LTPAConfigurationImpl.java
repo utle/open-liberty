@@ -94,7 +94,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private String keystoreFile;
     @Sensitive
     private String keystorePassword;
-    private boolean useKeystore;
     private LTPAFileMonitor ltpaFileMonitor;
     private ServiceRegistration<FileMonitor> ltpaFileMonitorRegistration;
     private final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();;
@@ -214,18 +213,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         updateTrigger = (String) props.get(CFG_KEY_UPDATE_TRIGGER);
         
         // Load keystore configuration
-        keystoreFile = (String) props.get(CFG_KEY_KEYSTORE_FILE);
+        keystoreFile = (String) props.get("keystoreFile");
         keystorePassword = resolveKeystorePassword(props);
-        
-        // Handle useKeystore property - can be Boolean or String
-        Object useKeystoreObj = props.get(CFG_KEY_USE_KEYSTORE);
-        if (useKeystoreObj instanceof Boolean) {
-            useKeystore = (Boolean) useKeystoreObj;
-        } else if (useKeystoreObj instanceof String) {
-            useKeystore = Boolean.parseBoolean((String) useKeystoreObj);
-        } else {
-            useKeystore = false;
-        }
 
         //get all validationKeys elements
         Map<String, List<Map<String, Object>>> validationKeysElements = Nester.nest(props, CFG_KEY_VALIDATION_KEYS);
@@ -307,8 +296,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             return keystorePasswordEnv;
         }
         
-        // If useKeystore is true but no password provided, use primary key password
-        if (useKeystore && primaryKeyPassword != null) {
+        // Fall back to primary key password if no keystore password provided
+        if (primaryKeyPassword != null) {
             return primaryKeyPassword;
         }
         
@@ -467,8 +456,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
 
     private void resolveActualPrimaryKeysFileLocation() {
-        // If using keystore, use keystoreFile as the primary key import file
-        if (useKeystore && keystoreFile != null) {
+        // If keystoreFile is specified, use it as the primary key import file
+        if (keystoreFile != null) {
             primaryKeyImportFile = keystoreFile;
         } else if (isInDefaultOutputLocation()) {
             WsResource keysFileInServerConfig = locationService.getServiceWithException().resolveResource(DEFAULT_CONFIG_LOCATION);
@@ -927,11 +916,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         return keystorePassword;
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public boolean getUseKeystore() {
-        return useKeystore;
-    }
 
     /*
      *

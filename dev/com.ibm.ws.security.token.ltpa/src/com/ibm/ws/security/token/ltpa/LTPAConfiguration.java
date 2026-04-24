@@ -166,10 +166,5 @@ public interface LTPAConfiguration {
      * @return LTPA keystore password
      */
     String getKeystorePassword();
-
-    /**
-     * @return whether to use keystore format
-     */
-    boolean getUseKeystore();
     
 }
