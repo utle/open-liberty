@@ -15,5 +15,5 @@
 #Using java.base restores the existing console behavior from previous JDK versions. 
 -Djdk.console=java.base
 -Dcom.ibm.ws.beta.edition=true
--Djdk.tls.namedGroups=X448MLKEM1024,X25519MLKEM768
+-Djdk.tls.namedGroups=X25519MLKEM768
 -Djavax.net.debug=ssl:handshake
