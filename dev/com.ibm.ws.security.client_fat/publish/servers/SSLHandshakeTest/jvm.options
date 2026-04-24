@@ -1,2 +1,3 @@
 -Dcom.ibm.ws.beta.edition=true
 -Djdk.tls.namedGroups=X448MLKEM1024,X25519MLKEM768
+-Djavax.net.debug=ssl:handshake
