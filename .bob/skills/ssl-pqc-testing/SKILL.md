@@ -1,3 +1,8 @@
+---
+name: ssl-pqc-testing
+description: Design, review, and extend testing for post-quantum cryptography (PQC) in TLS/SSL handshakes within Open Liberty. Use this skill when you need to test PQC or hybrid key exchange, design FAT tests for PQC scenarios, verify negotiated cryptographic mechanisms, distinguish between handshake success and PQC coverage, collect evidence from traces and packet captures, or diagnose provider mismatches and fallback behavior in PQC handshake testing.
+---
+
 # PQC SSL Handshake Testing
 
 ## Purpose

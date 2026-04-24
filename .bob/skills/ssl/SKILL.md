@@ -1,3 +1,8 @@
+---
+name: ssl
+description: Understand the Open Liberty SSL bundle architecture, SSL configuration flow, handshake behavior, keystore and provider roles, extension points, tracing, and debugging. Use this skill whenever the user asks how Liberty SSL works, wants help tracing TLS behavior, needs to understand SSL bundle internals, is adding SSL-related capabilities, or is diagnosing certificate, protocol, or cipher negotiation problems.
+---
+
 # SSL Bundle Baseline Understanding
 
 ## Purpose
