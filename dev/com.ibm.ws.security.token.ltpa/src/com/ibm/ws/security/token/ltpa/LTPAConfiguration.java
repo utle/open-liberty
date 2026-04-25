@@ -71,12 +71,12 @@ public interface LTPAConfiguration {
     /**
      * The token validation keystore file location.
      */
-    static final String CFG_KEY_VALIDATION_KEYSTORE_FILE = "validation.keystoreFile";
+    static final String CFG_KEY_VALIDATION_KEYSTORE_FILE = "keystoreFile";
 
     /**
      * The token validation keystore password.
      */
-    static final String CFG_KEY_VALIDATION_KEYSTORE_PASSWORD = "validation.keystorePassword";
+    static final String CFG_KEY_VALIDATION_KEYSTORE_PASSWORD = "keystorePassword";
 
     /**
      * The the date-time to stop using the token validation keys.
