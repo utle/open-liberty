@@ -66,7 +66,7 @@ public interface LTPAConfiguration {
     /**
      * The token validation keys file password.
      */
-    static final String CFG_KEY_VALIDATION_PASSWORD = "password";
+    static final String CFG_KEY_VALIDATION_PASSWORD = "password"; // pragma: allowlist secret
 
     /**
      * The token validation keystore file location.
@@ -76,7 +76,7 @@ public interface LTPAConfiguration {
     /**
      * The token validation keystore password.
      */
-    static final String CFG_KEY_VALIDATION_KEYSTORE_PASSWORD = "keystorePassword";
+    static final String CFG_KEY_VALIDATION_KEYSTORE_PASSWORD = "keystorePassword"; // pragma: allowlist secret
 
     /**
      * The the date-time to stop using the token validation keys.
@@ -100,7 +100,7 @@ public interface LTPAConfiguration {
     /**
      * The LTPA keystore password.
      */
-    public static final String CFG_KEY_KEYSTORE_PASSWORD = "keystorePassword";
+    public static final String CFG_KEY_KEYSTORE_PASSWORD = "keystorePassword"; // pragma: allowlist secret
 
     /**
      * Whether to use keystore format instead of .keys file.
