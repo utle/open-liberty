@@ -202,7 +202,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     @Sensitive
     private void loadConfig(Map<String, Object> props) {
         primaryKeyImportFile = (String) props.get(CFG_KEY_IMPORT_FILE);
-        primaryKeyPassword = resolvePrimaryKeyPassword(props);
+        primaryKeyPassword = resolvePassword(props, CFG_KEY_PASSWORD);
         keyTokenExpiration = (Long) props.get(CFG_KEY_TOKEN_EXPIRATION);
         monitorInterval = (Long) props.get(CFG_KEY_MONITOR_INTERVAL);
         authFilterRef = (String) props.get(KEY_AUTH_FILTER_REF);
@@ -211,10 +211,10 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         expirationDifferenceAllowed = (Long) props.get(KEY_EXP_DIFF_ALLOWED);
         monitorValidationKeysDir = (Boolean) props.get(CFG_KEY_MONITOR_VALIDATION_KEYS_DIR);
         updateTrigger = (String) props.get(CFG_KEY_UPDATE_TRIGGER);
-        
+
         // Load keystore configuration
         keystoreFile = (String) props.get("keystoreFile");
-        keystorePassword = resolveKeystorePassword(props);
+        keystorePassword = resolvePassword(props, CFG_KEY_KEYSTORE_PASSWORD);
 
         //get all validationKeys elements
         Map<String, List<Map<String, Object>>> validationKeysElements = Nester.nest(props, CFG_KEY_VALIDATION_KEYS);
@@ -250,8 +250,9 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
 
     @Sensitive
-    private String resolvePrimaryKeyPassword(Map<String, Object> props) {
-        SerializableProtectedString sps = (SerializableProtectedString) props.get(CFG_KEY_PASSWORD);
+    private String resolvePassword(Map<String, Object> props, String cfg_key) {
+//        SerializableProtectedString sps = (SerializableProtectedString) props.get(CFG_KEY_PASSWORD);
+        SerializableProtectedString sps = (SerializableProtectedString) props.get(cfg_key);
         String keysPassword = sps == null ? null : new String(sps.getChars());
         if (keysPassword != null && !keysPassword.isEmpty()) {
             tryToReEncryptLtpaKeys = false;
@@ -274,35 +275,36 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         throw new IllegalArgumentException(formattedMessage);
     }
 
-    @Sensitive
-    private String resolveKeystorePassword(Map<String, Object> props) {
-        Object passwordObj = props.get(CFG_KEY_KEYSTORE_PASSWORD);
-        String ksPassword = null;
-        
-        if (passwordObj instanceof SerializableProtectedString) {
-            SerializableProtectedString sps = (SerializableProtectedString) passwordObj;
-            ksPassword = new String(sps.getChars());
-        } else if (passwordObj instanceof String) {
-            ksPassword = (String) passwordObj;
-        }
-        
-        if (ksPassword != null && !ksPassword.isEmpty()) {
-            return ksPassword;
-        }
-        
-        // Fall back to keystore_password environment variable
-        String keystorePasswordEnv = System.getenv("keystore_password");
-        if (keystorePasswordEnv != null && !keystorePasswordEnv.isEmpty()) {
-            return keystorePasswordEnv;
-        }
-        
-        // Fall back to primary key password if no keystore password provided
-        if (primaryKeyPassword != null) {
-            return primaryKeyPassword;
-        }
-        
-        return null;
-    }
+//    @Sensitive
+//    private String resolveKeystorePassword(Map<String, Object> props) {
+//        return resolvePassword(props, CFG_KEY_KEYSTORE_PASSWORD);
+//        Object passwordObj = props.get(CFG_KEY_KEYSTORE_PASSWORD);
+//        String ksPassword = null;
+//
+//        if (passwordObj instanceof SerializableProtectedString) {
+//            SerializableProtectedString sps = (SerializableProtectedString) passwordObj;
+//            ksPassword = new String(sps.getChars());
+//        } else if (passwordObj instanceof String) {
+//            ksPassword = (String) passwordObj;
+//        }
+//
+//        if (ksPassword != null && !ksPassword.isEmpty()) {
+//            return ksPassword;
+//        }
+//
+//        // Fall back to keystore_password environment variable
+//        String keystorePasswordEnv = System.getenv("keystore_password");
+//        if (keystorePasswordEnv != null && !keystorePasswordEnv.isEmpty()) {
+//            return keystorePasswordEnv;
+//        }
+//
+//        // Fall back to primary key password if no keystore password provided
+//        if (primaryKeyPassword != null) {
+//            return primaryKeyPassword;
+//        }
+//
+//        return null;
+//    }
 
     /**
      *
@@ -915,7 +917,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     public String getKeystorePassword() {
         return keystorePassword;
     }
-
 
     /*
      *
