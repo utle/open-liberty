@@ -226,7 +226,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
 
         if (isValidationKeysFileConfigured) {
             configValidationKeys = getConfigValidationKeys(validationKeysElements, CFG_KEY_VALIDATION_KEYS, CFG_KEY_VALIDATION_FILE_NAME, CFG_KEY_VALIDATION_PASSWORD,
-                                                           CFG_KEY_VALIDATION_VALID_UNTIL_DATE);
+                                                           CFG_KEY_VALIDATION_KEYSTORE_FILE, CFG_KEY_VALIDATION_KEYSTORE_PASSWORD, CFG_KEY_VALIDATION_VALID_UNTIL_DATE);
         } else {
             configValidationKeys = null;
         }
@@ -449,7 +449,9 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             Iterator<Properties> configValidationKeysIterator = configValidationKeys.iterator();
             while (configValidationKeysIterator.hasNext()) {
                 Properties vKeys = configValidationKeysIterator.next();
-                if (vKeys.getProperty(CFG_KEY_VALIDATION_FILE_NAME).equals(fn))
+                String fileName = vKeys.getProperty(CFG_KEY_VALIDATION_FILE_NAME);
+                String keystoreFile = vKeys.getProperty(CFG_KEY_VALIDATION_KEYSTORE_FILE);
+                if ((fileName != null && fileName.equals(fn)) || (keystoreFile != null && keystoreFile.equals(fn)))
                     return true;
             }
         }
@@ -959,6 +961,9 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             if (attrKey.equals(CFG_KEY_VALIDATION_PASSWORD)) {
                 SerializableProtectedString sps = (SerializableProtectedString) configProps.get(CFG_KEY_VALIDATION_PASSWORD);
                 value = sps == null ? null : new String(sps.getChars());
+            } else if (attrKey.equals(CFG_KEY_VALIDATION_KEYSTORE_PASSWORD)) {
+                SerializableProtectedString sps = (SerializableProtectedString) configProps.get(CFG_KEY_VALIDATION_KEYSTORE_PASSWORD);
+                value = sps == null ? null : new String(sps.getChars());
             } else {
                 value = (String) configProps.get(attrKey);
             }
@@ -967,13 +972,18 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
                 value = value.trim();
                 if (attrKey.equals(CFG_KEY_VALIDATION_FILE_NAME)) {
                     value = primaryKeyImportDir.concat(value);
+                } else if (attrKey.equals(CFG_KEY_VALIDATION_KEYSTORE_FILE)) {
+                    value = primaryKeyImportDir.concat(value);
                 }
                 properties.put(attrKey, value);
             }
         }
 
-        //if validationKeys element is configured, then it must have the filename and password
-        if (properties.isEmpty() || properties.get(CFG_KEY_VALIDATION_FILE_NAME) == null || properties.get(CFG_KEY_VALIDATION_PASSWORD) == null) {
+        // Validation keys element must have either (fileName + password) OR (keystoreFile + keystorePassword)
+        boolean hasKeysFile = properties.get(CFG_KEY_VALIDATION_FILE_NAME) != null && properties.get(CFG_KEY_VALIDATION_PASSWORD) != null;
+        boolean hasKeystoreFile = properties.get(CFG_KEY_VALIDATION_KEYSTORE_FILE) != null && properties.get(CFG_KEY_VALIDATION_KEYSTORE_PASSWORD) != null;
+        
+        if (properties.isEmpty() || (!hasKeysFile && !hasKeystoreFile)) {
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.error(tc, "LTPA_VALIDATION_KEYS_MISSING_ATTR", elementName, printAttrKeys(attrKeys));
             }
@@ -983,7 +993,11 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
                 return null; //it can not be used so skip this validationKeys.
             }
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Configured validationKeys file name: " + properties.get(CFG_KEY_VALIDATION_FILE_NAME));
+                if (hasKeysFile) {
+                    Tr.debug(tc, "Configured validationKeys file name: " + properties.get(CFG_KEY_VALIDATION_FILE_NAME));
+                } else {
+                    Tr.debug(tc, "Configured validationKeys keystore file: " + properties.get(CFG_KEY_VALIDATION_KEYSTORE_FILE));
+                }
             }
             return properties;
         }

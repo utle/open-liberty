@@ -147,8 +147,14 @@ public class LTPAKeyInfoManager {
             while (validationKeysIterator.hasNext()) {
                 OffsetDateTime validUntilDateOdt = null;
                 Properties vKeys = validationKeysIterator.next();
-                String filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME);
-                if (!this.importFileCache.contains(vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME))) {
+                
+                // Determine which file to use - prefer keystoreFile if specified, otherwise use fileName
+                String filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_KEYSTORE_FILE);
+                if (filename == null) {
+                    filename = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_FILE_NAME);
+                }
+                
+                if (filename != null && !this.importFileCache.contains(filename)) {
                     String validUntilDate = ((String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_VALID_UNTIL_DATE));
                     if (validUntilDate != null) {
                         try {
@@ -205,7 +211,11 @@ public class LTPAKeyInfoManager {
 
     @Sensitive
     byte[] getKeyPasswordBytes(@Sensitive Properties vKeys) {
-        String password = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_PASSWORD);
+        // Prefer keystorePassword if specified, otherwise use password
+        String password = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_KEYSTORE_PASSWORD);
+        if (password == null) {
+            password = (String) vKeys.get(LTPAConfiguration.CFG_KEY_VALIDATION_PASSWORD);
+        }
         return PasswordUtil.passwordDecode(password).getBytes();
     }
 
@@ -271,27 +281,24 @@ public class LTPAKeyInfoManager {
                     }
                 }
                 
-                // Convert ltpa.keys to ltpa.p12
-                if (!validationKey) {
-                    convertPropertiesToKeystore(locService, keyImportFile, keyPassword, props);
-                    
-                    // Backup the ltpa.keys file with .file.backup extension
-                    backupLtpaKeysFile(locService, ltpaKeyFileResource, keysFilePath);
-                    
-                    // Delete the original ltpa.keys file after successful conversion
-                    try {
-                        ltpaKeyFileResource.delete();
-                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                            Tr.debug(this, tc, "Deleted original ltpa.keys file after conversion: " + keysFilePath);
-                        }
-                    } catch (Exception e) {
-                        if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                            Tr.debug(this, tc, "Failed to delete ltpa.keys file after conversion", e);
-                        }
+                // Convert ltpa.keys to ltpa.p12 (for both primary and validation keys)
+                convertPropertiesToKeystore(locService, keyImportFile, keyPassword, props);
+                
+                // Backup the ltpa.keys file with .file.backup extension
+                backupLtpaKeysFile(locService, ltpaKeyFileResource, keysFilePath);
+                
+                // Delete the original ltpa.keys file after successful conversion
+                try {
+                    ltpaKeyFileResource.delete();
+                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                        Tr.debug(this, tc, "Deleted original " + (validationKey ? "validation" : "primary") + " ltpa.keys file after conversion: " + keysFilePath);
                     }
-                    return;
+                } catch (Exception e) {
+                    if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                        Tr.debug(this, tc, "Failed to delete ltpa.keys file after conversion", e);
+                    }
                 }
-                // For validation keys, just load from properties
+                return;
             } else {
                 // ltpa.keys doesn't exist, check if ltpa.p12 exists
                 WsResource keystoreResource = getLTPAKeyFileResource(locService, keyImportFile);

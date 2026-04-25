@@ -69,6 +69,16 @@ public interface LTPAConfiguration {
     static final String CFG_KEY_VALIDATION_PASSWORD = "password";
 
     /**
+     * The token validation keystore file location.
+     */
+    static final String CFG_KEY_VALIDATION_KEYSTORE_FILE = "validation.keystoreFile";
+
+    /**
+     * The token validation keystore password.
+     */
+    static final String CFG_KEY_VALIDATION_KEYSTORE_PASSWORD = "validation.keystorePassword";
+
+    /**
      * The the date-time to stop using the token validation keys.
      */
     static final String CFG_KEY_VALIDATION_VALID_UNTIL_DATE = "validUntilDate";
@@ -166,5 +176,5 @@ public interface LTPAConfiguration {
      * @return LTPA keystore password
      */
     String getKeystorePassword();
-    
+
 }

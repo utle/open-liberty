@@ -62,8 +62,10 @@
     </Designate>
     
     <OCD id="com.ibm.ws.security.token.ltpa.validationKeys.metatype" name="%validationKeys" description="%validationKeys.desc">
-       	<AD id="fileName" name="%fileName" description="%fileName.desc" required="true" type="String"  />
-    	<AD id="password" name="%password" description="%password.desc" required="true" type="String" ibm:type="password" />
+       	<AD id="fileName" name="%fileName" description="%fileName.desc" required="false" type="String" ibm:type="location(file)" />
+    	<AD id="password" name="%password" description="%password.desc" required="false" type="String" ibm:type="password" />
+    	<AD id="keystoreFile" name="%validation.keystoreFile" description="%validation.keystoreFile.desc" required="false" type="String" ibm:type="location(file)" />
+    	<AD id="keystorePassword" name="%validation.keystorePassword" description="%validation.keystorePassword.desc" required="false" type="String" ibm:type="password" />
     	<AD id="validUntilDate" name="%validUntilDate" description="%validUntilDate.desc" required="false" type="String"  />
     </OCD>
 
