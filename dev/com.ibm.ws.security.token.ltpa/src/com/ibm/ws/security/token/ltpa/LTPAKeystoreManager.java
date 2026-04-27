@@ -24,6 +24,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
@@ -48,24 +49,48 @@ public class LTPAKeystoreManager {
      * Stores secret key using AES algorithm and private key with NULL certificate chain.
      *
      * @param keystoreFile The keystore file to create
-     * @param password     The keystore password
+     * @param password     The keystore password (must not be null)
      * @param ltpaKeys     The LTPA keys to store
-     * @throws Exception if keystore creation fails
+     * @throws LTPAKeystoreException if keystore creation fails
+     * @throws IllegalArgumentException if keystoreFile, password, or ltpaKeys is null
      */
-    public void createKeystore(File keystoreFile, char[] password, LTPAKeys ltpaKeys) throws Exception {
+    public void createKeystore(File keystoreFile, @Sensitive char[] password, LTPAKeys ltpaKeys) throws LTPAKeystoreException {
+        // Validate inputs
+        if (keystoreFile == null) {
+            throw new IllegalArgumentException("Keystore file cannot be null");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("Password cannot be null");
+        }
+        if (ltpaKeys == null) {
+            throw new IllegalArgumentException("LTPA keys cannot be null");
+        }
+        
+        // Validate file path for security (prevent path traversal)
+        try {
+            String canonicalPath = keystoreFile.getCanonicalPath();
+            if (canonicalPath.contains("..")) {
+                throw new IllegalArgumentException("Invalid keystore path: path traversal detected");
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid keystore path: " + e.getMessage(), e);
+        }
         if (tc.isEntryEnabled()) {
             Tr.entry(tc, "createKeystore", keystoreFile.getAbsolutePath());
         }
 
+        KeyStore.PasswordProtection passwordProtection = null;
         try {
             // Create new PKCS12 keystore
             KeyStore keystore = KeyStore.getInstance(KEYSTORE_TYPE);
             keystore.load(null, password);
 
+            // Create password protection object for all key entries
+            passwordProtection = new KeyStore.PasswordProtection(password);
+
             // Store secret key (24 bytes) as AES-192
             SecretKey secretKey = new SecretKeySpec(ltpaKeys.getSecretKeyBytes(), CryptoUtils.ENCRYPT_ALGORITHM_AES);
             KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(secretKey);
-            KeyStore.PasswordProtection passwordProtection = new KeyStore.PasswordProtection(password);
             keystore.setEntry(SECRET_KEY_ALIAS, secretKeyEntry, passwordProtection);
 
             if (tc.isDebugEnabled()) {
@@ -111,8 +136,18 @@ public class LTPAKeystoreManager {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Failed to create keystore", e);
             }
-            throw new Exception("Failed to create LTPA keystore: " + e.getMessage(), e);
+            throw new LTPAKeystoreException("Failed to create LTPA keystore: " + e.getMessage(), e);
         } finally {
+            // Destroy password protection to clear sensitive data from memory
+            if (passwordProtection != null) {
+                try {
+                    passwordProtection.destroy();
+                } catch (Exception e) {
+                    if (tc.isDebugEnabled()) {
+                        Tr.debug(tc, "Failed to destroy password protection", e);
+                    }
+                }
+            }
             if (tc.isEntryEnabled()) {
                 Tr.exit(tc, "createKeystore");
             }
@@ -123,11 +158,29 @@ public class LTPAKeystoreManager {
      * Load LTPA keys from an existing keystore.
      *
      * @param keystoreFile The keystore file to load from
-     * @param password     The keystore password
+     * @param password     The keystore password (must not be null)
      * @return The LTPA keys loaded from the keystore
-     * @throws Exception if key loading fails
+     * @throws LTPAKeystoreException if key loading fails
+     * @throws IllegalArgumentException if keystoreFile or password is null
      */
-    public LTPAKeys loadKeysFromKeystore(File keystoreFile, char[] password) throws Exception {
+    public LTPAKeys loadKeysFromKeystore(File keystoreFile, @Sensitive char[] password) throws LTPAKeystoreException {
+        // Validate inputs
+        if (keystoreFile == null) {
+            throw new IllegalArgumentException("Keystore file cannot be null");
+        }
+        if (password == null) {
+            throw new IllegalArgumentException("Password cannot be null");
+        }
+        
+        // Validate file path for security (prevent path traversal)
+        try {
+            String canonicalPath = keystoreFile.getCanonicalPath();
+            if (canonicalPath.contains("..")) {
+                throw new IllegalArgumentException("Invalid keystore path: path traversal detected");
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid keystore path: " + e.getMessage(), e);
+        }
         if (tc.isEntryEnabled()) {
             Tr.entry(tc, "loadKeysFromKeystore", keystoreFile.getAbsolutePath());
         }
@@ -142,7 +195,7 @@ public class LTPAKeystoreManager {
             // Retrieve secret key
             SecretKey secretKey = (SecretKey) keystore.getKey(SECRET_KEY_ALIAS, password);
             if (secretKey == null) {
-                throw new Exception("Secret key not found in keystore with alias: " + SECRET_KEY_ALIAS);
+                throw new LTPAKeystoreException("Secret key not found in keystore with alias: " + SECRET_KEY_ALIAS);
             }
             byte[] secretKeyBytes = secretKey.getEncoded();
 
@@ -153,7 +206,7 @@ public class LTPAKeystoreManager {
             // Retrieve private key (stored as a SecretKey entry)
             SecretKey privateKeyAsSecret = (SecretKey) keystore.getKey(PRIVATE_KEY_ALIAS, password);
             if (privateKeyAsSecret == null) {
-                throw new Exception("Private key not found in keystore with alias: " + PRIVATE_KEY_ALIAS);
+                throw new LTPAKeystoreException("Private key not found in keystore with alias: " + PRIVATE_KEY_ALIAS);
             }
             byte[] privateKeyBytes = privateKeyAsSecret.getEncoded();
 
@@ -164,7 +217,7 @@ public class LTPAKeystoreManager {
             // Retrieve public key (stored as a SecretKey entry)
             SecretKey publicKeyAsSecret = (SecretKey) keystore.getKey(PUBLIC_KEY_ALIAS, password);
             if (publicKeyAsSecret == null) {
-                throw new Exception("Public key not found in keystore with alias: " + PUBLIC_KEY_ALIAS);
+                throw new LTPAKeystoreException("Public key not found in keystore with alias: " + PUBLIC_KEY_ALIAS);
             }
             byte[] publicKeyBytes = publicKeyAsSecret.getEncoded();
 
@@ -184,7 +237,7 @@ public class LTPAKeystoreManager {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Failed to load keys from keystore", e);
             }
-            throw new Exception("Failed to load LTPA keys from keystore: " + e.getMessage(), e);
+            throw new LTPAKeystoreException("Failed to load LTPA keys from keystore: " + e.getMessage(), e);
         }
     }
 
