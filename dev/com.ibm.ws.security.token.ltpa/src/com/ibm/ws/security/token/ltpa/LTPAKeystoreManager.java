@@ -13,21 +13,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.common.crypto.CryptoUtils;
 
 /**
  * Manages LTPA keystore operations for PKCS12 keystores.
@@ -42,8 +39,8 @@ public class LTPAKeystoreManager {
     private static final String PUBLIC_KEY_ALIAS = "ltpaPublicKey";
 
     // Key algorithms
-    private static final String SECRET_KEY_ALGORITHM = "AES"; // Use AES for 24-byte (192-bit) secret key
-    private static final String ASYMMETRIC_KEY_ALGORITHM = "RSA";
+    //private static final String SECRET_KEY_ALGORITHM = "AES"; // Use AES for 24-byte (192-bit) secret key
+    //private static final String ASYMMETRIC_KEY_ALGORITHM = "RSA";
     private static final String KEYSTORE_TYPE = "PKCS12";
 
     /**
@@ -51,8 +48,8 @@ public class LTPAKeystoreManager {
      * Stores secret key using AES algorithm and private key with NULL certificate chain.
      *
      * @param keystoreFile The keystore file to create
-     * @param password The keystore password
-     * @param ltpaKeys The LTPA keys to store
+     * @param password     The keystore password
+     * @param ltpaKeys     The LTPA keys to store
      * @throws Exception if keystore creation fails
      */
     public void createKeystore(File keystoreFile, char[] password, LTPAKeys ltpaKeys) throws Exception {
@@ -66,7 +63,7 @@ public class LTPAKeystoreManager {
             keystore.load(null, password);
 
             // Store secret key (24 bytes) as AES-192
-            SecretKey secretKey = new SecretKeySpec(ltpaKeys.getSecretKeyBytes(), SECRET_KEY_ALGORITHM);
+            SecretKey secretKey = new SecretKeySpec(ltpaKeys.getSecretKeyBytes(), CryptoUtils.ENCRYPT_ALGORITHM_AES);
             KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(secretKey);
             KeyStore.PasswordProtection passwordProtection = new KeyStore.PasswordProtection(password);
             keystore.setEntry(SECRET_KEY_ALIAS, secretKeyEntry, passwordProtection);
@@ -76,7 +73,7 @@ public class LTPAKeystoreManager {
             }
 
             // Store private key bytes as AES SecretKey (avoids certificate requirement)
-            SecretKey privateKeyAsSecret = new SecretKeySpec(ltpaKeys.getPrivateKeyBytes(), SECRET_KEY_ALGORITHM);
+            SecretKey privateKeyAsSecret = new SecretKeySpec(ltpaKeys.getPrivateKeyBytes(), CryptoUtils.ENCRYPT_ALGORITHM_AES);
             KeyStore.SecretKeyEntry privateKeyEntry = new KeyStore.SecretKeyEntry(privateKeyAsSecret);
             keystore.setEntry(PRIVATE_KEY_ALIAS, privateKeyEntry, passwordProtection);
 
@@ -85,7 +82,7 @@ public class LTPAKeystoreManager {
             }
 
             // Store public key bytes as AES SecretKey
-            SecretKey publicKeyAsSecret = new SecretKeySpec(ltpaKeys.getPublicKeyBytes(), SECRET_KEY_ALGORITHM);
+            SecretKey publicKeyAsSecret = new SecretKeySpec(ltpaKeys.getPublicKeyBytes(), CryptoUtils.ENCRYPT_ALGORITHM_AES);
             KeyStore.SecretKeyEntry publicKeyEntry = new KeyStore.SecretKeyEntry(publicKeyAsSecret);
             keystore.setEntry(PUBLIC_KEY_ALIAS, publicKeyEntry, passwordProtection);
 
@@ -110,8 +107,7 @@ public class LTPAKeystoreManager {
                 Tr.debug(tc, "Keystore created successfully: " + keystoreFile.getAbsolutePath());
             }
 
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException |
-                 CertificateException e) {
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Failed to create keystore", e);
             }
@@ -127,7 +123,7 @@ public class LTPAKeystoreManager {
      * Load LTPA keys from an existing keystore.
      *
      * @param keystoreFile The keystore file to load from
-     * @param password The keystore password
+     * @param password     The keystore password
      * @return The LTPA keys loaded from the keystore
      * @throws Exception if key loading fails
      */
@@ -184,8 +180,7 @@ public class LTPAKeystoreManager {
 
             return ltpaKeys;
 
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException |
-                 CertificateException | UnrecoverableKeyException e) {
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException e) {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Failed to load keys from keystore", e);
             }
@@ -195,9 +190,9 @@ public class LTPAKeystoreManager {
 
     /**
      * Check if a keystore file exists and is valid.
-     * 
+     *
      * @param keystoreFile The keystore file to check
-     * @param password The keystore password
+     * @param password     The keystore password
      * @return true if the keystore exists and can be loaded
      */
     public boolean isValidKeystore(File keystoreFile, char[] password) {
@@ -211,7 +206,7 @@ public class LTPAKeystoreManager {
                 keystore.load(fis, password);
             }
             // Check if required aliases exist
-            return keystore.containsAlias(SECRET_KEY_ALIAS) && 
+            return keystore.containsAlias(SECRET_KEY_ALIAS) &&
                    keystore.containsAlias(PRIVATE_KEY_ALIAS) &&
                    keystore.containsAlias(PUBLIC_KEY_ALIAS);
         } catch (Exception e) {

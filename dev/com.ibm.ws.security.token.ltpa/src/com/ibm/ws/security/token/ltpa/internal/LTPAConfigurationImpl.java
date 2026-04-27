@@ -213,7 +213,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         updateTrigger = (String) props.get(CFG_KEY_UPDATE_TRIGGER);
 
         // Load keystore configuration
-        keystoreFile = (String) props.get("keystoreFile");
+        keystoreFile = (String) props.get(CFG_KEY_KEYSTORE_FILE);
         keystorePassword = resolvePassword(props, CFG_KEY_KEYSTORE_PASSWORD);
 
         //get all validationKeys elements
@@ -982,7 +982,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         // Validation keys element must have either (fileName + password) OR (keystoreFile + keystorePassword)
         boolean hasKeysFile = properties.get(CFG_KEY_VALIDATION_FILE_NAME) != null && properties.get(CFG_KEY_VALIDATION_PASSWORD) != null;
         boolean hasKeystoreFile = properties.get(CFG_KEY_VALIDATION_KEYSTORE_FILE) != null && properties.get(CFG_KEY_VALIDATION_KEYSTORE_PASSWORD) != null;
-        
+
         if (properties.isEmpty() || (!hasKeysFile && !hasKeystoreFile)) {
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.error(tc, "LTPA_VALIDATION_KEYS_MISSING_ATTR", elementName, printAttrKeys(attrKeys));
