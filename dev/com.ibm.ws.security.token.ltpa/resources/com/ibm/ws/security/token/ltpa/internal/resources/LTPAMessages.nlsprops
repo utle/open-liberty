@@ -98,6 +98,14 @@ LTPA_KEYS_PASSWORD_ERROR.useraction=Configure the keysPassword attribute in the 
 
 LTPA_KEYS_REENCRYPT=CWWKS4119I: The {0} LTPA keys are being re-encrypted by using the ''keystore_password'' environment variable.
 LTPA_KEYS_REENCRYPT.explanation=The LTPA keys are being re-encrypted by using the 'keystore_password' because the default value for the LTPA keysPassword attribute is removed to improve security.
+
+LTPA_BOTH_KEYSFILE_AND_KEYSTORE_CONFIGURED=CWWKS4120E: LTPA configuration error. Both keysFileName and keystoreFile attributes are configured. Only one can be specified.
+LTPA_BOTH_KEYSFILE_AND_KEYSTORE_CONFIGURED.explanation=The LTPA configuration cannot have both a legacy keys file and a keystore file configured at the same time.
+LTPA_BOTH_KEYSFILE_AND_KEYSTORE_CONFIGURED.useraction=Configure either the keysFileName attribute for legacy .keys file format, or the keystoreFile attribute for PKCS12 keystore format, but not both.
+
+LTPA_NEITHER_KEYSFILE_NOR_KEYSTORE_CONFIGURED=CWWKS4121E: LTPA configuration error. Neither keysFileName nor keystoreFile attribute is configured.
+LTPA_NEITHER_KEYSFILE_NOR_KEYSTORE_CONFIGURED.explanation=The LTPA configuration requires either a legacy keys file or a keystore file to be specified.
+LTPA_NEITHER_KEYSFILE_NOR_KEYSTORE_CONFIGURED.useraction=Configure either the keysFileName attribute for legacy .keys file format, or the keystoreFile attribute for PKCS12 keystore format.
 LTPA_KEYS_REENCRYPT.useraction=No action is required.
 
 LTPA_KEYS_REENCRYPT_SUCCESS=CWWKS4120I: Successfully re-encrypted the {0} LTPA keys by using the ''keystore_password'' environment variable.

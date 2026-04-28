@@ -68,10 +68,12 @@ public class LTPAKeystoreManager {
         
         // Validate file path for security (prevent path traversal)
         try {
-            String canonicalPath = keystoreFile.getCanonicalPath();
-            if (canonicalPath.contains("..")) {
+            String originalPath = keystoreFile.getPath();
+            if (originalPath.contains("..")) {
                 throw new IllegalArgumentException("Invalid keystore path: path traversal detected");
             }
+            // Also validate canonical path can be obtained
+            keystoreFile.getCanonicalPath();
         } catch (IOException e) {
             throw new IllegalArgumentException("Invalid keystore path: " + e.getMessage(), e);
         }
@@ -174,10 +176,12 @@ public class LTPAKeystoreManager {
         
         // Validate file path for security (prevent path traversal)
         try {
-            String canonicalPath = keystoreFile.getCanonicalPath();
-            if (canonicalPath.contains("..")) {
+            String originalPath = keystoreFile.getPath();
+            if (originalPath.contains("..")) {
                 throw new IllegalArgumentException("Invalid keystore path: path traversal detected");
             }
+            // Also validate canonical path can be obtained
+            keystoreFile.getCanonicalPath();
         } catch (IOException e) {
             throw new IllegalArgumentException("Invalid keystore path: " + e.getMessage(), e);
         }
@@ -238,6 +242,65 @@ public class LTPAKeystoreManager {
                 Tr.debug(tc, "Failed to load keys from keystore", e);
             }
             throw new LTPAKeystoreException("Failed to load LTPA keys from keystore: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create a timestamped backup of a keys file before conversion.
+     * Backup file format: <original-filename>.backup.<timestamp>
+     * Example: ltpa.keys.backup.20260428-175500
+     *
+     * @param keysFile The keys file to backup
+     * @return The backup file that was created
+     * @throws LTPAKeystoreException if backup creation fails
+     * @throws IllegalArgumentException if keysFile is null or doesn't exist
+     */
+    public File createBackup(File keysFile) throws LTPAKeystoreException {
+        if (keysFile == null) {
+            throw new IllegalArgumentException("Keys file cannot be null");
+        }
+        if (!keysFile.exists()) {
+            throw new IllegalArgumentException("Keys file does not exist: " + keysFile.getAbsolutePath());
+        }
+        if (!keysFile.isFile()) {
+            throw new IllegalArgumentException("Keys file is not a regular file: " + keysFile.getAbsolutePath());
+        }
+
+        if (tc.isEntryEnabled()) {
+            Tr.entry(tc, "createBackup", keysFile.getAbsolutePath());
+        }
+
+        try {
+            // Generate timestamp for backup filename
+            String timestamp = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            
+            // Create backup filename: <original>.backup.<timestamp>
+            String backupFileName = keysFile.getName() + ".backup." + timestamp;
+            File backupFile = new File(keysFile.getParentFile(), backupFileName);
+
+            // Copy original file to backup
+            java.nio.file.Files.copy(keysFile.toPath(), backupFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, "Created backup file: " + backupFile.getAbsolutePath());
+            }
+
+            // Log info message about backup creation
+            Tr.info(tc, "LTPA_KEYS_FILE_BACKED_UP", keysFile.getAbsolutePath(), backupFile.getAbsolutePath());
+
+            if (tc.isEntryEnabled()) {
+                Tr.exit(tc, "createBackup", backupFile.getAbsolutePath());
+            }
+
+            return backupFile;
+
+        } catch (IOException e) {
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, "Failed to create backup", e);
+            }
+            throw new LTPAKeystoreException("Failed to create backup of keys file: " + e.getMessage(), e);
         }
     }
 

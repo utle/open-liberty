@@ -177,4 +177,9 @@ public interface LTPAConfiguration {
      */
     String getKeystorePassword();
 
+    /**
+     * @return whether to use keystore format instead of .keys file
+     */
+    boolean getUseKeystore();
+
 }

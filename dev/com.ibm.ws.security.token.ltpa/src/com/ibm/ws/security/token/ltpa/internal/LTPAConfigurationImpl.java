@@ -94,6 +94,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private String keystoreFile;
     @Sensitive
     private String keystorePassword;
+    private boolean useKeystore;
     private LTPAFileMonitor ltpaFileMonitor;
     private ServiceRegistration<FileMonitor> ltpaFileMonitorRegistration;
     private final ReentrantReadWriteLock reentrantReadWriteLock = new ReentrantReadWriteLock();;
@@ -202,7 +203,18 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     @Sensitive
     private void loadConfig(Map<String, Object> props) {
         primaryKeyImportFile = (String) props.get(CFG_KEY_IMPORT_FILE);
+        keystoreFile = (String) props.get(CFG_KEY_KEYSTORE_FILE);
+        
+        // Read useKeystore attribute (defaults to false for backward compatibility)
+        Boolean useKeystoreObj = (Boolean) props.get(CFG_KEY_USE_KEYSTORE);
+        useKeystore = (useKeystoreObj != null) ? useKeystoreObj.booleanValue() : false;
+
+        // Resolve password - same password is used for both keys file and keystore
         primaryKeyPassword = resolvePassword(props, CFG_KEY_PASSWORD);
+        keystorePassword = resolveKeystorePassword(props);
+        if (keystorePassword == null && primaryKeyPassword != null)
+            keystorePassword = primaryKeyPassword; // Keystore uses the same password
+
         keyTokenExpiration = (Long) props.get(CFG_KEY_TOKEN_EXPIRATION);
         monitorInterval = (Long) props.get(CFG_KEY_MONITOR_INTERVAL);
         authFilterRef = (String) props.get(KEY_AUTH_FILTER_REF);
@@ -211,10 +223,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         expirationDifferenceAllowed = (Long) props.get(KEY_EXP_DIFF_ALLOWED);
         monitorValidationKeysDir = (Boolean) props.get(CFG_KEY_MONITOR_VALIDATION_KEYS_DIR);
         updateTrigger = (String) props.get(CFG_KEY_UPDATE_TRIGGER);
-
-        // Load keystore configuration
-        keystoreFile = (String) props.get(CFG_KEY_KEYSTORE_FILE);
-        keystorePassword = resolvePassword(props, CFG_KEY_KEYSTORE_PASSWORD);
 
         //get all validationKeys elements
         Map<String, List<Map<String, Object>>> validationKeysElements = Nester.nest(props, CFG_KEY_VALIDATION_KEYS);
@@ -275,36 +283,36 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         throw new IllegalArgumentException(formattedMessage);
     }
 
-//    @Sensitive
-//    private String resolveKeystorePassword(Map<String, Object> props) {
+    @Sensitive
+    private String resolveKeystorePassword(Map<String, Object> props) {
 //        return resolvePassword(props, CFG_KEY_KEYSTORE_PASSWORD);
-//        Object passwordObj = props.get(CFG_KEY_KEYSTORE_PASSWORD);
-//        String ksPassword = null;
-//
-//        if (passwordObj instanceof SerializableProtectedString) {
-//            SerializableProtectedString sps = (SerializableProtectedString) passwordObj;
-//            ksPassword = new String(sps.getChars());
-//        } else if (passwordObj instanceof String) {
-//            ksPassword = (String) passwordObj;
-//        }
-//
-//        if (ksPassword != null && !ksPassword.isEmpty()) {
-//            return ksPassword;
-//        }
-//
-//        // Fall back to keystore_password environment variable
-//        String keystorePasswordEnv = System.getenv("keystore_password");
-//        if (keystorePasswordEnv != null && !keystorePasswordEnv.isEmpty()) {
-//            return keystorePasswordEnv;
-//        }
-//
-//        // Fall back to primary key password if no keystore password provided
-//        if (primaryKeyPassword != null) {
-//            return primaryKeyPassword;
-//        }
-//
-//        return null;
-//    }
+        Object passwordObj = props.get(CFG_KEY_KEYSTORE_PASSWORD);
+        String ksPassword = null;
+
+        if (passwordObj instanceof SerializableProtectedString) {
+            SerializableProtectedString sps = (SerializableProtectedString) passwordObj;
+            ksPassword = new String(sps.getChars());
+        } else if (passwordObj instanceof String) {
+            ksPassword = (String) passwordObj;
+        }
+
+        if (ksPassword != null && !ksPassword.isEmpty()) {
+            return ksPassword;
+        }
+
+        // Fall back to keystore_password environment variable
+        String keystorePasswordEnv = System.getenv("keystore_password");
+        if (keystorePasswordEnv != null && !keystorePasswordEnv.isEmpty()) {
+            return keystorePasswordEnv;
+        }
+
+        // Fall back to primary key password if no keystore password provided
+        if (primaryKeyPassword != null) {
+            return primaryKeyPassword;
+        }
+
+        return null;
+    }
 
     /**
      *
@@ -460,10 +468,15 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
 
     private void resolveActualPrimaryKeysFileLocation() {
-        // If keystoreFile is specified, use it as the primary key import file
-        if (keystoreFile != null) {
+        // Determine which file to use based on useKeystore attribute
+        if (useKeystore) {
+            // Use keystore format (.p12)
             primaryKeyImportFile = keystoreFile;
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "useKeystore=true, using keystore file: " + keystoreFile);
+            }
         } else if (isInDefaultOutputLocation()) {
+            // Use legacy keys format (.keys) - check if keys file exists in config location
             WsResource keysFileInServerConfig = locationService.getServiceWithException().resolveResource(DEFAULT_CONFIG_LOCATION);
             if (keysFileInServerConfig != null && keysFileInServerConfig.exists()) {
                 String expandedKeysFileInServerConfig = locationService.getServiceWithException().resolveString(DEFAULT_CONFIG_LOCATION);
@@ -918,6 +931,12 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     @Override
     public String getKeystorePassword() {
         return keystorePassword;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean getUseKeystore() {
+        return useKeystore;
     }
 
     /*
