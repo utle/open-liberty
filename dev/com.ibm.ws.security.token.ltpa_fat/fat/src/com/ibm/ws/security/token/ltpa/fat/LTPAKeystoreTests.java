@@ -63,6 +63,7 @@ public class LTPAKeystoreTests {
     private static final String DEFAULT_SERVER_XML = "server.xml";
     private static final String KEYSTORE_SERVER_XML = "keystoreServer.xml";
     private static final String AUTO_CONVERT_SERVER_XML = "autoConvertServer.xml";
+    private static final String USE_KEYSTORE_SERVER_XML = "useKeystoreServer.xml";
 
     // Key file paths
     private static final String LTPA_KEYS_FILE = "resources/security/ltpa.keys";
@@ -324,13 +325,121 @@ public class LTPAKeystoreTests {
     }
 
     /**
-     * Helper method to clean up keystore files.
+     * Test useKeystore attribute with automatic conversion and backup.
+     * Verifies that when useKeystore=true, the .keys file is converted to .p12
+     * and a timestamped backup is created.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testUseKeystoreAttribute_AutoConversionWithBackup() throws Exception {
+        Log.info(thisClass, testName.getMethodName(), "Testing useKeystore attribute with backup");
+
+        // Ensure .keys file exists and .p12 does not
+        String keysPath = server.getServerRoot() + "/" + LTPA_KEYS_FILE;
+        String keystorePath = server.getServerRoot() + "/" + LTPA_KEYSTORE_FILE;
+        
+        File keysFile = new File(keysPath);
+        File keystoreFile = new File(keystorePath);
+        
+        assertTrue(".keys file should exist before test", keysFile.exists());
+        if (keystoreFile.exists()) {
+            keystoreFile.delete();
+        }
+
+        // Configure server with useKeystore=true
+        server.setServerConfigurationFile(USE_KEYSTORE_SERVER_XML);
+        server.startServer(testName.getMethodName() + ".log");
+
+        // Verify server started
+        assertNotNull("Server should start", server.waitForStringInLog("CWWKF0011I"));
+
+        // Verify LTPA keystore was created
+        assertNotNull("Should log keystore creation",
+                     server.waitForStringInLog("CWWKS4105I"));
+
+        // Verify keystore file was created
+        assertTrue("Keystore file should be created: " + keystorePath,
+                  keystoreFile.exists());
+        assertTrue("Keystore file should not be empty", keystoreFile.length() > 0);
+
+        // Verify original .keys file still exists
+        assertTrue(".keys file should still exist", keysFile.exists());
+
+        // Verify backup file was created (look for .backup. in filename)
+        File securityDir = keysFile.getParentFile();
+        File[] backupFiles = securityDir.listFiles((dir, name) ->
+            name.startsWith("ltpa.keys.backup."));
+        
+        assertNotNull("Should find backup files", backupFiles);
+        assertTrue("Should have at least one backup file", backupFiles.length > 0);
+        
+        // Verify backup file has timestamp format (yyyyMMdd-HHmmss)
+        String backupName = backupFiles[0].getName();
+        assertTrue("Backup should have timestamp: " + backupName,
+                  backupName.matches("ltpa\\.keys\\.backup\\.\\d{8}-\\d{6}"));
+
+        // Test authentication works with converted keystore
+        String response = flClient.accessProtectedServletWithAuthorizedCredentials(
+            "/formlogin/SimpleServlet", validUser, validPassword);
+        assertTrue("Should successfully authenticate with converted keystore",
+                  response.contains("SimpleServlet"));
+        
+        Log.info(thisClass, testName.getMethodName(),
+                "Successfully verified useKeystore attribute with backup: " + backupName);
+    }
+
+    /**
+     * Test that useKeystore=false (default) maintains backward compatibility.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testUseKeystoreFalse_BackwardCompatibility() throws Exception {
+        Log.info(thisClass, testName.getMethodName(), "Testing useKeystore=false backward compatibility");
+
+        // Use default server.xml which has useKeystore not set (defaults to false)
+        server.setServerConfigurationFile(DEFAULT_SERVER_XML);
+        server.startServer(testName.getMethodName() + ".log");
+
+        // Verify server started
+        assertNotNull("Server should start", server.waitForStringInLog("CWWKF0011I"));
+        assertNotNull("LTPA should be ready", server.waitForStringInLog("CWWKS4105I"));
+
+        // Verify .keys file is used (not .p12)
+        String keysPath = server.getServerRoot() + "/" + LTPA_KEYS_FILE;
+        File keysFile = new File(keysPath);
+        assertTrue(".keys file should be used", keysFile.exists());
+
+        // Test authentication works with .keys file
+        String response = flClient.accessProtectedServletWithAuthorizedCredentials(
+            "/formlogin/SimpleServlet", validUser, validPassword);
+        assertTrue("Should successfully authenticate with .keys file",
+                  response.contains("SimpleServlet"));
+    }
+
+    /**
+     * Helper method to clean up keystore files and backups.
      */
     private static void cleanupKeystoreFiles() throws Exception {
         String keystorePath = server.getServerRoot() + "/" + LTPA_KEYSTORE_FILE;
         File keystoreFile = new File(keystorePath);
         if (keystoreFile.exists()) {
             keystoreFile.delete();
+        }
+        
+        // Clean up backup files
+        String keysPath = server.getServerRoot() + "/" + LTPA_KEYS_FILE;
+        File keysFile = new File(keysPath);
+        if (keysFile.exists()) {
+            File securityDir = keysFile.getParentFile();
+            File[] backupFiles = securityDir.listFiles((dir, name) ->
+                name.startsWith("ltpa.keys.backup."));
+            if (backupFiles != null) {
+                for (File backup : backupFiles) {
+                    backup.delete();
+                }
+            }
         }
     }
 
