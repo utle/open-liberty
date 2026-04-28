@@ -25,7 +25,7 @@ Container class for LTPA cryptographic keys with validation methods.
 Complete keystore operations manager with:
 - Primary keystore operations (standard aliases)
 - Validation keystore operations (indexed aliases)
-- Auto-migration support
+- Auto-migration supporty
 - PKCS12 validation
 - Integration with Liberty's KeyStoreService
 
