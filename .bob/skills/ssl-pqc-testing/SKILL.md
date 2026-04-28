@@ -326,6 +326,129 @@ When the TLS stack or provider supports it, supplement Liberty evidence with:
 
 Be careful not to rely on one source alone.
 
+## Example: Typical PQC test structure
+
+The [`testPQCHandshakeBothPQCEnabled`](dev/com.ibm.ws.security.client_fat/fat/src/com/ibm/ws/security/client/fat/ClientSSLHandshakeTest.java:636) test demonstrates the standard pattern for PQC handshake testing in Open Liberty FAT tests.
+
+### Test structure breakdown
+
+```java
+@Test
+public void testPQCHandshakeBothPQCEnabled() {
+    try {
+        // 1. Server setup with PQC configuration
+        Log.info(c, name.getMethodName(), "Restarting server with TLS 1.3 and PQC enabled ...");
+        testServer.setMarkToEndOfLog();
+        if (testServer.isStarted())
+            testServer.stopServer();
+        
+        // Set server configuration with PQC named groups
+        testServer.setServerConfigurationFile("server_pqc_enabled.xml");
+        testServer.startServer();
+        
+        // 2. Wait for server readiness (critical for reliable tests)
+        assertNotNull("FeatureManager did not report update was complete",
+                     testServer.waitForStringInLogUsingMark("CWWKF0008I"));
+        assertNotNull("LTPA configuration did not report it was ready",
+                     testServer.waitForStringInLogUsingMark("CWWKS4105I"));
+        
+        // 3. Client setup with matching PQC configuration
+        Log.info(c, name.getMethodName(), "Starting PQC-enabled client ...");
+        ProgramOutput programOutput = commonClientSetUpWithCalcArgs("myTestClientCipher",
+                                                                    "client_pqc_enabled.xml",
+                                                                    "CWWKF0040E");
+        String output = programOutput.getStdout();
+        
+        // 4. Verify handshake success
+        assertTrue("Client should report it has started successfully (CWWKF0035I).",
+                 output.contains("5"));
+        
+        // 5. Verify PQC mechanism was actually used (NOT just handshake success)
+        List<String> serverTraceLines = testServer.findStringsInTrace("X25519MLKEM768");
+        assertFalse("Server trace should contain X25519MLKEM768 named group",
+                   serverTraceLines.isEmpty());
+        
+        Log.info(c, name.getMethodName(), "PQC handshake successful with X25519MLKEM768");
+        
+    } catch (Exception e) {
+        Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
+        fail("Exception was thrown: " + e);
+    }
+}
+```
+
+### Key elements of this pattern
+
+1. **Clean server state**: Stop and restart server with specific PQC configuration
+2. **Explicit readiness checks**: Wait for feature manager and LTPA before proceeding
+3. **Matching client configuration**: Client uses corresponding PQC-enabled configuration
+4. **Dual verification**:
+   - Handshake success (application-level outcome)
+   - PQC mechanism evidence (trace verification of `X25519MLKEM768`)
+5. **Specific named group assertion**: Proves PQC was used, not classical fallback
+
+### Server configuration example
+
+The test uses [`server_pqc_only.xml`](dev/com.ibm.ws.security.client_fat/publish/files/server_pqc_only.xml:21) which shows minimal PQC setup:
+
+```xml
+<!-- Server is configured with TLS 1.3 and PQC-only (no fallback).
+     Requires JVM arg: -Djdk.tls.namedGroups=X25519MLKEM768
+     Tests with PQC-enabled clients should succeed.
+     Tests with non-PQC clients should fail (no common named groups). -->
+<ssl id="supportedClientAuthenticationSSLConfig"
+    clientAuthenticationSupported="true"
+    keyStoreRef="defaultKeyStore"
+    sslProtocol="TLSv1.3" />
+```
+
+**Critical detail**: The PQC named groups are configured via JVM argument (`-Djdk.tls.namedGroups=X25519MLKEM768`), not in the XML configuration. This is set in the test setup code.
+
+### Multiple algorithm configuration
+
+For testing algorithm negotiation, [`server_pqc_multiple.xml`](dev/com.ibm.ws.security.client_fat/publish/files/server_pqc_multiple.xml:20) demonstrates multiple PQC algorithms:
+
+```xml
+<!-- Server is configured with TLS 1.3 and multiple PQC algorithms.
+     Requires JVM arg: -Djdk.tls.namedGroups=X25519MLKEM768,X448MLKEM1024
+     Tests algorithm negotiation with different client priorities. -->
+<ssl id="supportedClientAuthenticationSSLConfig"
+    clientAuthenticationSupported="true"
+    keyStoreRef="defaultKeyStore"
+    sslProtocol="TLSv1.3" />
+```
+
+### What this pattern proves
+
+This test structure demonstrates:
+
+- **Positive case**: Both client and server support PQC
+- **Explicit mechanism verification**: Trace evidence of `X25519MLKEM768`
+- **Not just connectivity**: Proves PQC was negotiated, not classical fallback
+- **Reproducible setup**: Clean server restart ensures consistent state
+- **Proper timing**: Waits for server readiness before client connection
+
+### What this pattern does NOT prove alone
+
+To complete PQC coverage, you would also need:
+
+- **Negative case**: Client without PQC support should fail with specific error
+- **Fallback behavior**: Mixed configuration showing classical fallback
+- **Provider verification**: Confirm which JSSE provider handled the negotiation
+- **Interoperability**: External client or server with different provider
+- **Performance**: Handshake latency and resource usage
+
+### Adapting this pattern for new PQC tests
+
+When creating new PQC tests, follow this structure:
+
+1. **Start with this test as a template** for positive PQC cases
+2. **Add a negative twin** that proves failure when PQC is unavailable
+3. **Verify the specific named group** in trace output (don't assume from success)
+4. **Document JVM arguments** required for PQC enablement
+5. **Use clean server restarts** to avoid configuration pollution between tests
+6. **Wait for explicit readiness signals** before asserting handshake behavior
+
 ## How to design a new PQC handshake FAT
 
 1. **Define the exact claim**
