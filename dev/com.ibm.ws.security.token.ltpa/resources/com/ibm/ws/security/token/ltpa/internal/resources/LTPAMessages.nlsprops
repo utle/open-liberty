@@ -108,10 +108,6 @@ LTPA_KEYS_REENCRYPT_ERROR=CWWKS4121E: Failed to re-encrypt the {0} LTPA keys. Ex
 LTPA_KEYS_REENCRYPT_ERROR.explanation=The LTPA keys could not be re-encrypted. For more information, see the exception in the message.
 LTPA_KEYS_REENCRYPT_ERROR.useraction=Ensure that the LTPA keys file and its directory are not read-only. If the LTPA keys file and its directory are not read-only, then see the exception in the message for more information.
 
-LTPA_MAX_LIFETIME_MUST_BE_GREATER_THAN_EXPIRATION=CWWKS4122W: The LTPA maxLifetime value ({0} ms) must be greater than the expiration value ({1} ms) to allow token refresh. The maxLifetime value is automatically adjusted to {0} ms.
-LTPA_MAX_LIFETIME_MUST_BE_GREATER_THAN_EXPIRATION.explanation=The maxLifetime attribute defines the maximum absolute lifetime of an LTPA token. For token refresh to work properly, the maxLifetime value must be greater than the expiration value.
-LTPA_MAX_LIFETIME_MUST_BE_GREATER_THAN_EXPIRATION.useraction=Update the LTPA configuration in the server.xml file to set the maxLifetime attribute to a value that is greater than the expiration attribute value.
-
-LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_EXPIRATION=CWWKS4123W: The LTPA refreshThreshold value ({0} ms) must be less than the expiration value ({1} ms) to allow token refresh. The refreshThreshold value is automatically adjusted to {0} ms.
-LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_EXPIRATION.explanation=The refreshThreshold attribute defines when a token should be refreshed before it expires. For token refresh to work properly, the refreshThreshold value must be less than the expiration value.
-LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_EXPIRATION.useraction=Update the LTPA configuration in the server.xml file to set the refreshThreshold attribute to a
+LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_INACTIVITY_TIMEOUT=CWWKS4123W: The LTPA refreshThreshold value ({0} minutes) must be less than the inactivityTimeout value ({1} minutes). The refreshThreshold value has been automatically adjusted to {2} minutes.
+LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_INACTIVITY_TIMEOUT.explanation=The refreshThreshold attribute specifies how early before the inactivity expiry a token should be proactively refreshed. For proactive refresh to work, refreshThreshold must be less than inactivityTimeout.
+LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_INACTIVITY_TIMEOUT.useraction=Update the LTPA configuration in the server.xml file to set the refreshThreshold attribute to a value less than the inactivityTimeout attribute.

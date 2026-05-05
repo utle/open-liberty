@@ -137,7 +137,7 @@ public class LTPAConfigurationImplTest {
     }
 
     private Map<String, Object> createProps(String filePath, String password, long expiration, long monitorInterval, boolean monitorValidationKeysDir, String updateTrigger,
-                                            long expDiffAllowed, long maxLifetime, long refreshThreshold, String validationKey, String validationKeyFileName, String validationKeyPassword,
+                                            long expDiffAllowed, long inactivityTimeout, long refreshThreshold, String validationKey, String validationKeyFileName, String validationKeyPassword,
                                             String validationKeyValidUntilDate) {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put(LTPAConfiguration.CFG_KEY_IMPORT_FILE, filePath);
@@ -147,7 +147,7 @@ public class LTPAConfigurationImplTest {
         props.put(LTPAConfiguration.CFG_KEY_MONITOR_VALIDATION_KEYS_DIR, monitorValidationKeysDir);
         props.put(LTPAConfiguration.CFG_KEY_UPDATE_TRIGGER, updateTrigger);
         props.put(LTPAConfigurationImpl.KEY_EXP_DIFF_ALLOWED, expDiffAllowed);
-        props.put(LTPAConfiguration.CFG_KEY_TOKEN_MAX_LIFE_TIME, maxLifetime);
+        props.put(LTPAConfiguration.CFG_KEY_INACTIVITY_TIMEOUT, 60L);
         props.put(LTPAConfiguration.CFG_KEY_TOKEN_REFRESH_THRESHOLD, refreshThreshold);
 
         // Create one validation key in props

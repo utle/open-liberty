@@ -65,7 +65,7 @@ public class LTPATokenRefreshTest {
     private static LibertyServer server;
 
     // Timing constants for token refresh tests
-    // Configuration: expiration=3m, refreshThreshold=1m, maxLifetime=4m
+    // Configuration: expiration=3m, refreshThreshold=1m, inactivityTimeout=4m
     private static final long REFRESH_THRESHOLD_WAIT_MS = 130000;  // 130 seconds (2m 10s) - wait past 1m threshold
     private static final long SHORT_EXPIRATION_WAIT_MS = 70000;    // 70 seconds (1m 10s) - for short expiration tests
     private static final long REQUEST_INTERVAL_MS = 5000;          // 5 seconds - interval between requests
@@ -88,8 +88,7 @@ public class LTPATokenRefreshTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         // Skip tests if not running beta edition
-        org.junit.Assume.assumeTrue("LTPA token refresh is only available in beta edition",
-                                     Utils.getInstallDir(null).resolve("lib/versions/openliberty.properties").toFile().exists() &&
+        org.junit.Assume.assumeTrue(Utils.getInstallDir().toPath().resolve("lib/versions/openliberty.properties").toFile().exists() &&
                                      Boolean.getBoolean("com.ibm.ws.beta.edition"));
         
         server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.refresh");

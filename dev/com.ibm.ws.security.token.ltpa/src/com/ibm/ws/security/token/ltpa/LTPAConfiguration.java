@@ -40,7 +40,8 @@ public interface LTPAConfiguration {
 
     public static final String CFG_KEY_TOKEN_REFRESH_THRESHOLD = "refreshThreshold";
 
-    public static final String CFG_KEY_TOKEN_MAX_LIFE_TIME = "maxLifetime";
+    public static final String CFG_KEY_INACTIVITY_TIMEOUT = "inactivityTimeout";
+
     /**
      * The token keys file's monitor interval.
      */
@@ -116,15 +117,6 @@ public interface LTPAConfiguration {
     long getTokenExpiration();
 
     /**
-     * Returns the maximum lifetime for LTPA tokens in minutes.
-     * This is a beta feature and is only available when running in beta mode.
-     *
-     * @return max life time in minutes
-     * @ibm-api
-     */
-    long getMaxLifetime();
-
-    /**
      * Returns the refresh threshold for LTPA tokens in minutes.
      * When a token's remaining lifetime falls below this threshold, it will be refreshed.
      * This is a beta feature and is only available when running in beta mode.
@@ -133,6 +125,19 @@ public interface LTPAConfiguration {
      * @ibm-api
      */
     long getRefreshThreshold();
+
+    /**
+     * Returns the inactivity timeout for LTPA tokens in minutes.
+     * The token expires after this period of inactivity. When the remaining time
+     * until inactivity expiration falls below the refresh threshold, a new token
+     * is created with a fresh inactivity window, but the absolute expiration time
+     * from the original token is preserved.
+     * This is a beta feature and is only available when running in beta mode.
+     *
+     * @return inactivity timeout in minutes, or 0 if disabled
+     * @ibm-api
+     */
+    long getInactivityTimeout();
 
     /**
      * @return authFiler reference

@@ -78,8 +78,10 @@ public class AttributeNameConstants {
 
     // The expiration time of the token, added to the signed part of the token.
     public static final String WSTOKEN_EXPIRATION = "expire";
-    // The max life time of the token.
-    public static final String WSTOKEN_MAX_LIFE_TIME = "maxLifetime";
+    // The creation time of the token in milliseconds since epoch.
+    // Used to track when the current token instance was created (updated on refresh).
+    // Combined with inactivityTimeout configuration to calculate inactivity expiration.
+    public static final String WSTOKEN_CREATION_TIME = "creationTime";
 
     // PropagationToken attributes
     // append each new caller at the end with | delimiter

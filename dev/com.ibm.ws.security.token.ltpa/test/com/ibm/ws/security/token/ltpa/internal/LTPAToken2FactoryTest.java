@@ -78,7 +78,7 @@ public class LTPAToken2FactoryTest {
     private Map<String, Object> createTestTokenFactoryMap() {
         long expectedExpirationLimit = 120;
         long expDiffAllowed = 0;
-        long maxLifetime = 240; // 4 hours
+        long inactivityTimeout = 60; // 60 minutes
         long refreshThreshold = 30; // 30 minutes
         Map<String, Object> tokenFactoryMap = new HashMap<String, Object>();
         tokenFactoryMap.put("expiration", expectedExpirationLimit);
@@ -86,7 +86,7 @@ public class LTPAToken2FactoryTest {
         tokenFactoryMap.put("primary_ltpa_public_key", ltpaPublicKey);
         tokenFactoryMap.put("primary_ltpa_private_key", ltpaPrivateKey);
         tokenFactoryMap.put("expirationDifferenceAllowed", expDiffAllowed);
-        tokenFactoryMap.put("maxLifetime", maxLifetime);
+        tokenFactoryMap.put("inactivityTimeout", inactivityTimeout);
         tokenFactoryMap.put("refreshThreshold", refreshThreshold);
 
         return tokenFactoryMap;
@@ -177,13 +177,13 @@ public class LTPAToken2FactoryTest {
     }
 
     @Test
-    public void testInitializeSetsMaxLifetime() throws Exception {
-        long expectedMaxLifetime = (Long) tokenFactoryMap.get("maxLifetime");
-        Field maxLifetimeField = LTPAToken2Factory.class.getDeclaredField("maxLifetimeInMinutes");
-        maxLifetimeField.setAccessible(true);
-        long actualMaxLifetime = maxLifetimeField.getLong(tokenFactory);
+    public void testInitializeSetsInactivityTimeout() throws Exception {
+        long expectedInactivityTimeout = (Long) tokenFactoryMap.get("inactivityTimeout");
+        Field inactivityTimeoutField = LTPAToken2Factory.class.getDeclaredField("inactivityTimeoutInMinutes");
+        inactivityTimeoutField.setAccessible(true);
+        long actualInactivityTimeout = inactivityTimeoutField.getLong(tokenFactory);
 
-        assertEquals("The max lifetime must be equals to the expected max lifetime.", expectedMaxLifetime, actualMaxLifetime);
+        assertEquals("The inactivity timeout must be equals to the expected inactivity timeout.", expectedInactivityTimeout, actualInactivityTimeout);
     }
 
     @Test

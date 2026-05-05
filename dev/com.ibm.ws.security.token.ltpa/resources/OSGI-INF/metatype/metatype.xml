@@ -28,8 +28,8 @@
         <AD id="refreshThreshold"  name="%refreshThreshold" description="%refreshThreshold.desc"
             required="false" type="String" ibm:type="duration(m)"
             ibm:beta="true" />
-        <AD id="maxLifetime"  name="%maxLifetime" description="%maxLifetime.desc"
-        	required="false" type="String" ibm:type="duration(m)"
+        <AD id="inactivityTimeout"  name="%inactivityTimeout" description="%inactivityTimeout.desc"
+            required="false" type="String" ibm:type="duration(m)"
             ibm:beta="true" />
         <AD id="monitorInterval" name="%ltpa.monitorInterval" description="%ltpa.monitorInterval.desc"
             required="false" type="String" ibm:type="duration" 

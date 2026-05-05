@@ -142,7 +142,7 @@ public class SSOAuthenticator implements WebAuthenticator {
         byte[] originalTokenBytes = getOriginalLtpaTokenBytesFromRequest(req);
         byte[] newTokenBytes = getNewLtpaTokenBytesFromSubject(subject);
 
-        boolean tokenRefreshed = areTokensDifferent(originalTokenBytes, newTokenBytes);
+        boolean tokenRefreshed = hasTokenBeenRefreshed(originalTokenBytes, newTokenBytes);
 
         if (!tokenRefreshed && isDebugEnabled()) {
             Tr.debug(tc, "LTPA token was not refreshed, skipping cookie update");
@@ -213,13 +213,14 @@ public class SSOAuthenticator implements WebAuthenticator {
     }
 
     /**
-     * Check if two token byte arrays are different.
+     * Returns {@code true} if the two token byte arrays differ, indicating that
+     * the LTPA token was refreshed (cloned) during this request.
      *
-     * @param originalTokenBytes the original LTPA token bytes from the request
-     * @param newTokenBytes the new LTPA token bytes from the authenticated subject
-     * @return true if the tokens are different (token was refreshed), false otherwise
+     * @param originalTokenBytes the original LTPA token bytes from the request cookie
+     * @param newTokenBytes      the new LTPA token bytes from the authenticated subject
+     * @return true if the bytes changed (token was refreshed), false otherwise
      */
-    private boolean areTokensDifferent(byte[] originalTokenBytes, byte[] newTokenBytes) {
+    private boolean hasTokenBeenRefreshed(byte[] originalTokenBytes, byte[] newTokenBytes) {
         // If either token is null or empty, consider it not refreshed
         if (originalTokenBytes == null || newTokenBytes == null ||
             originalTokenBytes.length == 0 || newTokenBytes.length == 0) {

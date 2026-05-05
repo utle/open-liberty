@@ -92,7 +92,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private boolean tryToReEncryptLtpaKeys;
     private long keyTokenExpiration;
     private long refreshThreshold;
-    private long keyTokenMaxLifetime;
+    private long inactivityTimeout;
     private long monitorInterval;
     private LTPAFileMonitor ltpaFileMonitor;
     private ServiceRegistration<FileMonitor> ltpaFileMonitorRegistration;
@@ -171,7 +171,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     protected void modified(Map<String, Object> props) {
         String oldKeyImportFile = primaryKeyImportFile;
         Long oldKeyTokenExpiration = keyTokenExpiration;
-        Long oldKeyTokenMaxLifetime = keyTokenMaxLifetime;
         Long oldRefreshThreshold = refreshThreshold;
         Long oldMonitorInterval = monitorInterval;
         Long oldExpirationDifferenceAllowed = expirationDifferenceAllowed;
@@ -187,7 +186,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         try {
             loadConfig(props);
 
-            if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldKeyTokenMaxLifetime, oldRefreshThreshold, oldExpirationDifferenceAllowed,
+            if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldRefreshThreshold, oldExpirationDifferenceAllowed,
                                     oldMonitorValidationKeysDir, oldUpdateTrigger, oldValidationKeys)) {
                 unsetFileMonitorRegistration();
                 Tr.audit(tc, "LTPA_KEYS_TO_LOAD", primaryKeyImportFile);
@@ -208,47 +207,37 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         primaryKeyPassword = resolvePrimaryKeyPassword(props);
         keyTokenExpiration = (Long) props.get(CFG_KEY_TOKEN_EXPIRATION);
         
-        // Beta guard: refreshThreshold and maxLifetime are only available in beta edition
+        // Beta guard: refreshThreshold and inactivityTimeout are only available in beta edition
         if (ProductInfo.getBetaEdition()) {
-            keyTokenMaxLifetime = (Long) props.get(CFG_KEY_TOKEN_MAX_LIFE_TIME);
-            refreshThreshold = (Long) props.get(CFG_KEY_TOKEN_REFRESH_THRESHOLD);
+            Long refreshThresholdValue = (Long) props.get(CFG_KEY_TOKEN_REFRESH_THRESHOLD);
+            refreshThreshold = (refreshThresholdValue != null) ? refreshThresholdValue : 0L;
+            
+            Long inactivityTimeoutValue = (Long) props.get(CFG_KEY_INACTIVITY_TIMEOUT);
+            inactivityTimeout = (inactivityTimeoutValue != null) ? inactivityTimeoutValue : 0L;
+            
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                Tr.debug(tc, "refreshThreshold: " + refreshThreshold + " minutes");
+                Tr.debug(tc, "inactivityTimeout: " + inactivityTimeout + " minutes");
+            }
+            
+            // Validate that refreshThreshold is less than inactivityTimeout (if both configured)
+            if (inactivityTimeout > 0 && refreshThreshold > 0 && refreshThreshold >= inactivityTimeout) {
+                long adjustedThreshold = inactivityTimeout / 3;
+                Tr.warning(tc, "LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_INACTIVITY_TIMEOUT", refreshThreshold, inactivityTimeout, adjustedThreshold);
+                refreshThreshold = adjustedThreshold;
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
+                    Tr.debug(tc, "Adjusted refreshThreshold to: " + refreshThreshold);
+                }
+            }
         } else {
             // In non-beta mode, set to default values that disable refresh functionality
-            keyTokenMaxLifetime = keyTokenExpiration; // Same as expiration, no refresh
             refreshThreshold = 0L; // No refresh threshold
+            inactivityTimeout = 0L; // No inactivity timeout
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "LTPA token refresh is only available in beta edition. Setting maxLifetime=expiration and refreshThreshold=0");
+                Tr.debug(tc, "LTPA token refresh is only available in beta edition. Setting refreshThreshold=0 and inactivityTimeout=0");
             }
         }
-
-        // Validate that keyTokenMaxLifetime is greater than expiration to allow token refresh
-        if (ProductInfo.getBetaEdition() && keyTokenMaxLifetime <= keyTokenExpiration) {
-            Tr.warning(tc, "LTPA_MAX_LIFETIME_MUST_BE_GREATER_THAN_EXPIRATION", keyTokenMaxLifetime, keyTokenExpiration);
-            // Adjust keyTokenMaxLifetime to be at least 2x the expiration to allow meaningful refresh
-            // Check for potential overflow before multiplication
-            if (keyTokenExpiration > Long.MAX_VALUE / 2) {
-                keyTokenMaxLifetime = Long.MAX_VALUE;
-                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                    Tr.debug(tc, "keyTokenExpiration too large for safe multiplication, setting keyTokenMaxLifetime to Long.MAX_VALUE");
-                }
-            } else {
-                keyTokenMaxLifetime = keyTokenExpiration * 2;
-            }
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Adjusted keyTokenMaxLifetime to: " + keyTokenMaxLifetime);
-            }
-        }
-
-        // Validate that refreshThreshold is less than or equal to expiration
-        if (ProductInfo.getBetaEdition() && refreshThreshold >= keyTokenExpiration) {
-            Tr.warning(tc, "LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_EXPIRATION", refreshThreshold, keyTokenExpiration);
-            // Adjust refreshThreshold to be 1/3 of expiration
-            refreshThreshold = keyTokenExpiration / 3;
-            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-                Tr.debug(tc, "Adjusted refreshThreshold to: " + refreshThreshold);
-            }
-        }
-
+        
         monitorInterval = (Long) props.get(CFG_KEY_MONITOR_INTERVAL);
         authFilterRef = (String) props.get(KEY_AUTH_FILTER_REF);
         // expirationDifferenceAllowed is set to 3 seconds (3000ms) by default.
@@ -323,7 +312,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             StringJoiner sj = new StringJoiner(", ", "debugLTPAConfig[", "]");
             sj.add("primaryKeyImportFile: " + primaryKeyImportFile);
             sj.add("keyTokenExpiration: " + keyTokenExpiration);
-            sj.add("keyTokenMaxLifetime: " + keyTokenMaxLifetime);
             sj.add("refreshThreshold: " + refreshThreshold);
             sj.add("monitorInterval: " + monitorInterval);
             sj.add("authFilterRef: " + authFilterRef);
@@ -677,25 +665,23 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
 
     /**
-     * The keys config is changed if the file, expiration, maxLifetime, refreshThreshold, expirationDifferenceAllowed,
+     * The keys config is changed if the file, expiration, refreshThreshold, expirationDifferenceAllowed,
      * monitorValidationKeysDir, updateTrigger or validationKeys configured were modified.
      * Changing the password by itself must not be considered a config change that should trigger a keys reload.
      *
      * @param oldKeyImportFile
      * @param oldKeyTokenExpiration
-     * @param oldKeyTokenMaxLifetime
      * @param oldRefreshThreshold
      * @param oldExpirationDifferenceAllowed
      * @param oldMonitorValidationKeysDir
      * @param oldUpdateTrigger
      * @param oldValidationKeys
      */
-    private boolean isKeysConfigChanged(String oldKeyImportFile, Long oldKeyTokenExpiration, Long oldKeyTokenMaxLifetime, Long oldRefreshThreshold,
+    private boolean isKeysConfigChanged(String oldKeyImportFile, Long oldKeyTokenExpiration, Long oldRefreshThreshold,
                                         Long oldExpirationDifferenceAllowed, boolean oldMonitorValidationKeysDir,
                                         String oldUpdateTrigger, @Sensitive List<Properties> oldValidationKeys) {
         return ((oldKeyImportFile.equals(primaryKeyImportFile) == false)
                 || (oldKeyTokenExpiration != keyTokenExpiration)
-                || (oldKeyTokenMaxLifetime != keyTokenMaxLifetime)
                 || (oldRefreshThreshold != refreshThreshold)
                 || (oldExpirationDifferenceAllowed != expirationDifferenceAllowed)
                 || (oldMonitorValidationKeysDir != monitorValidationKeysDir)
@@ -865,8 +851,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
 
     /** {@inheritDoc} */
     @Override
-    public long getMaxLifetime() {
-        return keyTokenMaxLifetime;
+    public long getInactivityTimeout() {
+        return inactivityTimeout;
     }
 
     /** {@inheritDoc} */

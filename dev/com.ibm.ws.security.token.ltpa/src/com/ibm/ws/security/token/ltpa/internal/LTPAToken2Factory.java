@@ -33,8 +33,8 @@ import com.ibm.wsspi.security.ltpa.TokenFactory;
 public class LTPAToken2Factory implements TokenFactory {
     private static final TraceComponent tc = Tr.register(LTPAToken2Factory.class);
     private long expirationInMinutes;
-    private long maxLifetimeInMinutes;
     private long refreshThresholdInMinutes;
+    private long inactivityTimeoutInMinutes;
     private byte[] primarySharedKey;
     private LTPAPublicKey primaryPublicKey;
     private LTPAPrivateKey primaryPrivateKey;
@@ -47,7 +47,7 @@ public class LTPAToken2Factory implements TokenFactory {
     public void initialize(@Sensitive Map tokenFactoryMap) {
         expirationInMinutes = (Long) tokenFactoryMap.get(LTPAConstants.EXPIRATION);
         refreshThresholdInMinutes = (long) tokenFactoryMap.get(LTPAConstants.REFRESH_THRESHOLD);
-        maxLifetimeInMinutes = (Long) tokenFactoryMap.get(LTPAConstants.MAX_LIFE_TIME);
+        inactivityTimeoutInMinutes = (Long) tokenFactoryMap.get(LTPAConstants.INACTIVITY_TIMEOUT);
         primarySharedKey = (byte[]) tokenFactoryMap.get(LTPAConstants.PRIMARY_SECRET_KEY);
         primaryPublicKey = (LTPAPublicKey) tokenFactoryMap.get(LTPAConstants.PRIMARY_PUBLIC_KEY);
         primaryPrivateKey = (LTPAPrivateKey) tokenFactoryMap.get(LTPAConstants.PRIMARY_PRIVATE_KEY);
@@ -63,7 +63,7 @@ public class LTPAToken2Factory implements TokenFactory {
     @Override
     public Token createToken(Map tokenData) throws TokenCreationFailedException {
         String userUniqueId = getUniqueId(tokenData);
-        return new LTPAToken2(userUniqueId, expirationInMinutes, maxLifetimeInMinutes, refreshThresholdInMinutes, primarySharedKey, primaryPrivateKey, primaryPublicKey);
+        return new LTPAToken2(userUniqueId, expirationInMinutes, refreshThresholdInMinutes, inactivityTimeoutInMinutes, primarySharedKey, primaryPrivateKey, primaryPublicKey);
     }
 
     private String getUniqueId(Map tokenData) throws TokenCreationFailedException {
@@ -104,7 +104,7 @@ public class LTPAToken2Factory implements TokenFactory {
 
                 Token returnToken = null;
 
-                validatedToken = new LTPAToken2(tokenBytes, primarySharedKey, primaryPrivateKey, primaryPublicKey, expDiffAllowed, expirationInMinutes, maxLifetimeInMinutes, refreshThresholdInMinutes, removeAttributes);
+                validatedToken = new LTPAToken2(tokenBytes, primarySharedKey, primaryPrivateKey, primaryPublicKey, expDiffAllowed, expirationInMinutes, refreshThresholdInMinutes, inactivityTimeoutInMinutes, removeAttributes);
                 if (validatedToken != null) {
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                         Tr.debug(tc, "validateTokenBytes with primary keys (success)");
@@ -158,7 +158,7 @@ public class LTPAToken2Factory implements TokenFactory {
                     }
                     if (sharedKeyForValidation != null && ltpaPrivateKeyForValidation != null && ltpaPublicKeyForValidation != null) {
                         try {
-                            validatedToken = new LTPAToken2(tokenBytes, sharedKeyForValidation, ltpaPrivateKeyForValidation, ltpaPublicKeyForValidation, expDiffAllowed, expirationInMinutes, maxLifetimeInMinutes, refreshThresholdInMinutes, removeAttributes);
+                            validatedToken = new LTPAToken2(tokenBytes, sharedKeyForValidation, ltpaPrivateKeyForValidation, ltpaPublicKeyForValidation, expDiffAllowed, expirationInMinutes, refreshThresholdInMinutes, inactivityTimeoutInMinutes, removeAttributes);
                             if (validatedToken != null) {
                                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                                     Tr.debug(tc, "validateTokenBytes with validationKeys (success)");
@@ -213,9 +213,9 @@ public class LTPAToken2Factory implements TokenFactory {
 
         String msg = null;
         if (clone) {
-            msg = "validateTokenBytes() took ";
-        } else {
             msg = "validateTokenBytes() and clone took ";
+        } else {
+            msg = "validateTokenBytes() took ";
         }
 
         // Calculate duration in milliseconds

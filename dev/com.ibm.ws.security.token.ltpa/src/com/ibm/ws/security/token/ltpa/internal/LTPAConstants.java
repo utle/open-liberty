@@ -29,9 +29,10 @@ public class LTPAConstants {
     protected static final String REFRESH_THRESHOLD = "refreshThreshold";
 
     /**
-     * Used to identify the LTPA token max lifetime.
+     * Used to identify the LTPA token inactivity timeout.
      */
-    protected static final String MAX_LIFE_TIME = "maxLifetime";
+    protected static final String INACTIVITY_TIMEOUT = "inactivityTimeout";
+    
     /**
      * Used to identify the primary LTPA shared key.
      */

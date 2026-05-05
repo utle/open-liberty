@@ -34,6 +34,7 @@ import com.ibm.websphere.ras.annotation.TraceOptions;
 import com.ibm.websphere.security.cred.WSCredential;
 import com.ibm.ws.common.encoder.Base64Coder;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.authentication.AuthenticationConstants;
 import com.ibm.ws.security.authentication.AuthenticationData;
 import com.ibm.ws.security.authentication.AuthenticationException;
@@ -55,7 +56,6 @@ import com.ibm.ws.security.jwtsso.token.proxy.JwtSSOTokenHelper;
 import com.ibm.ws.security.registry.RegistryException;
 import com.ibm.ws.security.registry.UserRegistry;
 import com.ibm.ws.security.registry.UserRegistryService;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.token.ltpa.LTPAConfiguration;
 import com.ibm.wsspi.kernel.service.utils.AtomicServiceReference;
 import com.ibm.wsspi.security.token.AttributeNameConstants;
@@ -95,7 +95,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private String invalidDelegationUser = "";
 
     private final AuthenticationGuard authenticationGuard = new AuthenticationGuard();
-    
+
     /**
      * Helper method to check if debug tracing is enabled.
      *
@@ -443,18 +443,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     /**
      * Checks if the LTPA token in the cached Subject needs to be refreshed based on
-     * refreshThreshold, expiration, and maxLifetime settings.
+     * refreshThreshold and inactivityTimeout settings.
      *
      * @param subject The Subject retrieved from auth cache
      * @return true if token needs refresh, false otherwise
      */
-    private synchronized boolean shouldRefreshCachedToken(Subject subject) {
+    private boolean shouldRefreshCachedToken(Subject subject) {
         // Beta guard: Token refresh is only available in beta edition
         if (!ProductInfo.getBetaEdition()) {
             return false;
         }
-        
+
         if (subject == null) {
+            return false;
+        }
+
+        // Early-exit: if inactivity timeout is not configured the feature is inactive;
+        // avoid the ltpaConfigurationRef.getService() call on every request.
+        LTPAConfiguration ltpaConfigEarlyCheck = ltpaConfigurationRef.getService();
+        if (ltpaConfigEarlyCheck == null || ltpaConfigEarlyCheck.getInactivityTimeout() <= 0) {
             return false;
         }
 
@@ -477,7 +484,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             long expiration = wsCredential.getExpiration();
             long currentTime = System.currentTimeMillis();
 
-            // Check if token is expired
+            // Check if token is expired (absolute expiration)
             if (currentTime >= expiration) {
                 if (isDebugEnabled()) {
                     Tr.debug(tc, "Token is expired: current=" + currentTime + ", expiration=" + expiration);
@@ -485,35 +492,55 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 return true;
             }
 
-            // Get LTPA configuration to check refresh threshold
-            LTPAConfiguration ltpaConfig = ltpaConfigurationRef.getService();
+            // ltpaConfigEarlyCheck already confirmed non-null with inactivityTimeout > 0 above
+            long refreshThresholdInMinutes = ltpaConfigEarlyCheck.getRefreshThreshold();
+            long inactivityTimeoutInMinutes = ltpaConfigEarlyCheck.getInactivityTimeout();
             if (isDebugEnabled()) {
-                Tr.debug(tc, "ltpaConfig: " + ltpaConfig);
+                Tr.debug(tc, "ltpaConfig inactivityTimeout=" + inactivityTimeoutInMinutes +
+                             ", refreshThreshold=" + refreshThresholdInMinutes);
             }
-            if (ltpaConfig != null) {
-                long refreshThresholdInMinutes = ltpaConfig.getRefreshThreshold();
+
+            // Get creation time from WSCredential
+            Object creationTimeObj = wsCredential.get(AttributeNameConstants.WSTOKEN_CREATION_TIME);
+            if (creationTimeObj instanceof Long) {
+                long creationTime = (Long) creationTimeObj;
+                long inactivityExpiration = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
+
+                // Cap inactivity expiration at absolute expiration
+                if (inactivityExpiration > expiration) {
+                    inactivityExpiration = expiration;
+                }
+
+                if (isDebugEnabled()) {
+                    Tr.debug(tc, "Inactivity timeout check: creationTime=" + creationTime +
+                                 ", inactivityExpiration=" + inactivityExpiration +
+                                 ", currentTime=" + currentTime);
+                }
+
+                // Check if token has exceeded inactivity timeout
+                if (currentTime >= inactivityExpiration) {
+                    if (isDebugEnabled()) {
+                        Tr.debug(tc, "Token exceeded inactivity timeout");
+                    }
+                    return true;
+                }
+
+                // Check if within refresh threshold of inactivity expiration
                 if (refreshThresholdInMinutes > 0) {
                     long refreshThresholdInMillis = refreshThresholdInMinutes * MILLIS_PER_MINUTE;
-                    long timeRemaining = expiration - currentTime;
+                    long timeRemainingUntilInactivity = inactivityExpiration - currentTime;
 
-                    if (isDebugEnabled()) {
-                        Tr.debug(tc, "Checking refresh threshold: timeRemaining=" + timeRemaining +
-                                     "ms, threshold=" + refreshThresholdInMillis + "ms");
-                    }
-
-                    // Check if token is within refresh threshold
-                    if (timeRemaining <= refreshThresholdInMillis) {
+                    if (timeRemainingUntilInactivity <= refreshThresholdInMillis) {
                         if (isDebugEnabled()) {
-                            Tr.debug(tc, "Token needs refresh: remaining time (" + timeRemaining +
-                                         "ms) <= threshold (" + refreshThresholdInMillis + "ms)");
+                            Tr.debug(tc, "Token needs refresh: time until inactivity expiration (" +
+                                         timeRemainingUntilInactivity + "ms) <= threshold (" +
+                                         refreshThresholdInMillis + "ms)");
                         }
                         return true;
                     }
                 }
-            } else {
-                if (isDebugEnabled()) {
-                    Tr.debug(tc, "LTPA configuration not available, token refresh disabled");
-                }
+            } else if (isDebugEnabled()) {
+                Tr.debug(tc, "Creation time not found in WSCredential, skipping inactivity timeout check");
             }
 
             return false;
@@ -738,8 +765,65 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 if (authenticationData.get(authenticationData.CERTCHAIN) != null) {
                     authCacheService.insert(authenticatedSubject, (X509Certificate[]) authenticationData.get(AuthenticationData.CERTCHAIN));
                 } else {
+                    // If the token was cloned (refreshed), the new subject's SSO token bytes differ
+                    // from the incoming request's bytes. Remove the stale old-bytes cache entry so
+                    // subsequent requests carrying the old cookie don't keep hitting it and triggering
+                    // unnecessary refresh cycles.
+                    evictStaleTokenCacheEntry(authCacheService, authenticationData, authenticatedSubject);
                     authCacheService.insert(authenticatedSubject);
                 }
+            }
+        }
+    }
+
+    /**
+     * If a token clone occurred during this JAAS login, the authenticated subject contains
+     * new SSO token bytes while the incoming authenticationData still carries the old bytes.
+     * Remove the old-bytes cache entry to prevent stale cache hits on subsequent requests.
+     *
+     * @param authCacheService     the auth cache service
+     * @param authenticationData   the original authentication data from the request
+     * @param authenticatedSubject the freshly authenticated subject (may contain cloned token)
+     */
+    private void evictStaleTokenCacheEntry(AuthCacheService authCacheService,
+                                           AuthenticationData authenticationData,
+                                           Subject authenticatedSubject) {
+        try {
+            // Derive the old cache key from the incoming request's token bytes
+            String oldCacheKey = null;
+            String ssoToken64 = (String) authenticationData.get(AuthenticationData.TOKEN64);
+            if (ssoToken64 != null) {
+                oldCacheKey = ssoToken64;
+            } else {
+                byte[] ssoTokenBytes = (byte[]) authenticationData.get(AuthenticationData.TOKEN);
+                if (ssoTokenBytes != null) {
+                    oldCacheKey = Base64Coder.toString(Base64Coder.base64Encode(ssoTokenBytes));
+                }
+            }
+
+            if (oldCacheKey == null) {
+                return; // Not a token-based login — nothing to evict
+            }
+
+            // Derive the new cache key from the authenticated subject's SSO token
+            com.ibm.wsspi.security.token.SingleSignonToken newSsoToken =
+                SSOTokenHelper.getSSOToken(authenticatedSubject);
+            if (newSsoToken == null) {
+                return;
+            }
+            String newCacheKey = Base64Coder.toString(Base64Coder.base64Encode(newSsoToken.getBytes()));
+
+            // Only remove the old entry if the bytes actually changed (i.e. a clone occurred)
+            if (!oldCacheKey.equals(newCacheKey)) {
+                if (isDebugEnabled()) {
+                    Tr.debug(tc, "Token was cloned during refresh — evicting stale cache entry for old token bytes");
+                }
+                authCacheService.remove(oldCacheKey);
+            }
+        } catch (Exception e) {
+            // Non-fatal: stale entry will be evicted by the generational cache timer
+            if (isDebugEnabled()) {
+                Tr.debug(tc, "Could not evict stale token cache entry after clone", e);
             }
         }
     }
