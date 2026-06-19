@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 IBM Corporation and others.
+ * Copyright (c) 2011, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -23,6 +23,7 @@ import org.osgi.service.component.annotations.Reference;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.websphere.ssl.Constants;
 import com.ibm.ws.ssl.config.SSLConfigManager;
 
 /**
@@ -68,11 +69,18 @@ public class RepertoireConfigService extends GenericSSLConfigService implements 
             }
         }
         super.modified(id, properties);
+        
+        // Notify registered listeners of configuration change
+        SSLConfigManager.getInstance().notifySSLConfigChangeListener(id, Constants.CONFIG_STATE_CHANGED);
     }
 
     @Deactivate
     protected void deactivate(int reason) {
         SSLConfigManager.getInstance().removeSSLPropertiesFromMap(id, true);
+        
+        // Notify registered listeners of configuration deletion
+        SSLConfigManager.getInstance().notifySSLConfigChangeListener(id, Constants.CONFIG_STATE_DELETED);
+        
         super.deactivate(id, reason);
     }
 

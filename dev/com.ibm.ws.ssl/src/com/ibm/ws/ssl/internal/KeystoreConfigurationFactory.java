@@ -209,7 +209,9 @@ public class KeystoreConfigurationFactory implements ManagedServiceFactory, File
                 com.ibm.ws.ssl.config.KeyStoreManager.getInstance().findKeyStoreInMapAndClear(keyStorePath);
                 com.ibm.ws.ssl.provider.AbstractJSSEProvider.removeEntryFromSSLContextMap(keyStorePath);
                 com.ibm.ws.ssl.config.SSLConfigManager.getInstance().resetDefaultSSLContextIfNeeded(keyStorePath);
-
+                
+                // Notify SSL configs that use this keystore
+                com.ibm.ws.ssl.config.SSLConfigManager.getInstance().notifySSLConfigsUsingKeystore(keyStorePath);
             }
             Tr.audit(tc, "ssl.keystore.modified.CWPKI0811I", modifiedFiles.toArray());
         } catch (Exception e) {
@@ -237,6 +239,10 @@ public class KeystoreConfigurationFactory implements ManagedServiceFactory, File
                 com.ibm.ws.ssl.config.KeyStoreManager.getInstance().findKeyStoreInMapAndClear(modifiedKeyStoreName);
                 com.ibm.ws.ssl.provider.AbstractJSSEProvider.removeEntryFromSSLContextMap(modifiedKeyStoreName);
                 com.ibm.ws.ssl.config.SSLConfigManager.getInstance().resetDefaultSSLContextIfNeeded(modifiedKeyStoreName);
+                
+                // Notify SSL configs that use this keystore
+                com.ibm.ws.ssl.config.SSLConfigManager.getInstance().notifySSLConfigsUsingKeystore(modifiedKeyStoreName);
+                
                 Tr.audit(tc, "ssl.keystore.modified.CWPKI0811I", modifiedKeyStores.toArray());
             } catch (Exception e) {
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {

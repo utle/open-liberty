@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2023 IBM Corporation and others.
+ * Copyright (c) 2009, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -138,6 +138,9 @@ public class SSLComponent extends GenericSSLConfigService implements SSLSupportO
             Tr.event(tc, "Deactivated: " + reason);
         }
 
+        // Notify registered listeners of default SSL configuration deletion
+        SSLConfigManager.getInstance().notifySSLConfigChangeListener(MY_ALIAS, Constants.CONFIG_STATE_DELETED);
+
         super.deactivate(MY_ALIAS, reason);
 
         repertoireMap.clear();
@@ -178,6 +181,9 @@ public class SSLComponent extends GenericSSLConfigService implements SSLSupportO
         super.modified(MY_ALIAS, properties);
 
         processConfig(true);
+        
+        // Notify registered listeners of default SSL configuration change
+        SSLConfigManager.getInstance().notifySSLConfigChangeListener(MY_ALIAS, Constants.CONFIG_STATE_CHANGED);
     }
 
     /**

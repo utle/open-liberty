@@ -53,7 +53,8 @@ Private-Package: \
   com.ibm.ws.ssl.internal.SSLConfigValidator, \
   com.ibm.ws.ssl.internal.SSLSupportImpl, \
   com.ibm.ws.ssl.internal.RepertoireConfigService, \
-  com.ibm.ws.ssl.internal.KeystoreConfigurationFactory
+  com.ibm.ws.ssl.internal.KeystoreConfigurationFactory, \
+  com.ibm.ws.ssl.internal.InternalSSLSupportImpl
 
 Include-Resource: \
     OSGI-INF/permissions.perm=resources/permissions.perm, \

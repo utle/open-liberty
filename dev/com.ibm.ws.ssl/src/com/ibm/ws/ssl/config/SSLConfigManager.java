@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -91,6 +92,9 @@ public class SSLConfigManager {
     private final Map<String, List<SSLConfigChangeListener>> sslConfigListenerMap = new HashMap<String, List<SSLConfigChangeListener>>();
     // used to hold listener -> listener event references
     private final Map<SSLConfigChangeListener, SSLConfigChangeEvent> sslConfigListenerEventMap = new HashMap<SSLConfigChangeListener, SSLConfigChangeEvent>();
+    
+    // used to track which SSL configs use which keystore files (for keystore change notifications)
+    private final Map<String, Set<String>> keystoreToSSLConfigMap = new ConcurrentHashMap<>();
 
     //get the outbound selections method
     private final OutboundSSLSelections outboundSSL = new OutboundSSLSelections();
@@ -1551,6 +1555,92 @@ public class SSLConfigManager {
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
             Tr.exit(tc, "deregisterSSLConfigChangeListener");
     }
+    /***
+     * Register that an SSL config uses a specific keystore file.
+     * Called when SSL config is created/updated.
+     *
+     * @param sslConfigAlias The SSL configuration alias
+     * @param keystorePath The canonical path to the keystore file
+     ***/
+    public synchronized void registerKeystoreUsage(String sslConfigAlias, String keystorePath) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.entry(tc, "registerKeystoreUsage", new Object[] { sslConfigAlias, keystorePath });
+
+        if (keystorePath != null && sslConfigAlias != null) {
+            keystoreToSSLConfigMap.computeIfAbsent(keystorePath, k -> new HashSet<>())
+                                  .add(sslConfigAlias);
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "Registered keystore usage: " + keystorePath + " -> " + sslConfigAlias);
+        }
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.exit(tc, "registerKeystoreUsage");
+    }
+
+    /***
+     * Unregister keystore usage when SSL config is removed.
+     *
+     * @param sslConfigAlias The SSL configuration alias being removed
+     ***/
+    public synchronized void unregisterKeystoreUsage(String sslConfigAlias) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.entry(tc, "unregisterKeystoreUsage", new Object[] { sslConfigAlias });
+
+        if (sslConfigAlias != null) {
+            // Remove this SSL config from all keystore mappings
+            keystoreToSSLConfigMap.values().forEach(set -> set.remove(sslConfigAlias));
+
+            // Clean up empty sets
+            keystoreToSSLConfigMap.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "Unregistered keystore usage for: " + sslConfigAlias);
+        }
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.exit(tc, "unregisterKeystoreUsage");
+    }
+
+    /***
+     * Get all SSL config aliases that reference a specific keystore file.
+     *
+     * @param keystorePath The canonical path to the keystore file
+     * @return Set of SSL config aliases, or empty set if none
+     ***/
+    public synchronized Set<String> getSSLConfigsUsingKeystore(String keystorePath) {
+        Set<String> configs = keystoreToSSLConfigMap.get(keystorePath);
+        return configs != null ? new HashSet<>(configs) : new HashSet<>();
+    }
+
+    /***
+     * Notify listeners for all SSL configs that use the specified keystore file.
+     * Called when a keystore file is modified.
+     *
+     * @param keystorePath The canonical path to the modified keystore file
+     ***/
+    public synchronized void notifySSLConfigsUsingKeystore(String keystorePath) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.entry(tc, "notifySSLConfigsUsingKeystore", new Object[] { keystorePath });
+
+        Set<String> affectedConfigs = getSSLConfigsUsingKeystore(keystorePath);
+
+        if (!affectedConfigs.isEmpty()) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "Notifying " + affectedConfigs.size() + " SSL configs affected by keystore change: " + keystorePath);
+
+            for (String alias : affectedConfigs) {
+                notifySSLConfigChangeListener(alias, Constants.CONFIG_STATE_CHANGED);
+            }
+        } else {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "No SSL configs affected by keystore change: " + keystorePath);
+        }
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.exit(tc, "notifySSLConfigsUsingKeystore");
+    }
+
 
     /**
      * Query the flag on whether this is running in a server process, versus a
