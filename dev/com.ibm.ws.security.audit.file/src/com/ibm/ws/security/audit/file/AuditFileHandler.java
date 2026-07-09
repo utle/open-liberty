@@ -717,28 +717,13 @@ public class AuditFileHandler implements SynchronousHandler {
         }
 
         // Check if PQC mode is enabled and PQC support is available
-if (!PQCRuntimeSupport.isPQCSupported()) {
+if (PQCRuntimeSupport.isPQCSupported()) {
     if (tc.isDebugEnabled()) {
         Tr.debug(tc, "PQC mode enabled, using ML-KEM for key encapsulation and ML-DSA for signing");
     }
 
     try {
-        // =========================
-        // 1. LOAD ML-DSA (SIGNING)
-        // =========================
-        String mldsaPemFilePath =
-            "/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/servers/defaultServer/resources/security/AuditSigningKeyStore.pem";
-
-        if (tc.isDebugEnabled()) {
-            Tr.debug(tc, "Loading ML-DSA key pair: " + mldsaPemFilePath);
-        }
-
-        java.security.KeyPair mldsaKeyPair =
-            AuditPQCKeyLoader.loadKeyPair(mldsaPemFilePath);
-
-        PublicKey mldsaPublicKey = mldsaKeyPair.getPublic();
-        PrivateKey mldsaPrivateKey = mldsaKeyPair.getPrivate();
-
+       
         // =========================
         // 2. LOAD ML-KEM (ENCAPSULATION)
         // =========================
@@ -753,9 +738,10 @@ if (!PQCRuntimeSupport.isPQCSupported()) {
             AuditPQCKeyLoader.loadKeyPair(mlkemPemFilePath);
 
         PublicKey mlkemPublicKey = mlkemKeyPair.getPublic();
+        PrivateKey mlkemPrivateKey = mlkemKeyPair.getPrivate();
 
         // =========================
-        // 3. ML-KEM ENCAPSULATION
+        // 3. ML-KEM ENCAPSULATION FOR SIGNING
         // =========================
         Object encap =
             PQCRuntimeSupport.encapsulate(mlkemPublicKey);
@@ -763,7 +749,8 @@ if (!PQCRuntimeSupport.isPQCSupported()) {
         SecretKey mlkemSharedSecret =
             PQCRuntimeSupport.extractSharedSecret(encap);
 
-        sharedKey = mlkemSharedSecret;
+        // Initialize signedSharedKey for signing operations
+        signedSharedKey = mlkemSharedSecret;
 
         encryptedSignerSharedKey =
             PQCRuntimeSupport.extractEncapsulation(encap);
@@ -771,8 +758,9 @@ if (!PQCRuntimeSupport.isPQCSupported()) {
         // =========================
         // 4. ASSIGN SIGNING KEYS
         // =========================
-        publicSignerKey = mldsaPublicKey;
-        privateSignerKey = mldsaPrivateKey;
+        publicSignerKey = mlkemPublicKey;
+        privateSignerKey = mlkemPrivateKey;
+    
 
         if (tc.isDebugEnabled()) {
             Tr.debug(tc, "PQC signing setup complete");

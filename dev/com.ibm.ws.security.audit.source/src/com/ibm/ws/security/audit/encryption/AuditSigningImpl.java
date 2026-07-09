@@ -120,17 +120,21 @@ public class AuditSigningImpl implements AuditSigning {
         javax.crypto.spec.SecretKeySpec sharedKey = null;
         try {
             if (crypto != null) {
-                sharedKey = new javax.crypto.spec.SecretKeySpec(crypto.generateSharedKey(), 0, CryptoUtils.AES_256_KEY_LENGTH_BYTES, CryptoUtils.ENCRYPT_ALGORITHM_AES);
+                byte[] keyBytes = crypto.generateSharedKey();
+                if (keyBytes == null) {
+                    throw new com.ibm.websphere.crypto.KeyException("Failed to generate random key bytes.");
+                }
+                sharedKey = new javax.crypto.spec.SecretKeySpec(keyBytes, 0, CryptoUtils.AES_256_KEY_LENGTH_BYTES, CryptoUtils.ENCRYPT_ALGORITHM_AES);
             }
 
             if (sharedKey != null) {
                 return sharedKey;
             } else {
-                throw new com.ibm.websphere.crypto.KeyException("Key could not be generated.");
+                throw new com.ibm.websphere.crypto.KeyException("Key could not be generated - crypto object is null.");
             }
 
         } catch (Exception e) {
-            com.ibm.ws.ffdc.FFDCFilter.processException(e, "com.ibm.ws.security.audit.AuditEncryptionImpl.generateKey", "98", this);
+            com.ibm.ws.ffdc.FFDCFilter.processException(e, "com.ibm.ws.security.audit.AuditSigningImpl.generateSharedKey", "98", this);
             if (tc.isDebugEnabled())
                 Tr.debug(tc, "Error generating key.", new Object[] { e });
 

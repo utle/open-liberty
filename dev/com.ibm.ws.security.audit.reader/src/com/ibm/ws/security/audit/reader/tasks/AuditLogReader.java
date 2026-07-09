@@ -402,19 +402,57 @@ public class AuditLogReader {
                     }
 
                     try {
-                        // Handle signing key (traditional RSA for now - signing not yet PQC)
+                        // Handle signing key - now supports both RSA and ML-DSA
                         if (signingKeyStorePassword == null || signingKeyStorePassword.length() == 0) {
                             String msg = CommandUtils.getMessage("audit.NoKeyStorePasswordValue", signingKeyStoreLocation);
                             throw new Exception(msg);
                         }
 
                         Key publicKey = null;
-                        try {
-                            publicKey = getPublicKey(signingKeyStoreType, signingKeyStoreLocation, signingKeyStorePassword, signingCertAlias);
-                        } catch (Exception e) {
-                            if (debugEnabled)
-                                theLogger.fine("exception getting public key for our signed records" + e.getMessage());
-                            throw e;
+                        
+                        // Check if we should use ML-DSA (PQC) or RSA (traditional)
+                        boolean useMLKEM = AuditPQCRuntimeSupport.isPQCSupported();
+                        
+                        if (useMLKEM) {
+                            // Load ML-KEM public key from PEM file (encryption keystore contains ML-KEM keys)
+                            String mlkemPemFilePath = "/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/servers/defaultServer/resources/security/AuditEncryptionKeyStore.pem";
+
+                            
+                            if (debugEnabled) {
+                                theLogger.fine("Loading ML-KEM public key from PEM file: " + mlkemPemFilePath);
+                            }
+                            if (tc.isDebugEnabled()) {
+                                Tr.debug(tc, "Loading ML-KEM public key from PEM file: " + mlkemPemFilePath);
+                            }
+                            
+                            try {
+                                KeyPair mlkemKeyPair = AuditPQCKeyLoader.loadKeyPair(mlkemPemFilePath);
+                                publicKey = mlkemKeyPair.getPublic();
+                                
+                                if (debugEnabled) {
+                                    theLogger.fine("Successfully loaded ML-KEM public key for signature verification");
+                                }
+                                if (tc.isDebugEnabled()) {
+                                    Tr.debug(tc, "Successfully loaded ML-KEM public key for signature verification");
+                                }
+                            } catch (Exception e) {
+                                if (debugEnabled)
+                                    theLogger.fine("Failed to load ML-KEM key, falling back to RSA: " + e.getMessage());
+                                if (tc.isDebugEnabled())
+                                    Tr.debug(tc, "Failed to load ML-KEM key, falling back to RSA: " + e.getMessage());
+                                useMLKEM = false;
+                            }
+                        }
+                        
+                        if (!useMLKEM) {
+                            // Fall back to traditional RSA
+                            try {
+                                publicKey = getPublicKey(signingKeyStoreType, signingKeyStoreLocation, signingKeyStorePassword, signingCertAlias);
+                            } catch (Exception e) {
+                                if (debugEnabled)
+                                    theLogger.fine("exception getting public key for our signed records" + e.getMessage());
+                                throw e;
+                            }
                         }
 
                         try {
