@@ -228,30 +228,104 @@ public class AuditLogReader {
 
             if (signedLog && !encryptedLog) {
 
-                // And then let's get our public key
-                Key publicKey = null;
-                try {
-                    publicKey = getPublicKey(signingKeyStoreType, signingKeyStoreLocation, signingKeyStorePassword, signingCertAlias);
-                } catch (Exception e) {
-                    throw e;
-                }
-
-                // Now that I have my key, decrypt the encrypted shared key
-
                 AuditSigningImpl as = null;
-                try {
+                byte[] decryptedSigningSharedKey = null;
 
-                    as = new AuditSigningImpl(signingKeyStoreName, signingKeyStoreLocation, signingKeyStoreType, null, signingKeyStorePassword, signingCertAlias);
-                } catch (Exception ase) {
-                    throw new Exception(ase);
+                // Check if PQC mode is enabled
+                if (AuditPQCRuntimeSupport.isPQCSupported()) {
+                    if (debugEnabled) {
+                        theLogger.fine("PQC mode detected for signed-only log, using ML-KEM decapsulation for signing key");
+                    }
+                    if (tc.isDebugEnabled()) {
+                        Tr.debug(tc, "PQC mode detected for signed-only log, using ML-KEM decapsulation for signing key");
+                    }
+
+                    try {
+                        // Load ML-KEM private key from PEM file for signing
+                        String mlkemPemFilePath = "/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/servers/defaultServer/resources/security/AuditEncryptionKeyStore.pem";
+
+                        if (debugEnabled) {
+                            theLogger.fine("Loading ML-KEM private key from PEM file: " + mlkemPemFilePath);
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Loading ML-KEM private key from PEM file: " + mlkemPemFilePath);
+                        }
+
+                        // Load the ML-KEM key pair from PEM file
+                        KeyPair keyPair = AuditPQCKeyLoader.loadKeyPair(mlkemPemFilePath);
+                        PrivateKey mlkemPrivateKey = keyPair.getPrivate();
+
+                        if (debugEnabled) {
+                            theLogger.fine("Successfully loaded ML-KEM private key for signing key decapsulation");
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Successfully loaded ML-KEM private key for signing key decapsulation");
+                        }
+
+                        // Decode the encapsulated signing key
+                        byte[] encapsulation = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
+
+                        if (debugEnabled) {
+                            theLogger.fine("Encapsulation length: " + encapsulation.length);
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Encapsulation length: " + encapsulation.length);
+                        }
+
+                        // Use ML-KEM decapsulation to recover the signing shared secret
+                        SecretKey mlkemSharedSecret = AuditPQCRuntimeSupport.decapsulate(mlkemPrivateKey, encapsulation);
+                        decryptedSigningSharedKey = mlkemSharedSecret.getEncoded();
+
+                        if (debugEnabled) {
+                            theLogger.fine("Successfully decapsulated signing shared key using ML-KEM");
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Successfully decapsulated signing shared key using ML-KEM, key length: " + decryptedSigningSharedKey.length);
+                        }
+
+                    } catch (Exception e) {
+                        if (debugEnabled) {
+                            theLogger.fine("Error during ML-KEM decapsulation for signing key: " + e.getMessage());
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Error during ML-KEM decapsulation for signing key", e);
+                        }
+                        throw new Exception("Failed to decapsulate signing shared key using ML-KEM: " + e.getMessage(), e);
+                    }
+
+                } else {
+                    // Traditional RSA-based approach
+                    if (debugEnabled) {
+                        theLogger.fine("Using traditional RSA for signing key decryption");
+                    }
+
+                    // And then let's get our public key
+                    Key publicKey = null;
+                    try {
+                        publicKey = getPublicKey(signingKeyStoreType, signingKeyStoreLocation, signingKeyStorePassword, signingCertAlias);
+                    } catch (Exception e) {
+                        throw e;
+                    }
+
+                    // Now that I have my key, decrypt the encrypted shared key
+                    try {
+                        as = new AuditSigningImpl(signingKeyStoreName, signingKeyStoreLocation, signingKeyStoreType, null, signingKeyStorePassword, signingCertAlias);
+                    } catch (Exception ase) {
+                        throw new Exception(ase);
+                    }
+
+                    byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
+                    decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
                 }
 
-                byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
-
-                byte[] sk = encryptedSignerSharedKey.getBytes();
-                String x = new String(sk);
-                byte[] decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
-                String z = new String(decryptedSigningSharedKey);
+                // Initialize AuditSigningImpl if not already done
+                if (as == null) {
+                    try {
+                        as = new AuditSigningImpl(signingKeyStoreName, signingKeyStoreLocation, signingKeyStoreType, null, signingKeyStorePassword, signingCertAlias);
+                    } catch (Exception ase) {
+                        throw new Exception(ase);
+                    }
+                }
 
                 // Read our signed audit records
                 try {
@@ -402,70 +476,7 @@ public class AuditLogReader {
                     }
 
                     try {
-                        // Handle signing key - now supports both RSA and ML-DSA
-                        if (signingKeyStorePassword == null || signingKeyStorePassword.length() == 0) {
-                            String msg = CommandUtils.getMessage("audit.NoKeyStorePasswordValue", signingKeyStoreLocation);
-                            throw new Exception(msg);
-                        }
-
-                        Key publicKey = null;
-                        
-                        // Check if we should use ML-DSA (PQC) or RSA (traditional)
-                        boolean useMLKEM = AuditPQCRuntimeSupport.isPQCSupported();
-                        
-                        if (useMLKEM) {
-                            // Load ML-KEM public key from PEM file (encryption keystore contains ML-KEM keys)
-                            String mlkemPemFilePath = "/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/servers/defaultServer/resources/security/AuditEncryptionKeyStore.pem";
-
-                            
-                            if (debugEnabled) {
-                                theLogger.fine("Loading ML-KEM public key from PEM file: " + mlkemPemFilePath);
-                            }
-                            if (tc.isDebugEnabled()) {
-                                Tr.debug(tc, "Loading ML-KEM public key from PEM file: " + mlkemPemFilePath);
-                            }
-                            
-                            try {
-                                KeyPair mlkemKeyPair = AuditPQCKeyLoader.loadKeyPair(mlkemPemFilePath);
-                                publicKey = mlkemKeyPair.getPublic();
-                                
-                                if (debugEnabled) {
-                                    theLogger.fine("Successfully loaded ML-KEM public key for signature verification");
-                                }
-                                if (tc.isDebugEnabled()) {
-                                    Tr.debug(tc, "Successfully loaded ML-KEM public key for signature verification");
-                                }
-                            } catch (Exception e) {
-                                if (debugEnabled)
-                                    theLogger.fine("Failed to load ML-KEM key, falling back to RSA: " + e.getMessage());
-                                if (tc.isDebugEnabled())
-                                    Tr.debug(tc, "Failed to load ML-KEM key, falling back to RSA: " + e.getMessage());
-                                useMLKEM = false;
-                            }
-                        }
-                        
-                        if (!useMLKEM) {
-                            // Fall back to traditional RSA
-                            try {
-                                publicKey = getPublicKey(signingKeyStoreType, signingKeyStoreLocation, signingKeyStorePassword, signingCertAlias);
-                            } catch (Exception e) {
-                                if (debugEnabled)
-                                    theLogger.fine("exception getting public key for our signed records" + e.getMessage());
-                                throw e;
-                            }
-                        }
-
-                        try {
-                            as = new AuditSigningImpl(signingKeyStoreName, signingKeyStoreLocation, signingKeyStoreType, null, signingKeyStorePassword, signingCertAlias);
-                        } catch (Exception ase) {
-                            throw new Exception(ase);
-                        }
-
-                        byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
-                        byte[] sk = encryptedSignerSharedKey.getBytes();
-                        decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
-
-                        // Handle encryption key with ML-KEM decapsulation
+                        // Determine PEM file path from encryption keystore location
                         String pemFilePath = encKeyStoreLocation;
                         if (encKeyStoreLocation != null && encKeyStoreLocation.endsWith(".p12")) {
                             pemFilePath = encKeyStoreLocation.replace(".p12", ".pem");
@@ -480,9 +491,9 @@ public class AuditLogReader {
                             Tr.debug(tc, "Loading ML-KEM private key from PEM file: " + pemFilePath);
                         }
 
-                        // Load the ML-KEM key pair from PEM file
-                        KeyPair keyPair = AuditPQCKeyLoader.loadKeyPair(pemFilePath);
-                        PrivateKey mlkemPrivateKey = keyPair.getPrivate();
+                        // Load the ML-KEM key pair from PEM file (used for both signing and encryption)
+                        KeyPair mlkemKeyPair = AuditPQCKeyLoader.loadKeyPair(pemFilePath);
+                        PrivateKey mlkemPrivateKey = mlkemKeyPair.getPrivate();
 
                         if (debugEnabled) {
                             theLogger.fine("Successfully loaded ML-KEM private key from PEM file");
@@ -491,30 +502,52 @@ public class AuditLogReader {
                             Tr.debug(tc, "Successfully loaded ML-KEM private key from PEM file");
                         }
 
-                        // Decode the encapsulation from the audit log
-                        byte[] encapsulation = Base64Coder.base64Decode(encSharedKey.getBytes(StandardCharsets.UTF_8));
+                        // Step 1: Decrypt signing shared key using ML-KEM decapsulation
+                        byte[] signingEncapsulation = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
 
                         if (debugEnabled) {
-                            theLogger.fine("Encapsulation length: " + encapsulation.length);
+                            theLogger.fine("Signing encapsulation length: " + signingEncapsulation.length);
                         }
                         if (tc.isDebugEnabled()) {
-                            Tr.debug(tc, "Encapsulation length: " + encapsulation.length);
+                            Tr.debug(tc, "Signing encapsulation length: " + signingEncapsulation.length);
                         }
 
-                        // Use ML-KEM decapsulation to recover the shared secret
-                        SecretKey mlkemSharedSecret = AuditPQCRuntimeSupport.decapsulate(mlkemPrivateKey, encapsulation);
-                        decryptedSharedKey = mlkemSharedSecret.getEncoded();
+                        SecretKey signingSharedSecret = AuditPQCRuntimeSupport.decapsulate(mlkemPrivateKey, signingEncapsulation);
+                        decryptedSigningSharedKey = signingSharedSecret.getEncoded();
 
                         if (debugEnabled) {
-                            theLogger.fine("Successfully recovered ML-KEM shared key via decapsulation");
-                            theLogger.fine("Shared key length: " + decryptedSharedKey.length);
+                            theLogger.fine("Successfully recovered ML-KEM signing shared key via decapsulation");
+                            theLogger.fine("Signing shared key length: " + decryptedSigningSharedKey.length);
                         }
                         if (tc.isDebugEnabled()) {
-                            Tr.debug(tc, "Successfully recovered ML-KEM shared key via decapsulation");
-                            Tr.debug(tc, "Shared key length: " + decryptedSharedKey.length);
+                            Tr.debug(tc, "Successfully recovered ML-KEM signing shared key via decapsulation");
+                            Tr.debug(tc, "Signing shared key length: " + decryptedSigningSharedKey.length);
                         }
 
-                        // Create AuditEncryptionImpl without keystore for PQC mode
+                        // Step 2: Decrypt encryption shared key using ML-KEM decapsulation
+                        byte[] encEncapsulation = Base64Coder.base64Decode(encSharedKey.getBytes(StandardCharsets.UTF_8));
+
+                        if (debugEnabled) {
+                            theLogger.fine("Encryption encapsulation length: " + encEncapsulation.length);
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Encryption encapsulation length: " + encEncapsulation.length);
+                        }
+
+                        SecretKey encSharedSecret = AuditPQCRuntimeSupport.decapsulate(mlkemPrivateKey, encEncapsulation);
+                        decryptedSharedKey = encSharedSecret.getEncoded();
+
+                        if (debugEnabled) {
+                            theLogger.fine("Successfully recovered ML-KEM encryption shared key via decapsulation");
+                            theLogger.fine("Encryption shared key length: " + decryptedSharedKey.length);
+                        }
+                        if (tc.isDebugEnabled()) {
+                            Tr.debug(tc, "Successfully recovered ML-KEM encryption shared key via decapsulation");
+                            Tr.debug(tc, "Encryption shared key length: " + decryptedSharedKey.length);
+                        }
+
+                        // Create AuditSigningImpl and AuditEncryptionImpl without keystores for PQC mode
+                        as = new AuditSigningImpl(signingKeyStoreName, null, null, null, null, signingCertAlias);
                         ae = new AuditEncryptionImpl(encKeyStoreName, null, null, null, null, encCertAlias);
 
                     } catch (Exception e) {
@@ -532,73 +565,81 @@ public class AuditLogReader {
                     if (encKeyStorePassword == null || encKeyStorePassword.length() == 0) {
                         String msg = CommandUtils.getMessage("audit.NoKeyStorePasswordValue", encKeyStoreLocation);
                         throw new Exception(msg);
-                    } else if (signingKeyStorePassword == null || signingKeyStorePassword.length() == 0) {
+                    }
+                    if (signingKeyStorePassword == null || signingKeyStorePassword.length() == 0) {
                         String msg = CommandUtils.getMessage("audit.NoKeyStorePasswordValue", signingKeyStoreLocation);
                         throw new Exception(msg);
                     }
 
-                    // And then let's get our public key for our signed records
+                    // Get public key for signed records
                     Key publicKey = null;
                     try {
                         publicKey = getPublicKey(signingKeyStoreType, signingKeyStoreLocation, signingKeyStorePassword, signingCertAlias);
                     } catch (Exception e) {
-                        if (debugEnabled)
-                            theLogger.fine("exception getting public key for our signed records" + e.getMessage());
+                        if (debugEnabled) {
+                            theLogger.fine("Exception getting public key for signed records: " + e.getMessage());
+                        }
                         throw e;
                     }
 
-                    // Now that I have my key, decrypt the encrypted shared key
+                    // Decrypt the signing shared key
                     try {
                         as = new AuditSigningImpl(signingKeyStoreName, signingKeyStoreLocation, signingKeyStoreType, null, signingKeyStorePassword, signingCertAlias);
                     } catch (Exception ase) {
                         throw new Exception(ase);
                     }
 
-                    byte[] yy = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
-                    byte[] sk = encryptedSignerSharedKey.getBytes();
-                    decryptedSigningSharedKey = as.decryptSharedKey(yy, publicKey);
+                    byte[] encryptedSignerKeyBytes = Base64Coder.base64Decode(encryptedSignerSharedKey.getBytes(StandardCharsets.UTF_8));
+                    decryptedSigningSharedKey = as.decryptSharedKey(encryptedSignerKeyBytes, publicKey);
 
-                    // Let's get our public key for our encrypted records
+                    // Get public key for encrypted records
                     try {
                         publicKey = getPublicKey(encKeyStoreType, encKeyStoreLocation, encKeyStorePassword, encCertAlias);
                     } catch (Exception e) {
-                        if (debugEnabled)
-                            theLogger.fine("exception getting public key for our encrypted records" + e.getMessage());
+                        if (debugEnabled) {
+                            theLogger.fine("Exception getting public key for encrypted records: " + e.getMessage());
+                        }
                         throw e;
                     }
 
-                    // Now that I have my key, decrypt the encrypted shared key
-                    if (debugEnabled)
-                        theLogger.fine("encKeyStoreName: " + encKeyStoreName + " encKeyStoreLocation: " + encKeyStoreLocation + " encKeyStoreType: " +
-                                       encKeyStoreType + "encCertAlias: " + encCertAlias);
+                    // Decrypt the encryption shared key
+                    if (debugEnabled) {
+                        theLogger.fine("encKeyStoreName: " + encKeyStoreName + " encKeyStoreLocation: " + encKeyStoreLocation +
+                                       " encKeyStoreType: " + encKeyStoreType + " encCertAlias: " + encCertAlias);
+                    }
                     try {
                         ae = new AuditEncryptionImpl(encKeyStoreName, encKeyStoreLocation, encKeyStoreType, null, encKeyStorePassword, encCertAlias);
                     } catch (Exception aee) {
-                        if (debugEnabled)
-                            theLogger.fine("exception getting newing up an AuditEncryptionImpl" + aee.getMessage());
+                        if (debugEnabled) {
+                            theLogger.fine("Exception creating AuditEncryptionImpl: " + aee.getMessage());
+                        }
                         throw new Exception(aee);
                     }
 
-                    yy = Base64Coder.base64Decode(encSharedKey.getBytes(StandardCharsets.UTF_8));
+                    byte[] encryptedKeyBytes = Base64Coder.base64Decode(encSharedKey.getBytes(StandardCharsets.UTF_8));
 
-                    if (debugEnabled)
-                        theLogger.fine("Was able to base64Decode the encrypted shared key");
+                    if (debugEnabled) {
+                        theLogger.fine("Successfully base64 decoded the encrypted shared key");
+                    }
 
-                    decryptedSharedKey = ae.decryptSharedKey(yy, publicKey);
+                    decryptedSharedKey = ae.decryptSharedKey(encryptedKeyBytes, publicKey);
 
-                    if (debugEnabled)
-                        theLogger.fine("Was able to decrypt shared key");
+                    if (debugEnabled) {
+                        theLogger.fine("Successfully decrypted shared key");
+                    }
                 }
 
                 // Read our signed and encrypted audit records
-                if (debugEnabled)
-                    theLogger.fine("filename: " + filename);
+                if (debugEnabled) {
+                    theLogger.fine("Processing audit log file: " + filename);
+                }
 
                 try {
                     file_reader = new FileReader(filename);
                 } catch (java.io.FileNotFoundException fnf) {
-                    if (debugEnabled)
-                        theLogger.fine("File " + filename + " not found." + fnf.getMessage());
+                    if (debugEnabled) {
+                        theLogger.fine("File " + filename + " not found: " + fnf.getMessage());
+                    }
                     throw fnf;
                 }
 
