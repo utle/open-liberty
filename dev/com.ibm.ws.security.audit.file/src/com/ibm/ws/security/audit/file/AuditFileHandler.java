@@ -918,6 +918,14 @@ if (PQCRuntimeSupport.isPQCSupported()) {
 
             }
 
+            // Initialize AuditEncryptionImpl for traditional RSA mode
+            try {
+                ae = new AuditEncryptionImpl(encryptKeyStoreId, encryptKeyStoreLocation, null, null, null, encryptAlias);
+            } catch (AuditEncryptionException aee) {
+                Tr.error(tc, "FAILURE_INITIALIZING_ENCRYPTION_CONFIGURATION", new Object[] { aee.getMessage() });
+                throw new AuditEncryptionException(aee);
+            }
+
             try {
                 sharedKey = ae.generateSharedKey();
             } catch (Exception e) {

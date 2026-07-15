@@ -232,12 +232,15 @@ public class AuditLogReader {
                 byte[] decryptedSigningSharedKey = null;
 
                 // Check if PQC mode is enabled
-                if (AuditPQCRuntimeSupport.isPQCSupported()) {
+                boolean usePQC = AuditPQCRuntimeSupport.isPQCSupported();
+                boolean pqcFailed = false;
+                
+                if (usePQC) {
                     if (debugEnabled) {
-                        theLogger.fine("PQC mode detected for signed-only log, using ML-KEM decapsulation for signing key");
+                        theLogger.fine("PQC mode detected for signed-only log, attempting ML-KEM decapsulation for signing key");
                     }
                     if (tc.isDebugEnabled()) {
-                        Tr.debug(tc, "PQC mode detected for signed-only log, using ML-KEM decapsulation for signing key");
+                        Tr.debug(tc, "PQC mode detected for signed-only log, attempting ML-KEM decapsulation for signing key");
                     }
 
                     try {
@@ -285,15 +288,17 @@ public class AuditLogReader {
 
                     } catch (Exception e) {
                         if (debugEnabled) {
-                            theLogger.fine("Error during ML-KEM decapsulation for signing key: " + e.getMessage());
+                            theLogger.fine("ML-KEM decapsulation failed for signing key: " + e.getMessage());
+                            theLogger.fine("Falling back to traditional RSA decryption");
                         }
                         if (tc.isDebugEnabled()) {
-                            Tr.debug(tc, "Error during ML-KEM decapsulation for signing key", e);
+                            Tr.debug(tc, "ML-KEM decapsulation failed for signing key, falling back to RSA", e);
                         }
-                        throw new Exception("Failed to decapsulate signing shared key using ML-KEM: " + e.getMessage(), e);
+                        pqcFailed = true;
                     }
-
-                } else {
+                }
+                
+                if (!usePQC || pqcFailed) {
                     // Traditional RSA-based approach
                     if (debugEnabled) {
                         theLogger.fine("Using traditional RSA for signing key decryption");
@@ -344,12 +349,15 @@ public class AuditLogReader {
                 AuditEncryptionImpl ae = null;
 
                 // Check if PQC mode is enabled
-                if (AuditPQCRuntimeSupport.isPQCSupported()) {
+                boolean usePQC = AuditPQCRuntimeSupport.isPQCSupported();
+                boolean pqcFailed = false;
+                
+                if (usePQC) {
                     if (debugEnabled) {
-                        theLogger.fine("PQC mode detected, using ML-KEM decapsulation for shared key recovery");
+                        theLogger.fine("PQC mode detected, attempting ML-KEM decapsulation for shared key recovery");
                     }
                     if (tc.isDebugEnabled()) {
-                        Tr.debug(tc, "PQC mode detected, using ML-KEM decapsulation for shared key recovery");
+                        Tr.debug(tc, "PQC mode detected, attempting ML-KEM decapsulation for shared key recovery");
                     }
 
                     try {
@@ -411,13 +419,17 @@ public class AuditLogReader {
 
                     } catch (Exception e) {
                         if (debugEnabled) {
-                            theLogger.fine("Error during ML-KEM decapsulation: " + e.getMessage());
+                            theLogger.fine("ML-KEM decapsulation failed: " + e.getMessage());
+                            theLogger.fine("Falling back to traditional RSA decryption");
                         }
                         if (tc.isDebugEnabled()) {
-                            Tr.debug(tc, "Error during ML-KEM decapsulation", e);
+                            Tr.debug(tc, "ML-KEM decapsulation failed, falling back to RSA", e);
                         }
-                        throw new Exception("Failed to decrypt audit log using ML-KEM: " + e.getMessage(), e);
+                        pqcFailed = true;
                     }
+                }
+                
+                if (!usePQC || pqcFailed) {
 
                 } else {
                     // Traditional RSA-based decryption
@@ -467,12 +479,15 @@ public class AuditLogReader {
                 AuditSigningImpl as = null;
 
                 // Check if PQC mode is enabled
-                if (AuditPQCRuntimeSupport.isPQCSupported()) {
+                boolean usePQC = AuditPQCRuntimeSupport.isPQCSupported();
+                boolean pqcFailed = false;
+                
+                if (usePQC) {
                     if (debugEnabled) {
-                        theLogger.fine("PQC mode detected for encrypted and signed log, using ML-KEM decapsulation");
+                        theLogger.fine("PQC mode detected for encrypted and signed log, attempting ML-KEM decapsulation");
                     }
                     if (tc.isDebugEnabled()) {
-                        Tr.debug(tc, "PQC mode detected for encrypted and signed log, using ML-KEM decapsulation");
+                        Tr.debug(tc, "PQC mode detected for encrypted and signed log, attempting ML-KEM decapsulation");
                     }
 
                     try {
@@ -552,15 +567,17 @@ public class AuditLogReader {
 
                     } catch (Exception e) {
                         if (debugEnabled) {
-                            theLogger.fine("Error during ML-KEM decapsulation for signed+encrypted log: " + e.getMessage());
+                            theLogger.fine("ML-KEM decapsulation failed for signed+encrypted log: " + e.getMessage());
+                            theLogger.fine("Falling back to traditional RSA decryption");
                         }
                         if (tc.isDebugEnabled()) {
-                            Tr.debug(tc, "Error during ML-KEM decapsulation for signed+encrypted log", e);
+                            Tr.debug(tc, "ML-KEM decapsulation failed for signed+encrypted log, falling back to RSA", e);
                         }
-                        throw new Exception("Failed to decrypt signed+encrypted audit log using ML-KEM: " + e.getMessage(), e);
+                        pqcFailed = true;
                     }
-
-                } else {
+                }
+                
+                if (!usePQC || pqcFailed) {
                     // Traditional RSA-based decryption for both signing and encryption
                     if (encKeyStorePassword == null || encKeyStorePassword.length() == 0) {
                         String msg = CommandUtils.getMessage("audit.NoKeyStorePasswordValue", encKeyStoreLocation);

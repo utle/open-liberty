@@ -1,0 +1,1832 @@
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "0",
+   "eventTime": "2026-07-13T21:00:56.118293-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "1",
+   "eventTime": "2026-07-13T21:00:56.140339-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/reports",
+      "method": "POST",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "2",
+   "eventTime": "2026-07-13T21:00:56.140502-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/auth",
+      "method": "PUT",
+      "credential.token": "user2",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "3",
+   "eventTime": "2026-07-13T21:00:56.140611-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean79",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "4",
+   "eventTime": "2026-07-13T21:00:56.140718-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean94",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "5",
+   "eventTime": "2026-07-13T21:00:56.14081-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean72",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "6",
+   "eventTime": "2026-07-13T21:00:56.140901-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/config",
+      "method": "DELETE",
+      "credential.token": "user2",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "7",
+   "eventTime": "2026-07-13T21:00:56.140971-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean75",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "8",
+   "eventTime": "2026-07-13T21:00:56.141029-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean56",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "9",
+   "eventTime": "2026-07-13T21:00:56.141094-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/health",
+      "method": "POST",
+      "credential.token": "service_account",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "10",
+   "eventTime": "2026-07-13T21:00:56.141314-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/users",
+      "method": "POST",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "11",
+   "eventTime": "2026-07-13T21:00:56.141497-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/dashboard",
+      "method": "GET",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "12",
+   "eventTime": "2026-07-13T21:00:56.141609-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/orders",
+      "method": "DELETE",
+      "credential.token": "api_user",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "13",
+   "eventTime": "2026-07-13T21:00:56.141678-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean43",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "14",
+   "eventTime": "2026-07-13T21:00:56.141744-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/users",
+      "method": "GET",
+      "credential.token": "operator",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "15",
+   "eventTime": "2026-07-13T21:00:56.142284-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean86",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "16",
+   "eventTime": "2026-07-13T21:00:56.142422-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "17",
+   "eventTime": "2026-07-13T21:00:56.14257-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "POST",
+      "credential.token": "testuser",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "18",
+   "eventTime": "2026-07-13T21:00:56.142729-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean67",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "19",
+   "eventTime": "2026-07-13T21:00:56.142802-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "20",
+   "eventTime": "2026-07-13T21:00:56.142921-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/health",
+      "method": "POST",
+      "credential.token": "service_account",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "21",
+   "eventTime": "2026-07-13T21:00:56.143052-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "22",
+   "eventTime": "2026-07-13T21:00:56.144119-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean18",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "23",
+   "eventTime": "2026-07-13T21:00:56.144257-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "24",
+   "eventTime": "2026-07-13T21:00:56.144325-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "25",
+   "eventTime": "2026-07-13T21:00:56.144379-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "26",
+   "eventTime": "2026-07-13T21:00:56.144437-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/users",
+      "method": "GET",
+      "credential.token": "user2",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "27",
+   "eventTime": "2026-07-13T21:00:56.144515-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean0",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "28",
+   "eventTime": "2026-07-13T21:00:56.144571-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean69",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "29",
+   "eventTime": "2026-07-13T21:00:56.144632-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/orders",
+      "method": "GET",
+      "credential.token": "guest",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "30",
+   "eventTime": "2026-07-13T21:00:56.144743-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean5",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "31",
+   "eventTime": "2026-07-13T21:00:56.146027-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean58",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "32",
+   "eventTime": "2026-07-13T21:00:56.146279-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean70",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "33",
+   "eventTime": "2026-07-13T21:00:56.146425-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/config",
+      "method": "POST",
+      "credential.token": "operator",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "34",
+   "eventTime": "2026-07-13T21:00:56.146594-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean74",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "35",
+   "eventTime": "2026-07-13T21:00:56.146692-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean39",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "36",
+   "eventTime": "2026-07-13T21:00:56.146825-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/health",
+      "method": "POST",
+      "credential.token": "operator",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "37",
+   "eventTime": "2026-07-13T21:00:56.14691-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean16",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "38",
+   "eventTime": "2026-07-13T21:00:56.146972-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean80",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "39",
+   "eventTime": "2026-07-13T21:00:56.147036-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/users",
+      "method": "PUT",
+      "credential.token": "api_user",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "40",
+   "eventTime": "2026-07-13T21:00:56.147096-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean14",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "41",
+   "eventTime": "2026-07-13T21:00:56.147149-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean28",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "42",
+   "eventTime": "2026-07-13T21:00:56.147204-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean12",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "43",
+   "eventTime": "2026-07-13T21:00:56.147258-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean28",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "44",
+   "eventTime": "2026-07-13T21:00:56.147309-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean88",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "45",
+   "eventTime": "2026-07-13T21:00:56.147365-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "46",
+   "eventTime": "2026-07-13T21:00:56.147416-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean4",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "47",
+   "eventTime": "2026-07-13T21:00:56.147934-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "48",
+   "eventTime": "2026-07-13T21:00:56.148001-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "DELETE",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "49",
+   "eventTime": "2026-07-13T21:00:56.148062-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean16",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "50",
+   "eventTime": "2026-07-13T21:00:56.148239-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean11",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "51",
+   "eventTime": "2026-07-13T21:00:56.148345-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/config",
+      "method": "DELETE",
+      "credential.token": "user2",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "52",
+   "eventTime": "2026-07-13T21:00:56.148464-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/metrics",
+      "method": "POST",
+      "credential.token": "developer",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "53",
+   "eventTime": "2026-07-13T21:00:56.148574-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "54",
+   "eventTime": "2026-07-13T21:00:56.148628-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/users",
+      "method": "PUT",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "55",
+   "eventTime": "2026-07-13T21:00:56.148683-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean43",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "56",
+   "eventTime": "2026-07-13T21:00:56.148732-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean90",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "57",
+   "eventTime": "2026-07-13T21:00:56.148789-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean78",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "58",
+   "eventTime": "2026-07-13T21:00:56.148843-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean84",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "59",
+   "eventTime": "2026-07-13T21:00:56.148897-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "60",
+   "eventTime": "2026-07-13T21:00:56.148947-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "PUT",
+      "credential.token": "user2",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "61",
+   "eventTime": "2026-07-13T21:00:56.149-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/reports",
+      "method": "PUT",
+      "credential.token": "user1",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "62",
+   "eventTime": "2026-07-13T21:00:56.149445-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean92",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "63",
+   "eventTime": "2026-07-13T21:00:56.149524-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean76",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "64",
+   "eventTime": "2026-07-13T21:00:56.149588-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "PATCH",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "65",
+   "eventTime": "2026-07-13T21:00:56.149671-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "66",
+   "eventTime": "2026-07-13T21:00:56.150065-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "67",
+   "eventTime": "2026-07-13T21:00:56.150188-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/dashboard",
+      "method": "PATCH",
+      "credential.token": "testuser",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "68",
+   "eventTime": "2026-07-13T21:00:56.15034-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/orders",
+      "method": "PUT",
+      "credential.token": "service_account",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "69",
+   "eventTime": "2026-07-13T21:00:56.150465-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean0",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "70",
+   "eventTime": "2026-07-13T21:00:56.150679-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean90",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "71",
+   "eventTime": "2026-07-13T21:00:56.150827-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/users",
+      "method": "POST",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "72",
+   "eventTime": "2026-07-13T21:00:56.151236-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/health",
+      "method": "PUT",
+      "credential.token": "admin",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "73",
+   "eventTime": "2026-07-13T21:00:56.151336-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/users",
+      "method": "PUT",
+      "credential.token": "user1",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "74",
+   "eventTime": "2026-07-13T21:00:56.151435-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean53",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "75",
+   "eventTime": "2026-07-13T21:00:56.151545-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/metrics",
+      "method": "PUT",
+      "credential.token": "developer",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "76",
+   "eventTime": "2026-07-13T21:00:56.151685-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/reports",
+      "method": "PUT",
+      "credential.token": "operator",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "77",
+   "eventTime": "2026-07-13T21:00:56.15246-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean85",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "78",
+   "eventTime": "2026-07-13T21:00:56.15269-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean19",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "79",
+   "eventTime": "2026-07-13T21:00:56.152837-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/dashboard",
+      "method": "PATCH",
+      "credential.token": "admin",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "80",
+   "eventTime": "2026-07-13T21:00:56.152961-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean68",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "81",
+   "eventTime": "2026-07-13T21:00:56.153076-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/health",
+      "method": "PATCH",
+      "credential.token": "user1",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "82",
+   "eventTime": "2026-07-13T21:00:56.153187-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean50",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN",
+   "eventSequenceNumber": "83",
+   "eventTime": "2026-07-13T21:00:56.153289-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean39",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "84",
+   "eventTime": "2026-07-13T21:00:56.153413-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "85",
+   "eventTime": "2026-07-13T21:00:56.153517-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "86",
+   "eventTime": "2026-07-13T21:00:56.153993-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "PATCH",
+      "credential.token": "admin",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "87",
+   "eventTime": "2026-07-13T21:00:56.154072-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/app/reports",
+      "method": "DELETE",
+      "credential.token": "user3",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "88",
+   "eventTime": "2026-07-13T21:00:56.154124-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean52",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "89",
+   "eventTime": "2026-07-13T21:00:56.154172-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean21",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "JMX_MBEAN_ATTRIBUTES",
+   "eventSequenceNumber": "90",
+   "eventTime": "2026-07-13T21:00:56.154223-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "jmx.mbean.name": "WebSphere:name=TestMBean15",
+      "jmx.mbean.action": "invoke",
+      "typeURI": "server/mbean"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "91",
+   "eventTime": "2026-07-13T21:00:56.154275-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "GET",
+      "credential.token": "user1",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "92",
+   "eventTime": "2026-07-13T21:00:56.154325-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/users",
+      "method": "GET",
+      "credential.token": "admin",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "93",
+   "eventTime": "2026-07-13T21:00:56.154914-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/health",
+      "method": "GET",
+      "credential.token": "guest",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "94",
+   "eventTime": "2026-07-13T21:00:56.154981-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/config",
+      "method": "GET",
+      "credential.token": "developer",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "95",
+   "eventTime": "2026-07-13T21:00:56.155091-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "failure",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/config",
+      "method": "PATCH",
+      "credential.token": "service_account",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "96",
+   "eventTime": "2026-07-13T21:00:56.155178-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/products",
+      "method": "GET",
+      "credential.token": "guest",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "97",
+   "eventTime": "2026-07-13T21:00:56.155233-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/api/orders",
+      "method": "PATCH",
+      "credential.token": "service_account",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHZ",
+   "eventSequenceNumber": "98",
+   "eventTime": "2026-07-13T21:00:56.155289-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "redirect",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "/admin/config",
+      "method": "PUT",
+      "credential.token": "user1",
+      "credential.type": "BASIC",
+      "host.address": "127.0.0.1:9443",
+      "realm": "defaultRealm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUDIT_MGMT",
+   "eventSequenceNumber": "99",
+   "eventTime": "2026-07-13T21:00:56.155341-04:00",
+   "observer": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "challenge",
+   "target": {
+      "id": "websphere: Mac:/opt/ibm/wlp/usr/:defaultServer",
+      "typeURI": "service/audit/test"
+   }
+}

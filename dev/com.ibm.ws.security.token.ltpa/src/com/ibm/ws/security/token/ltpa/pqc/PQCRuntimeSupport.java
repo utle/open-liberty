@@ -40,6 +40,7 @@ public class PQCRuntimeSupport {
     
     private static final boolean IS_JAVA_26_OR_LATER;
     private static final Class<?> KEM_CLASS;
+    private static final String PQC_ENABLED_PROPERTY = "com.ibm.ws.security.pqc.enabled";
     
     static {
         boolean java26Available = false;
@@ -74,10 +75,49 @@ public class PQCRuntimeSupport {
     
     /**
      * Check if PQC (ML-KEM) support is available at runtime.
-     * 
-     * @return true if running on Java 26+ with ML-KEM support
+     *
+     * This method checks the system property 'com.ibm.ws.security.pqc.enabled'
+     * which can be set via JVM options (e.g., -Dcom.ibm.ws.security.pqc.enabled=true).
+     *
+     * Behavior:
+     * - If property is set to "true": Returns true only if Java 26+ with ML-KEM is available
+     * - If property is set to "false": Returns false (PQC disabled)
+     * - If property is not set: Auto-detect based on Java version (default behavior)
+     *
+     * @return true if PQC support is enabled and available
      */
     public static boolean isPQCSupported() {
+        String pqcEnabled = System.getProperty(PQC_ENABLED_PROPERTY);
+        
+        if (pqcEnabled != null) {
+            boolean enabled = Boolean.parseBoolean(pqcEnabled);
+            
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, "PQC mode explicitly set via system property: " +
+                        PQC_ENABLED_PROPERTY + "=" + pqcEnabled);
+            }
+            
+            // If explicitly enabled, still require Java 26+ runtime support
+            if (enabled) {
+                if (!IS_JAVA_26_OR_LATER) {
+                    if (tc.isDebugEnabled()) {
+                        Tr.debug(tc, "PQC enabled via property but Java 26+ not available. " +
+                                "Current Java version: " + getJavaVersion());
+                    }
+                    return false;
+                }
+                return true;
+            }
+            
+            // Explicitly disabled
+            return false;
+        }
+        
+        // Default: auto-detect based on Java version
+        if (tc.isDebugEnabled() && IS_JAVA_26_OR_LATER) {
+            Tr.debug(tc, "PQC auto-detected as available (Java 26+)");
+        }
+        
         return IS_JAVA_26_OR_LATER;
     }
     
