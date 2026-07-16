@@ -1,0 +1,3700 @@
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "0",
+   "eventTime": "2026-07-15T17:22:59.446-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "3QZ0_hJ9GPXe8XpYjAcOhqD",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "1",
+   "eventTime": "2026-07-15T17:22:59.547-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "MRR5lgAHOtuAxLwCT-_qA6B",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "2",
+   "eventTime": "2026-07-15T17:22:59.573-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "ZrJG-gQqXP1Re0DAzhWDbD2",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "3",
+   "eventTime": "2026-07-15T17:22:59.592-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "Rs7AiQZdDSKkNjkt4SvY4zM",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "4",
+   "eventTime": "2026-07-15T17:22:59.618-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "oQ8mukXcT-f2xLICJvbkR0D",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "5",
+   "eventTime": "2026-07-15T17:22:59.646-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "hLJ4QWtlqaQ_7jMAEsL3MVf",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "6",
+   "eventTime": "2026-07-15T17:22:59.670-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "q8yDZtbf0oQBb5o0WPpwU5m",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "7",
+   "eventTime": "2026-07-15T17:22:59.688-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "arrrdBuWBa0eLMdOvgn65qr",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "8",
+   "eventTime": "2026-07-15T17:22:59.707-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "RMzZD4_DCHWP9T0-_eAMrox",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "9",
+   "eventTime": "2026-07-15T17:22:59.724-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "sJFc9youZeb-gv8DHCyf3G7",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "10",
+   "eventTime": "2026-07-15T17:22:59.748-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "HvhDzKns4VJK3uKh8MZGIwx",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "11",
+   "eventTime": "2026-07-15T17:22:59.774-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "IAULNliIvnwY69AZ-s5zdPZ",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "12",
+   "eventTime": "2026-07-15T17:22:59.789-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "Z4zLr3hzcTNlWiK0lMEkdiC",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "13",
+   "eventTime": "2026-07-15T17:22:59.805-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "RCTm_hpPh8ew9ipjIEf3cdk",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "14",
+   "eventTime": "2026-07-15T17:22:59.822-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "g2gTtq8ZbE3VmnVR-55pSIo",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "15",
+   "eventTime": "2026-07-15T17:22:59.847-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "ApA_Y0AYtEeK3MDshjxiIi5",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "16",
+   "eventTime": "2026-07-15T17:22:59.863-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "vwHgHuRy02Y9onqdYSq6dqI",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "17",
+   "eventTime": "2026-07-15T17:22:59.887-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "QXj2anai9jo7oHy_1RhhL6B",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "18",
+   "eventTime": "2026-07-15T17:22:59.905-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "rZyzLsoMsdf-VS7jg20SZNA",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "19",
+   "eventTime": "2026-07-15T17:22:59.929-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "iAQMV5FOZXCbXR_9hhyy0dO",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "20",
+   "eventTime": "2026-07-15T17:22:59.947-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "pBBqGWY8GRigP3mCZ7sUOik",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "21",
+   "eventTime": "2026-07-15T17:22:59.966-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "dlzLuORQYvA8Es0Ss-fVIel",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "22",
+   "eventTime": "2026-07-15T17:22:59.987-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "lyYlHtGKgApfoQq_5DX9epn",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "23",
+   "eventTime": "2026-07-15T17:23:00.011-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "S3btNOAQCgkYzrb8a_uE1iv",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "24",
+   "eventTime": "2026-07-15T17:23:00.036-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "xhe8UVMqM2J4qPGc-kRE4h6",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "25",
+   "eventTime": "2026-07-15T17:23:00.059-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "B8U7ZSXzp6mXaJTQqn7hftZ",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "26",
+   "eventTime": "2026-07-15T17:23:00.081-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "fvroUKy5GUPrksZB-DZCCNw",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "27",
+   "eventTime": "2026-07-15T17:23:00.103-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "kDnmEnuRPSeL_iNZ4sX5dY9",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "28",
+   "eventTime": "2026-07-15T17:23:00.126-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "0QRMTCBT6UqCmj471mXTrlz",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "29",
+   "eventTime": "2026-07-15T17:23:00.146-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "xRvHSO6vLIGoy20jAB3RSlD",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "30",
+   "eventTime": "2026-07-15T17:23:00.163-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "mGrriClYHDcB1RNaY7it_-Z",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "31",
+   "eventTime": "2026-07-15T17:23:00.186-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "SsVOc43I6y7b2ry5swiDNgN",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "32",
+   "eventTime": "2026-07-15T17:23:00.202-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "LCQ1CdgMjTkbQGjDmO35uu6",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "33",
+   "eventTime": "2026-07-15T17:23:00.219-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "KF_NuWetLSZO8qG1SNB8MGG",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "34",
+   "eventTime": "2026-07-15T17:23:00.250-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "NfJpC-2nCX0kXGnmTTIsQOm",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "35",
+   "eventTime": "2026-07-15T17:23:00.270-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "uzY0D6t_fmgFQ1FBcRL2crr",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "36",
+   "eventTime": "2026-07-15T17:23:00.293-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "gzl1nl509RcJpzhd3KXyQ3a",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "37",
+   "eventTime": "2026-07-15T17:23:00.317-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "C9PpihOnP6fdpeU1TmXlpmD",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "38",
+   "eventTime": "2026-07-15T17:23:00.338-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "wTtAkP2v2p1LJyAvqJow5cD",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "39",
+   "eventTime": "2026-07-15T17:23:00.355-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "f3YUla_qHejl72_Cvki3AfF",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "40",
+   "eventTime": "2026-07-15T17:23:00.375-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "BBw01wXuP4li-hfZvJRHbm2",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "41",
+   "eventTime": "2026-07-15T17:23:00.398-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "xa-8r-3tsVd863GEclvj6UE",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "42",
+   "eventTime": "2026-07-15T17:23:00.419-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "bBq0CxAZsb-wfyc8MoyA7fT",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "43",
+   "eventTime": "2026-07-15T17:23:00.444-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "MOsH8rzQIhVr5mC6eXuEHkA",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "44",
+   "eventTime": "2026-07-15T17:23:00.467-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "HrczGkhRIeAtgDv6iK0ab0j",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "45",
+   "eventTime": "2026-07-15T17:23:00.488-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "zTuAkvovWHuXMCA5dnqphiZ",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "46",
+   "eventTime": "2026-07-15T17:23:00.513-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "J_ugFnwc1SDfY7Z34OBxMPX",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "47",
+   "eventTime": "2026-07-15T17:23:00.535-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "_0xzfH9NqWCzYyWr1GyYIH-",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "48",
+   "eventTime": "2026-07-15T17:23:00.552-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "xIrcoLgMAuUqRZDWjMfYa5p",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "49",
+   "eventTime": "2026-07-15T17:23:00.570-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "fu5oVjHuNtUXHGEZPSneHec",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "50",
+   "eventTime": "2026-07-15T17:23:00.592-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "j7t8E8pBq2FRC7ghAG8bBe4",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "51",
+   "eventTime": "2026-07-15T17:23:00.613-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "7gqbVLrYQcbPtqcFzPHXyye",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "52",
+   "eventTime": "2026-07-15T17:23:00.647-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "BjpDOig65AjzkPovc95ATCe",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "53",
+   "eventTime": "2026-07-15T17:23:00.726-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "PU4XFzzUO92sQbBsq94dhFA",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "54",
+   "eventTime": "2026-07-15T17:23:00.753-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "qSyTnn2ro3mlPnBTvEJFUad",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "55",
+   "eventTime": "2026-07-15T17:23:00.777-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "Niv7w752167w4qXPWp9hN6z",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "56",
+   "eventTime": "2026-07-15T17:23:00.795-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "Xkp2Z6x4Jx-2GdDIIzKS1ot",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "57",
+   "eventTime": "2026-07-15T17:23:00.811-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "xLs__84462VAWvAHbuItJNy",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "58",
+   "eventTime": "2026-07-15T17:23:00.833-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "xGrDJZzxjFysj55a9qfUWAf",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "59",
+   "eventTime": "2026-07-15T17:23:00.852-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "39JS0eR7T41wSWENCBuq6hu",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "60",
+   "eventTime": "2026-07-15T17:23:00.869-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "zmAJdMX6KNcsTydjMMGBzfi",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "61",
+   "eventTime": "2026-07-15T17:23:00.886-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "rO11JJKN5SZXuXlsRXvvHyp",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "62",
+   "eventTime": "2026-07-15T17:23:00.903-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "O_kEwTU6JHdmAJcATKZscjg",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "63",
+   "eventTime": "2026-07-15T17:23:00.922-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "VntuicGsBWrDxDiX3T7byhW",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "64",
+   "eventTime": "2026-07-15T17:23:00.944-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "iLlcPKHKwtnEj9JmDtDWAUd",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "65",
+   "eventTime": "2026-07-15T17:23:00.961-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "lrW-Gbk-zgQl4q5hZteE2nJ",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "66",
+   "eventTime": "2026-07-15T17:23:00.985-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "hHXqgaFkwxVyqiktJ9-GKpY",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "67",
+   "eventTime": "2026-07-15T17:23:01.002-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "jAR2P6Gmba8jF7rEfhNre66",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "68",
+   "eventTime": "2026-07-15T17:23:01.025-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "9WAWx_CuEmuxZPqTw9wrqWF",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "69",
+   "eventTime": "2026-07-15T17:23:01.051-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "Hn3PUSIOqKTEtPYk8ds9hC1",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "70",
+   "eventTime": "2026-07-15T17:23:01.073-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "EFR6sIvhfuxFyOg_W7oZKgM",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "71",
+   "eventTime": "2026-07-15T17:23:01.095-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "4HM5f9VNVFYcBnEMDxNuzPV",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "72",
+   "eventTime": "2026-07-15T17:23:01.116-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "kk2GEE-4-3JQ1vynf_0nNc-",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "73",
+   "eventTime": "2026-07-15T17:23:01.138-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "EbORGWpjBNKWGrRG3ZZaZlU",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "74",
+   "eventTime": "2026-07-15T17:23:01.160-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "MosfP1da1z8WmnuT0RSprK7",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "75",
+   "eventTime": "2026-07-15T17:23:01.175-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "ydguNGhNSUuJ4J8ursV6iLS",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "76",
+   "eventTime": "2026-07-15T17:23:01.190-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "AclLsQOtLLZWVWz9HRRK3YX",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "77",
+   "eventTime": "2026-07-15T17:23:01.211-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "Dh9RpDqiVO4hfrp0iXGbJd-",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "78",
+   "eventTime": "2026-07-15T17:23:01.233-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "C7nOzWDy2-GQhTMqY_MM8z8",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "79",
+   "eventTime": "2026-07-15T17:23:01.251-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "HkLcBasic65IGwIRBMWc5GW",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "80",
+   "eventTime": "2026-07-15T17:23:01.265-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "Sqsxn2qvDnzZMwK1HLyObch",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "81",
+   "eventTime": "2026-07-15T17:23:01.286-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "KmdfjWfZcagks86iRbyMCDb",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "82",
+   "eventTime": "2026-07-15T17:23:01.309-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "Vb74AxPvbjPYHmWOTM5Jp3_",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "83",
+   "eventTime": "2026-07-15T17:23:01.326-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "lZ52ylZ-RAwrtfXRIk7QnP6",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "84",
+   "eventTime": "2026-07-15T17:23:01.343-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "0rlGv-VqANtiEeTWopbrSJX",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "85",
+   "eventTime": "2026-07-15T17:23:01.365-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "jtEnWzoq_8haBwI5-9zlMx1",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "86",
+   "eventTime": "2026-07-15T17:23:01.389-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "S6MVMXSwBJk4EjrriRqL-e3",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "87",
+   "eventTime": "2026-07-15T17:23:01.410-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "ckxLY8i5h7O2ao2b10E8toC",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "88",
+   "eventTime": "2026-07-15T17:23:01.427-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "srKryuzns8ypevmq8gjG47j",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "89",
+   "eventTime": "2026-07-15T17:23:01.447-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "GET",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "46PJFT3_Kfq7w49AhmLSCtb",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "90",
+   "eventTime": "2026-07-15T17:23:01.469-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "-ejaGBTy5pXuHAXEbph8ehO",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "91",
+   "eventTime": "2026-07-15T17:23:01.490-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "iFMrJdZ125MAeb4HhOFFKiH",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "92",
+   "eventTime": "2026-07-15T17:23:01.511-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "ZlbZh_udPPQjZSiTyVd6Kjv",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "93",
+   "eventTime": "2026-07-15T17:23:01.527-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "yjgi2PYSvWUNuT5n0qmABV8",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "94",
+   "eventTime": "2026-07-15T17:23:01.543-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "Ky6PRG2HsSlwenlKpsy0YVX",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "95",
+   "eventTime": "2026-07-15T17:23:01.566-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "RJJr6kqrXhbs00y7CH6X_ac",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "96",
+   "eventTime": "2026-07-15T17:23:01.581-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "jfgWbmZSEHErP1Qb39JYvmu",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "97",
+   "eventTime": "2026-07-15T17:23:01.602-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "POST",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "8bXiByXIl1CKmyO9tEu5gYy",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "98",
+   "eventTime": "2026-07-15T17:23:01.625-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "success",
+   "reason": {
+      "reasonCode": "200",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "PUT",
+      "name": "/auditTest/secure",
+      "realm": "BasicRealm",
+      "session": "6Y3SjYTM2pAa8YwyQi_T_n4",
+      "typeURI": "service/application/web"
+   }
+}
+{
+   "eventName": "SECURITY_AUTHN",
+   "eventSequenceNumber": "99",
+   "eventTime": "2026-07-15T17:23:01.648-0400",
+   "initiator": {
+      "host": {
+         "address": "127.0.0.1",
+         "agent": "Java/26.0.1"
+      }
+   },
+   "observer": {
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "name": "SecurityService",
+      "typeURI": "service/server"
+   },
+   "outcome": "denied",
+   "reason": {
+      "reasonCode": "401",
+      "reasonType": "HTTPS"
+   },
+   "target": {
+      "appname": "null",
+      "credential": {
+         "token": "admin",
+         "type": "BASIC"
+      },
+      "host": {
+         "address": "127.0.0.1:9443"
+      },
+      "id": "websphere: mac:/Users/niyathar/libertyGit/open-liberty/dev/build.image/wlp/usr/:defaultServer",
+      "method": "DELETE",
+      "name": "/auditTest/admin",
+      "realm": "BasicRealm",
+      "session": "xlDjjOZKFDHvUH_d7zwvO9s",
+      "typeURI": "service/application/web"
+   }
+}

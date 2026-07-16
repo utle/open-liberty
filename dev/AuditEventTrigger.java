@@ -53,7 +53,7 @@ public class AuditEventTrigger {
         "GET", "POST", "PUT", "DELETE"
     };
     
-    private static final Random random = new Random();
+    private static final Random random = new Random(12345); // Fixed seed for reproducible tests
     
     static {
         // Disable SSL certificate validation for testing with self-signed certificates
@@ -102,8 +102,9 @@ public class AuditEventTrigger {
     private static void triggerAuditEvents(Config config) throws IOException, InterruptedException {
         long startTime = System.currentTimeMillis();
         long eventCount = 0;
-        long successCount = 0;
-        long failureCount = 0;
+        long successAuthCount = 0;
+        long deniedAuthCount = 0;
+        long connectionErrorCount = 0;
         
         System.out.println("Starting audit event generation via HTTP requests...");
         System.out.println("Target server: " + config.baseUrl);
@@ -116,7 +117,8 @@ public class AuditEventTrigger {
             System.out.println("Count: " + config.eventCount + " events");
         }
         
-        System.out.println("\nGenerating audit events by making HTTP requests...\n");
+        System.out.println("\nGenerating audit events by making HTTP requests...");
+        System.out.println("(50% correct credentials, 50% wrong credentials)\n");
         
         if (config.useDuration) {
             // Duration-based generation
@@ -124,17 +126,21 @@ public class AuditEventTrigger {
             long delayMs = 1000L / config.eventsPerSecond;
             
             while (System.currentTimeMillis() < endTime) {
-                boolean success = makeRequest(config);
+                int result = makeRequest(config);
                 eventCount++;
-                if (success) {
-                    successCount++;
+                if (result == 200) {
+                    successAuthCount++;
+                } else if (result == 401 || result == 403) {
+                    deniedAuthCount++;
                 } else {
-                    failureCount++;
+                    connectionErrorCount++;
                 }
                 
                 if (eventCount % 10 == 0) {
-                    System.out.print("\rGenerated " + eventCount + " events (Success: " + 
-                                   successCount + ", Failed: " + failureCount + ")...");
+                    System.out.print("\rRequests: " + eventCount +
+                                   " | Auth Success: " + successAuthCount +
+                                   " | Auth Denied: " + deniedAuthCount +
+                                   " | Connection Errors: " + connectionErrorCount);
                 }
                 
                 // Rate limiting
@@ -145,17 +151,21 @@ public class AuditEventTrigger {
         } else {
             // Count-based generation
             for (long i = 0; i < config.eventCount; i++) {
-                boolean success = makeRequest(config);
+                int result = makeRequest(config);
                 eventCount++;
-                if (success) {
-                    successCount++;
+                if (result == 200) {
+                    successAuthCount++;
+                } else if (result == 401 || result == 403) {
+                    deniedAuthCount++;
                 } else {
-                    failureCount++;
+                    connectionErrorCount++;
                 }
                 
                 if (eventCount % 10 == 0) {
-                    System.out.print("\rGenerated " + eventCount + " events (Success: " + 
-                                   successCount + ", Failed: " + failureCount + ")...");
+                    System.out.print("\rRequests: " + eventCount +
+                                   " | Auth Success: " + successAuthCount +
+                                   " | Auth Denied: " + deniedAuthCount +
+                                   " | Connection Errors: " + connectionErrorCount);
                 }
                 
                 // Small delay to avoid overwhelming the server
@@ -167,16 +177,20 @@ public class AuditEventTrigger {
         double durationSec = (endTime - startTime) / 1000.0;
         double eventsPerSec = eventCount / durationSec;
         
-        System.out.println("\n\nGeneration complete!");
-        System.out.println("Total requests: " + eventCount);
-        System.out.println("Successful: " + successCount);
-        System.out.println("Failed: " + failureCount);
+        System.out.println("\n\n=== Generation Complete ===");
+        System.out.println("Total HTTP requests: " + eventCount);
+        System.out.println("  ✓ Successful auth (200): " + successAuthCount);
+        System.out.println("  ✗ Denied auth (401/403): " + deniedAuthCount);
+        System.out.println("  ⚠ Connection errors: " + connectionErrorCount);
         System.out.println("Duration: " + String.format("%.2f", durationSec) + " seconds");
-        System.out.println("Average rate: " + String.format("%.2f", eventsPerSec) + " events/second");
-        System.out.println("\nCheck your server's audit log for the generated events.");
+        System.out.println("Average rate: " + String.format("%.2f", eventsPerSec) + " requests/second");
+        System.out.println("\nAudit events logged: " + (successAuthCount + deniedAuthCount));
+        System.out.println("Check your server's audit log for the generated events.");
+        System.out.println("  - Successful auth events will have outcome=\"success\"");
+        System.out.println("  - Failed auth events will have outcome=\"denied\"");
     }
     
-    private static boolean makeRequest(Config config) {
+    private static int makeRequest(Config config) {
         HttpURLConnection conn = null;
         try {
             // Randomly choose endpoint and method
@@ -195,7 +209,7 @@ public class AuditEventTrigger {
                 username = "admin";
                 password = "adminpass";
             } else {
-                // Wrong admin password - this should trigger SECURITY_AUTHN_FAILURE
+                // Wrong admin password - this should trigger SECURITY_AUTHN with outcome="denied"
                 username = "admin";
                 password = "wrongpassword";
             }
@@ -240,12 +254,12 @@ public class AuditEventTrigger {
                 // Ignore stream reading errors
             }
             
-            // Any response (including 401, 403, 404) generates an audit event
-            return true;
+            // Return the HTTP status code
+            return responseCode;
             
         } catch (Exception e) {
-            // Connection failures still count as attempts
-            return false;
+            // Connection failures - return -1 to indicate error
+            return -1;
         } finally {
             if (conn != null) {
                 conn.disconnect();
