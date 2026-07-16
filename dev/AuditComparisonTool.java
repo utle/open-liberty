@@ -165,8 +165,55 @@ public class AuditComparisonTool {
     }
     
     private static String extractValue(String json, String key) {
+        // Handle nested paths like "target.credential.token"
+        if (key.contains(".")) {
+            return extractNestedValue(json, key);
+        }
+        
+        // Simple key extraction
         Pattern pattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\"([^\"]+)\"");
         Matcher matcher = pattern.matcher(json);
+        return matcher.find() ? matcher.group(1) : "";
+    }
+    
+    private static String extractNestedValue(String json, String path) {
+        String[] keys = path.split("\\.");
+        String currentJson = json;
+        
+        for (int i = 0; i < keys.length - 1; i++) {
+            String key = keys[i];
+            // Find the object for this key
+            Pattern objPattern = Pattern.compile("\"" + Pattern.quote(key) + "\"\\s*:\\s*\\{");
+            Matcher objMatcher = objPattern.matcher(currentJson);
+            
+            if (!objMatcher.find()) {
+                return "";
+            }
+            
+            int start = objMatcher.end() - 1; // Include the opening brace
+            int braceCount = 0;
+            int end = start;
+            
+            // Find matching closing brace
+            for (int j = start; j < currentJson.length(); j++) {
+                char c = currentJson.charAt(j);
+                if (c == '{') braceCount++;
+                else if (c == '}') {
+                    braceCount--;
+                    if (braceCount == 0) {
+                        end = j + 1;
+                        break;
+                    }
+                }
+            }
+            
+            currentJson = currentJson.substring(start, end);
+        }
+        
+        // Extract the final value
+        String finalKey = keys[keys.length - 1];
+        Pattern pattern = Pattern.compile("\"" + Pattern.quote(finalKey) + "\"\\s*:\\s*\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(currentJson);
         return matcher.find() ? matcher.group(1) : "";
     }
     
