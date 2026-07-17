@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='UTF-8'>
+<title>Audit Log PQC Performance Comparison</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f8f9fa; color: #212529; }
+h1 { color: #1a1a1a; border-bottom: 4px solid #0066cc; padding-bottom: 12px; font-size: 28px; }
+h2 { color: #2c3e50; margin-top: 35px; font-size: 22px; border-left: 4px solid #0066cc; padding-left: 12px; }
+.summary { background: white; padding: 25px; border-radius: 10px; margin: 25px 0; box-shadow: 0 3px 6px rgba(0,0,0,0.12); border: 1px solid #e0e0e0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin: 25px 0; }
+.stat-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 3px 6px rgba(0,0,0,0.12); border: 1px solid #e0e0e0; transition: transform 0.2s; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.15); }
+.stat-card h3 { margin-top: 0; color: #495057; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.stat-value { font-size: 36px; font-weight: bold; color: #0066cc; margin: 10px 0; }
+.stat-label { color: #6c757d; font-size: 13px; }
+.comparison { background: white; padding: 25px; border-radius: 10px; margin: 25px 0; box-shadow: 0 3px 6px rgba(0,0,0,0.12); border: 1px solid #e0e0e0; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; }
+th { background: linear-gradient(135deg, #0066cc 0%, #004c99 100%); color: white; padding: 14px 12px; text-align: left; position: sticky; top: 0; font-weight: 600; border-bottom: 2px solid #003d7a; }
+td { padding: 12px; border-bottom: 1px solid #e9ecef; }
+tr:nth-child(even) { background: #f8f9fa; }
+tr:hover { background: #e3f2fd; }
+.success { color: #28a745; font-weight: 600; background: #d4edda; padding: 4px 8px; border-radius: 4px; }
+.failure { color: #dc3545; font-weight: 600; background: #f8d7da; padding: 4px 8px; border-radius: 4px; }
+.denied { color: #fd7e14; font-weight: 600; background: #fff3cd; padding: 4px 8px; border-radius: 4px; }
+.challenge { color: #007bff; font-weight: 600; background: #cfe2ff; padding: 4px 8px; border-radius: 4px; }
+.faster { background: #d1f2eb; }
+.slower { background: #f8d7da; }
+.time-diff { font-weight: 700; font-family: 'Courier New', monospace; }
+.positive { color: #28a745; }
+.negative { color: #dc3545; }
+@media (max-width: 768px) { body { margin: 10px; } .stats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>🔐 Audit Log PQC Performance Comparison</h1>
+<p>Comparison of 100 authentication audit events with PQC disabled vs enabled</p>
+<div class='stats'>
+<div class='stat-card'>
+<h3>PQC Disabled</h3>
+<div class='stat-value'>100</div>
+<div class='stat-label'>Total Events</div>
+<div style='margin-top: 15px;'>
+<span class='success'>✓ 46 Success</span><br>
+<span class='denied'>✗ 54 Denied</span>
+</div>
+<div style='margin-top: 15px; font-size: 18px; color: #666;'>
+Total Time: <strong>2202 ms</strong>
+</div>
+</div>
+<div class='stat-card'>
+<h3>PQC Enabled</h3>
+<div class='stat-value'>100</div>
+<div class='stat-label'>Total Events</div>
+<div style='margin-top: 15px;'>
+<span class='success'>✓ 46 Success</span><br>
+<span class='denied'>✗ 54 Denied</span>
+</div>
+<div style='margin-top: 15px; font-size: 18px; color: #666;'>
+Total Time: <strong>2186 ms</strong>
+</div>
+</div>
+<div class='stat-card'>
+<h3>Performance Impact</h3>
+<div class='stat-value positive'>-16 ms</div>
+<div class='stat-label'>Time Difference</div>
+<div style='margin-top: 15px; font-size: 24px;' class='positive'>
+-0.7%
+</div>
+</div>
+</div>
+<h2>Event-by-Event Comparison</h2>
+<div class='comparison'>
+<table>
+<tr>
+<th>#</th>
+<th>Time (ms)</th>
+<th>User</th>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Outcome</th>
+<th>Time (ms)</th>
+<th>User</th>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Outcome</th>
+<th>Δ Time</th>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>0</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>51</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>56</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+5</td>
+</tr>
+<tr>
+<td>3</td>
+<td>110</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>112</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+2</td>
+</tr>
+<tr>
+<td>4</td>
+<td>151</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>150</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>169</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>170</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>6</td>
+<td>188</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>188</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>0</td>
+</tr>
+<tr>
+<td>7</td>
+<td>206</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>207</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>8</td>
+<td>223</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>224</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>9</td>
+<td>242</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>243</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>10</td>
+<td>272</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>271</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>11</td>
+<td>301</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>300</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>12</td>
+<td>320</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>317</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-3</td>
+</tr>
+<tr>
+<td>13</td>
+<td>337</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>336</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>14</td>
+<td>356</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>353</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-3</td>
+</tr>
+<tr>
+<td>15</td>
+<td>373</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>371</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>16</td>
+<td>401</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>399</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>17</td>
+<td>418</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>417</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>18</td>
+<td>446</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>445</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>19</td>
+<td>473</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>472</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>20</td>
+<td>501</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>500</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-1</td>
+</tr>
+<tr>
+<td>21</td>
+<td>531</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>527</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-4</td>
+</tr>
+<tr>
+<td>22</td>
+<td>559</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>555</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-4</td>
+</tr>
+<tr>
+<td>23</td>
+<td>586</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>583</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-3</td>
+</tr>
+<tr>
+<td>24</td>
+<td>614</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>610</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-4</td>
+</tr>
+<tr>
+<td>25</td>
+<td>639</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>635</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-4</td>
+</tr>
+<tr>
+<td>26</td>
+<td>656</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>654</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>27</td>
+<td>680</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>680</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>0</td>
+</tr>
+<tr>
+<td>28</td>
+<td>699</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>697</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>29</td>
+<td>716</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>714</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>30</td>
+<td>732</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>732</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>0</td>
+</tr>
+<tr>
+<td>31</td>
+<td>750</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>748</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>32</td>
+<td>777</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>775</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-2</td>
+</tr>
+<tr>
+<td>33</td>
+<td>793</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>794</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>34</td>
+<td>810</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>811</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>35</td>
+<td>835</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>839</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>36</td>
+<td>861</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>865</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>37</td>
+<td>878</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>882</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>38</td>
+<td>905</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>908</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+3</td>
+</tr>
+<tr>
+<td>39</td>
+<td>933</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>934</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>40</td>
+<td>948</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>952</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>41</td>
+<td>964</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>968</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>42</td>
+<td>982</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>985</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+3</td>
+</tr>
+<tr>
+<td>43</td>
+<td>1009</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1011</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+2</td>
+</tr>
+<tr>
+<td>44</td>
+<td>1024</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1029</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+5</td>
+</tr>
+<tr>
+<td>45</td>
+<td>1048</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1054</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+6</td>
+</tr>
+<tr>
+<td>46</td>
+<td>1065</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1071</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+6</td>
+</tr>
+<tr>
+<td>47</td>
+<td>1094</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1098</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>48</td>
+<td>1111</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1114</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+3</td>
+</tr>
+<tr>
+<td>49</td>
+<td>1137</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1139</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+2</td>
+</tr>
+<tr>
+<td>50</td>
+<td>1154</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1155</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>51</td>
+<td>1171</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1172</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>52</td>
+<td>1187</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1190</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+3</td>
+</tr>
+<tr>
+<td>53</td>
+<td>1204</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1206</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+2</td>
+</tr>
+<tr>
+<td>54</td>
+<td>1230</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1231</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+1</td>
+</tr>
+<tr>
+<td>55</td>
+<td>1245</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1249</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+4</td>
+</tr>
+<tr>
+<td>56</td>
+<td>1270</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1275</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+5</td>
+</tr>
+<tr>
+<td>57</td>
+<td>1288</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1293</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+5</td>
+</tr>
+<tr>
+<td>58</td>
+<td>1303</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1310</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff negative'>+7</td>
+</tr>
+<tr>
+<td>59</td>
+<td>1320</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1326</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff negative'>+6</td>
+</tr>
+<tr>
+<td>60</td>
+<td>1354</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1351</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-3</td>
+</tr>
+<tr>
+<td>61</td>
+<td>1380</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1375</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-5</td>
+</tr>
+<tr>
+<td>62</td>
+<td>1396</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1391</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-5</td>
+</tr>
+<tr>
+<td>63</td>
+<td>1422</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1416</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-6</td>
+</tr>
+<tr>
+<td>64</td>
+<td>1448</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1441</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-7</td>
+</tr>
+<tr>
+<td>65</td>
+<td>1473</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1466</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-7</td>
+</tr>
+<tr>
+<td>66</td>
+<td>1499</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1491</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-8</td>
+</tr>
+<tr>
+<td>67</td>
+<td>1517</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1507</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-10</td>
+</tr>
+<tr>
+<td>68</td>
+<td>1533</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1524</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-9</td>
+</tr>
+<tr>
+<td>69</td>
+<td>1550</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1541</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-9</td>
+</tr>
+<tr>
+<td>70</td>
+<td>1568</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1557</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-11</td>
+</tr>
+<tr>
+<td>71</td>
+<td>1584</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1575</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-9</td>
+</tr>
+<tr>
+<td>72</td>
+<td>1601</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1591</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-10</td>
+</tr>
+<tr>
+<td>73</td>
+<td>1619</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1608</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-11</td>
+</tr>
+<tr>
+<td>74</td>
+<td>1644</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1631</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-13</td>
+</tr>
+<tr>
+<td>75</td>
+<td>1662</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1648</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-14</td>
+</tr>
+<tr>
+<td>76</td>
+<td>1686</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1672</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-14</td>
+</tr>
+<tr>
+<td>77</td>
+<td>1712</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1697</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-15</td>
+</tr>
+<tr>
+<td>78</td>
+<td>1738</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1723</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-15</td>
+</tr>
+<tr>
+<td>79</td>
+<td>1755</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1739</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-16</td>
+</tr>
+<tr>
+<td>80</td>
+<td>1778</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1757</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-21</td>
+</tr>
+<tr>
+<td>81</td>
+<td>1795</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1774</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-21</td>
+</tr>
+<tr>
+<td>82</td>
+<td>1822</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1802</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-20</td>
+</tr>
+<tr>
+<td>83</td>
+<td>1840</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1824</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-16</td>
+</tr>
+<tr>
+<td>84</td>
+<td>1856</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1841</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-15</td>
+</tr>
+<tr>
+<td>85</td>
+<td>1882</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1867</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-15</td>
+</tr>
+<tr>
+<td>86</td>
+<td>1900</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1883</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-17</td>
+</tr>
+<tr>
+<td>87</td>
+<td>1925</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1912</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-13</td>
+</tr>
+<tr>
+<td>88</td>
+<td>1943</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>1929</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-14</td>
+</tr>
+<tr>
+<td>89</td>
+<td>1962</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>1947</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-15</td>
+</tr>
+<tr>
+<td>90</td>
+<td>1988</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>1971</td>
+<td>admin</td>
+<td>GET</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-17</td>
+</tr>
+<tr>
+<td>91</td>
+<td>2004</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>1986</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-18</td>
+</tr>
+<tr>
+<td>92</td>
+<td>2029</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>2013</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-16</td>
+</tr>
+<tr>
+<td>93</td>
+<td>2054</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>2037</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-17</td>
+</tr>
+<tr>
+<td>94</td>
+<td>2078</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>2061</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-17</td>
+</tr>
+<tr>
+<td>95</td>
+<td>2095</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>2078</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-17</td>
+</tr>
+<tr>
+<td>96</td>
+<td>2119</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td>2103</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-16</td>
+</tr>
+<tr>
+<td>97</td>
+<td>2141</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>2128</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-13</td>
+</tr>
+<tr>
+<td>98</td>
+<td>2166</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td>2153</td>
+<td>admin</td>
+<td>PUT</td>
+<td>/auditTest/admin</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-13</td>
+</tr>
+<tr>
+<td>99</td>
+<td>2186</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td>2170</td>
+<td>admin</td>
+<td>DELETE</td>
+<td>/auditTest/secure</td>
+<td class='denied'>denied</td>
+<td class='time-diff positive'>-16</td>
+</tr>
+<tr>
+<td>100</td>
+<td>2202</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td>2186</td>
+<td>admin</td>
+<td>POST</td>
+<td>/auditTest/secure</td>
+<td class='success'>success</td>
+<td class='time-diff positive'>-16</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

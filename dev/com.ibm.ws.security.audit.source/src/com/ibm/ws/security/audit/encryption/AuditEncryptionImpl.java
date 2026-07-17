@@ -23,6 +23,7 @@ import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import javax.crypto.Cipher;
 import javax.management.ObjectName;
 
 import com.ibm.websphere.ras.Tr;
@@ -308,12 +309,17 @@ public class AuditEncryptionImpl implements AuditEncrypting {
             }
             return null;
         }
-        byte[] encodedPublicKey = pKey.getEncoded();
         byte[] encodedSharedKey = sharedKey.getEncoded();
 
-        encryptor = new AuditKeyEncryptor(encodedPublicKey);
-
-        encryptedSharedKey = encryptor.encrypt(encodedSharedKey);
+        try {
+            Cipher c = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+            c.init(Cipher.ENCRYPT_MODE, pKey);
+            encryptedSharedKey = c.doFinal(encodedSharedKey);
+        } catch (Exception e) {
+            if (tc.isDebugEnabled())
+                Tr.debug(tc, "encryptSharedKey RSA-OAEP failed", e);
+            throw new java.io.IOException(e.getMessage());
+        }
 
         return encryptedSharedKey;
     }
@@ -334,14 +340,31 @@ public class AuditEncryptionImpl implements AuditEncrypting {
             return null;
         }
 
-        if (encryptor == null) {
-            byte[] encodedPublicKey = pKey.getEncoded();
-            encryptor = new AuditKeyEncryptor(encodedPublicKey);
+        // Check if the key is an RSA key
+        boolean isRSAKey = pKey != null && pKey.getAlgorithm() != null &&
+                          pKey.getAlgorithm().equals("RSA");
+        
+        if (!isRSAKey) {
+            String keyType = (pKey != null && pKey.getAlgorithm() != null) ? pKey.getAlgorithm() : "unknown";
+            String errorMsg = "key was not an RSAKey, found key type: " + keyType +
+                            ". The keystore may contain PQC (ML-KEM) keys instead of RSA keys. " +
+                            "Please ensure you are using the correct keystore with RSA keys for decryption, " +
+                            "or use PQC-enabled decryption if the audit logs were encrypted with ML-KEM keys.";
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, errorMsg);
+            }
+            throw new java.io.IOException(errorMsg);
         }
 
-        byte[] encodedPublicKey = pKey.getEncoded();
-
-        decryptedSharedKey = encryptor.decrypt(sharedKey);
+        try {
+            Cipher c = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+            c.init(Cipher.DECRYPT_MODE, pKey);
+            decryptedSharedKey = c.doFinal(sharedKey);
+        } catch (Exception e) {
+            if (tc.isDebugEnabled())
+                Tr.debug(tc, "decryptSharedKey RSA-OAEP failed", e);
+            throw new java.io.IOException(e.getMessage());
+        }
 
         return decryptedSharedKey;
     }

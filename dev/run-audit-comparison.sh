@@ -101,8 +101,9 @@ clear_audit_logs() {
 decrypt_audit_log() {
     local encrypted_log=$1
     local decrypted_log=$2
+    local pqc_enabled=$3
     
-    echo "Decrypting audit log..."
+    echo "Decrypting audit log (PQC: ${pqc_enabled})..."
     
     # Convert to absolute paths
     decrypted_log=$(cd "$(dirname "${decrypted_log}")" 2>/dev/null && pwd)/$(basename "${decrypted_log}") || echo "${decrypted_log}"
@@ -115,16 +116,48 @@ decrypt_audit_log() {
     
     cd "${SERVER_DIR}/bin"
     
+    # Determine which keystores to use based on PQC setting
+    local enc_keystore
+    local signing_keystore
+    local enc_password
+    local signing_password
+    
+    if [ "${pqc_enabled}" = "true" ]; then
+        # Use PQC keystores (ML-KEM/ML-DSA keys)
+        enc_keystore="${SERVER_DIR}/usr/servers/${SERVER_NAME}/resources/security/AuditEncryptionKeyStore.p12"
+        signing_keystore="${SERVER_DIR}/usr/servers/${SERVER_NAME}/resources/security/AuditSigningKeyStore.p12"
+        enc_password="Liberty"
+        signing_password="Liberty"
+        echo "Using PQC keystores (ML-KEM/ML-DSA keys)"
+    else
+        # Use RSA keystores
+        enc_keystore="${SERVER_DIR}/usr/servers/${SERVER_NAME}/resources/security/rsa-encryption.p12"
+        signing_keystore="${SERVER_DIR}/usr/servers/${SERVER_NAME}/resources/security/rsa-signing.p12"
+        enc_password="changeit"
+        signing_password="changeit"
+        echo "Using RSA keystores"
+        
+        # Verify RSA keystores exist
+        if [ ! -f "${enc_keystore}" ]; then
+            echo "ERROR: RSA encryption keystore not found at ${enc_keystore}"
+            return 1
+        fi
+        if [ ! -f "${signing_keystore}" ]; then
+            echo "ERROR: RSA signing keystore not found at ${signing_keystore}"
+            return 1
+        fi
+    fi
+    
     JAVA_HOME="${JAVA_HOME}" ./auditUtility auditReader \
         --auditFileLocation="${encrypted_log}" \
         --outputFileLocation="${decrypted_log}" \
         --encrypted=true \
-        --encKeyStoreLocation="${SERVER_DIR}/usr/servers/${SERVER_NAME}/resources/security/AuditEncryptionKeyStore.p12" \
-        --encKeyStorePassword=Liberty \
+        --encKeyStoreLocation="${enc_keystore}" \
+        --encKeyStorePassword="${enc_password}" \
         --encKeyStoreType=PKCS12 \
         --signed=true \
-        --signingKeyStoreLocation="${SERVER_DIR}/usr/servers/${SERVER_NAME}/resources/security/AuditSigningKeyStore.p12" \
-        --signingKeyStorePassword=Liberty \
+        --signingKeyStoreLocation="${signing_keystore}" \
+        --signingKeyStorePassword="${signing_password}" \
         --signingKeyStoreType=PKCS12 \
         > "${utility_log}" 2>&1
     
@@ -164,15 +197,25 @@ run_test() {
     clear_audit_logs
     
     # Start server with specific PQC setting
+    local server_start_time=$(date +%s)
     start_server "${pqc_value}"
+    local server_ready_time=$(date +%s)
+    local server_startup_duration=$((server_ready_time - server_start_time))
     
-    # Run audit trigger
-    local start_time=$(date +%s)
+    echo "Server startup took ${server_startup_duration} seconds"
+    
+    # Run audit trigger and measure client-side time
+    echo "Generating ${EVENT_COUNT} audit events..."
+    local trigger_start_time=$(date +%s%N)  # nanoseconds for better precision
     run_audit_trigger
-    local end_time=$(date +%s)
-    local duration=$((end_time - start_time))
+    local trigger_end_time=$(date +%s%N)
+    local trigger_duration_ns=$((trigger_end_time - trigger_start_time))
+    local trigger_duration_ms=$((trigger_duration_ns / 1000000))
     
-    echo "Test completed in ${duration} seconds"
+    echo "Client-side request time: ${trigger_duration_ms}ms"
+    
+    # Wait a moment for server to finish writing audit logs
+    sleep 2
     
     # Copy and decrypt audit log
     local logs_dir="${SERVER_DIR}/usr/servers/${SERVER_NAME}/logs"
@@ -181,15 +224,27 @@ run_test() {
     
     if [ -f "${encrypted_log}" ]; then
         cp "${encrypted_log}" "${RUN_DIR}/audit-${mode}-encrypted.log"
-        decrypt_audit_log "${encrypted_log}" "${decrypted_log}"
+        
+        # Measure decryption time
+        local decrypt_start_time=$(date +%s%N)
+        decrypt_audit_log "${encrypted_log}" "${decrypted_log}" "${pqc_value}"
+        local decrypt_end_time=$(date +%s%N)
+        local decrypt_duration_ns=$((decrypt_end_time - decrypt_start_time))
+        local decrypt_duration_ms=$((decrypt_duration_ns / 1000000))
+        
+        echo "Decryption time: ${decrypt_duration_ms}ms"
+        
+        # Save detailed timing info
+        cat > "${RUN_DIR}/timing-${mode}.txt" << EOF
+Server Startup: ${server_startup_duration}s
+Client Request Time: ${trigger_duration_ms}ms
+Decryption Time: ${decrypt_duration_ms}ms
+EOF
     else
         echo "WARNING: No audit log found at ${encrypted_log}"
         echo "Checking for audit logs in other locations..."
         find "${SERVER_DIR}/usr/servers/${SERVER_NAME}" -name "audit.log" -type f
     fi
-    
-    # Save timing info
-    echo "${duration}" > "${RUN_DIR}/timing-${mode}.txt"
 }
 
 # Main execution

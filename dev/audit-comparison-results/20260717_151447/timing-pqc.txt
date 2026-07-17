@@ -1,0 +1,3 @@
+Server Startup: 13s
+Client Request Time: 3277ms
+Decryption Time: 625ms

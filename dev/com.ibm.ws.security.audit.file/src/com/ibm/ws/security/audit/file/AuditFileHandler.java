@@ -156,6 +156,8 @@ public class AuditFileHandler implements SynchronousHandler {
     private final static String encryptionCloseTag = "</EncryptionInformation>\n";
     private final static String encryptedSharedKeyOpenTag = "   <encryptedSharedKey>";
     private final static String encryptedSharedKeyCloseTag = "</encryptedSharedKey>\n";
+    private final static String keyWrapAlgorithmOpenTag = "   <keyWrapAlgorithm>";
+    private final static String keyWrapAlgorithmCloseTag = "</keyWrapAlgorithm>\n";
 
     private final static String encryptionCertAliasOpenTag = "   <encryptionCertAlias>";
     private final static String encryptionCertAliasCloseTag = "</encryptionCertAlias>\n";
@@ -189,6 +191,8 @@ public class AuditFileHandler implements SynchronousHandler {
 
     private final static String signingSharedKeyOpenTag = "   <signingSharedKey>";
     private final static String signingSharedKeyCloseTag = "</signingSharedKey>\n";
+    private final static String signingKeyWrapAlgorithmOpenTag = "   <signingKeyWrapAlgorithm>";
+    private final static String signingKeyWrapAlgorithmCloseTag = "</signingKeyWrapAlgorithm>\n";
 
     private final String signerKeyStoreName = null;
     private final String signerKeyStoreScope = null;
@@ -993,6 +997,10 @@ if (PQCRuntimeSupport.isPQCSupported()) {
 
         header = header.concat(encryptedSharedKeyCloseTag);
 
+        header = header.concat(keyWrapAlgorithmOpenTag);
+        header = header.concat("RSA-OAEP");
+        header = header.concat(keyWrapAlgorithmCloseTag);
+
         header = header.concat(encryptionCertAliasOpenTag);
         header = header.concat(encryptAlias != null ? encryptAlias : "");
         header = header.concat(encryptionCertAliasCloseTag);
@@ -1028,6 +1036,10 @@ if (PQCRuntimeSupport.isPQCSupported()) {
 
         header = header.concat(new String(x));
         header = header.concat(signingSharedKeyCloseTag);
+
+        header = header.concat(signingKeyWrapAlgorithmOpenTag);
+        header = header.concat("RSA-OAEP");
+        header = header.concat(signingKeyWrapAlgorithmCloseTag);
 
         header = header.concat(signingCertAliasOpenTag);
         header = header.concat(signerAlias != null ? signerAlias : "");
