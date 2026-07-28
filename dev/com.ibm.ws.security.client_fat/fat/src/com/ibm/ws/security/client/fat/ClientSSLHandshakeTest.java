@@ -673,6 +673,7 @@ public class ClientSSLHandshakeTest extends CommonTest {
             Log.error(c, name.getMethodName(), e, "Unexpected exception was thrown.");
             fail("Exception was thrown: " + e);
         }
+    }
     /**
      * Test description:
      * - Restart the server with TLS 1.3 and PQC-only configuration (no fallback).
@@ -1004,4 +1005,4 @@ public class ClientSSLHandshakeTest extends CommonTest {
     }
 
     
-    }
+    
