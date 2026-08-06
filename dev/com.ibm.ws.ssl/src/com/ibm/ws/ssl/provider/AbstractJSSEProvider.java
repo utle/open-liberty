@@ -386,6 +386,8 @@ public abstract class AbstractJSSEProvider implements JSSEProvider {
             // prepare trust manager wrapper.
             TrustManager[] defaultTMArray = trustManagerFactory.getTrustManagers();
             WSX509TrustManager wsTrustManager = new WSX509TrustManager(defaultTMArray, connectionInfo, sslConfig, trustStoreName, trustStoreLocation);
+            // Register for in-place refresh when the backing truststore file changes.
+            wsTrustManager.register();
             tmHolder.add(wsTrustManager);
 
         } catch (Exception e) {

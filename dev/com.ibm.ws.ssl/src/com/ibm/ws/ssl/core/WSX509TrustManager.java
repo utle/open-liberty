@@ -32,6 +32,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.lang.ref.WeakReference;
+import java.security.KeyStore;
+import javax.net.ssl.TrustManagerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
@@ -72,7 +77,11 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
     private static final int MAX_MSG_LEN = 79;
     private static final String INDENT = "           ";
 
-    private final TrustManager[] tm;
+    /** Registry of live instances keyed by canonical truststore file path, for in-place refresh. */
+    private static final ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>> REGISTRY =
+        new ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>>();
+
+    private volatile TrustManager[] tm;
     private final String tsCfgAlias;
     private final String tsFile;
     private Map<String, Object> extendedInfo;
@@ -170,6 +179,80 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
             Tr.exit(tc, "WSX509TrustManager");
+    }
+
+    /**
+     * Registers this instance in the static registry so it can be refreshed in-place
+     * when the backing truststore file changes. Called immediately after construction
+     * by {@link com.ibm.ws.ssl.provider.AbstractJSSEProvider}.
+     */
+    void register() {
+        if (tsFile == null) return;
+        REGISTRY.computeIfAbsent(tsFile, k -> new CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>())
+                .add(new WeakReference<WSX509TrustManager>(this));
+    }
+
+    /**
+     * Refreshes the inner {@code TrustManager[]} of every live {@link WSX509TrustManager}
+     * whose truststore file matches {@code trustStoreFilePath}. Stale (GC'd) weak references
+     * are pruned during the sweep.
+     *
+     * @param trustStoreFilePath canonical path of the truststore file that was modified
+     */
+    public static void refreshTrustManagers(String trustStoreFilePath) {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.entry(tc, "refreshTrustManagers", trustStoreFilePath);
+
+        CopyOnWriteArrayList<WeakReference<WSX509TrustManager>> refs = REGISTRY.get(trustStoreFilePath);
+        if (refs == null) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+                Tr.exit(tc, "refreshTrustManagers", "no registered managers for path");
+            return;
+        }
+
+        List<WeakReference<WSX509TrustManager>> dead = new ArrayList<WeakReference<WSX509TrustManager>>();
+        for (WeakReference<WSX509TrustManager> ref : refs) {
+            WSX509TrustManager mgr = ref.get();
+            if (mgr == null) {
+                dead.add(ref);
+                continue;
+            }
+            mgr.refreshInPlace();
+        }
+        refs.removeAll(dead);
+
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.exit(tc, "refreshTrustManagers");
+    }
+
+    /**
+     * Reloads the inner {@code TrustManager[]} from the truststore identified by
+     * {@link #tsCfgAlias} / {@link #tsFile}. The field is volatile so the updated
+     * reference is immediately visible to threads calling {@code check*Trusted}.
+     */
+    private void refreshInPlace() {
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.entry(tc, "refreshInPlace", tsFile);
+        try {
+            KeyStore trustStore = KeyStoreManager.getInstance().getJavaKeyStore(tsCfgAlias);
+            if (trustStore == null) {
+                if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                    Tr.debug(tc, "refreshInPlace: trustStore not available yet for " + tsCfgAlias);
+                return;
+            }
+            String trustMgr = config != null ? config.getProperty(com.ibm.websphere.ssl.Constants.SSLPROP_TRUST_MANAGER) : null;
+            if (trustMgr == null) trustMgr = com.ibm.ws.ssl.JSSEProviderFactory.getTrustManagerFactoryAlgorithm();
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustMgr);
+            tmf.init(trustStore);
+            this.tm = tmf.getTrustManagers();
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "refreshInPlace: reloaded TrustManagers for " + tsFile);
+        } catch (Exception e) {
+            if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
+                Tr.debug(tc, "refreshInPlace: failed to reload TrustManagers for " + tsFile + ": " + e.getMessage());
+        }
+        if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
+            Tr.exit(tc, "refreshInPlace");
     }
 
     /**
