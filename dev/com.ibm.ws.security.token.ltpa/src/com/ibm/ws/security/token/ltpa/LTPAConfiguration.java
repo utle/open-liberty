@@ -118,7 +118,15 @@ public interface LTPAConfiguration {
 
     /**
      * Returns the refresh threshold for LTPA tokens in minutes.
-     * When a token's remaining lifetime falls below this threshold, it will be refreshed.
+     * When the time remaining until the token's <em>inactivity timeout</em> falls at or
+     * below this threshold, the token is proactively refreshed: a new token is issued
+     * with the creation time reset to now (restarting the inactivity window) while the
+     * absolute expiration from the original token is preserved.
+     * <p>
+     * Note: this threshold is measured against the <strong>inactivity window</strong>,
+     * not against the total token lifetime ({@code expiration}). It must be configured
+     * to a value less than {@code inactivityTimeout}.
+     * <p>
      * This is a beta feature and is only available when running in beta mode.
      *
      * @return refresh threshold in minutes
@@ -128,10 +136,12 @@ public interface LTPAConfiguration {
 
     /**
      * Returns the inactivity timeout for LTPA tokens in minutes.
-     * The token expires after this period of inactivity. When the remaining time
-     * until inactivity expiration falls below the refresh threshold, a new token
-     * is created with a fresh inactivity window, but the absolute expiration time
-     * from the original token is preserved.
+     * The token expires after this period of inactivity (measured from the token's
+     * creation time, which is reset on each refresh). The inactivity timeout is always
+     * capped at the absolute expiration so it can never extend beyond the token's hard
+     * deadline. When the remaining time until inactivity timeout falls at or below
+     * {@code refreshThreshold}, a new token is issued with a fresh inactivity window.
+     * <p>
      * This is a beta feature and is only available when running in beta mode.
      *
      * @return inactivity timeout in minutes, or 0 if disabled

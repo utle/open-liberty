@@ -183,14 +183,14 @@ public class LTPAToken2 implements Token, Serializable {
      * Accepts the original token's absolute expiration in milliseconds so that
      * the cloned token preserves the same deadline rather than computing a new one from now.
      *
-     * @param expirationInMinutes            Expiration limit of the LTPA2 token in minutes (config value, kept for future clones)
-     * @param refreshThresholdInMinutes      The LTPA token expiration time remaining threshold
-     * @param inactivityTimeoutInMinutes     The LTPA token inactivity timeout in minutes
-     * @param originalExpirationInMillis     The absolute expiration of the original token in milliseconds
-     * @param sharedKey                      The LTPA shared key
-     * @param privateKey                     The LTPA private key
-     * @param publicKey                      The LTPA public key
-     * @param userdata                       The UserData
+     * @param expirationInMinutes        Expiration limit of the LTPA2 token in minutes (config value, kept for future clones)
+     * @param refreshThresholdInMinutes  The LTPA token expiration time remaining threshold
+     * @param inactivityTimeoutInMinutes The LTPA token inactivity timeout in minutes
+     * @param originalExpirationInMillis The absolute expiration of the original token in milliseconds
+     * @param sharedKey                  The LTPA shared key
+     * @param privateKey                 The LTPA private key
+     * @param publicKey                  The LTPA public key
+     * @param userdata                   The UserData
      */
     protected LTPAToken2(long expirationInMinutes, long refreshThresholdInMinutes, long inactivityTimeoutInMinutes,
                          long originalExpirationInMillis,
@@ -415,20 +415,20 @@ public class LTPAToken2 implements Token, Serializable {
             String[] creationTimeArray = userData.getAttributes(AttributeNameConstants.WSTOKEN_CREATION_TIME);
             if (creationTimeArray != null && creationTimeArray[creationTimeArray.length - 1] != null) {
                 long creationTime = Long.parseLong(creationTimeArray[creationTimeArray.length - 1]);
-                long inactivityExpiry = getInactivityExpiry(creationTime);
+                long inactivityTimeout = getInactivityTimeout(creationTime);
 
-                boolean inactivityExpired = currentTime > inactivityExpiry;
+                boolean inactivityExpired = currentTime > inactivityTimeout;
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                     Tr.debug(this, tc, "creation time = " + new Date(creationTime));
-                    Tr.debug(this, tc, "inactivity expiry = " + new Date(inactivityExpiry));
+                    Tr.debug(this, tc, "inactivity timeout = " + new Date(inactivityTimeout));
                 }
                 if (inactivityExpired) {
                     String msg = "The token has exceeded inactivity timeout: current time = \"" +
-                                 currentD + "\", inactivity expiry = \"" + new Date(inactivityExpiry) + "\"";
+                                 currentD + "\", inactivity timeout = \"" + new Date(inactivityTimeout) + "\"";
                     if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                         Tr.debug(this, tc, msg);
                     }
-                    throw new TokenExpiredException(inactivityExpiry, msg);
+                    throw new TokenExpiredException(inactivityTimeout, msg);
                 }
             }
         }
@@ -438,19 +438,19 @@ public class LTPAToken2 implements Token, Serializable {
     }
 
     /**
-     * Compute the inactivity expiry for this token given its creation time.
+     * Compute the inactivity timeout for this token given its creation time.
      * The result is capped at the absolute expiration so inactivity can never
      * extend beyond the token's hard deadline.
      *
      * @param creationTime the WSTOKEN_CREATION_TIME value in milliseconds
-     * @return the effective inactivity expiry time in milliseconds
+     * @return the effective inactivity timeout time in milliseconds
      */
-    private long getInactivityExpiry(long creationTime) {
-        long expiry = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
-        if (expiry > expirationInMilliseconds) {
-            expiry = expirationInMilliseconds;
+    private long getInactivityTimeout(long creationTime) {
+        long timeout = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
+        if (timeout > expirationInMilliseconds) {
+            timeout = expirationInMilliseconds;
         }
-        return expiry;
+        return timeout;
     }
 
     /**
@@ -489,15 +489,15 @@ public class LTPAToken2 implements Token, Serializable {
         }
 
         long creationTime = Long.parseLong(creationTimeArray[creationTimeArray.length - 1]);
-        long inactivityExpiry = getInactivityExpiry(creationTime);
+        long inactivityTimeout = getInactivityTimeout(creationTime);
 
-        long inactivityTimeRemaining = inactivityExpiry - currentTime;
+        long inactivityTimeRemaining = inactivityTimeout - currentTime;
         long thresholdInMillis = getRefreshThreshold();
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
             Tr.debug(this, tc, "Current time: " + new Date(currentTime));
             Tr.debug(this, tc, "Creation time: " + new Date(creationTime));
-            Tr.debug(this, tc, "Inactivity expiry: " + new Date(inactivityExpiry));
+            Tr.debug(this, tc, "Inactivity timeout: " + new Date(inactivityTimeout));
             Tr.debug(this, tc, "Inactivity time remaining (ms): " + inactivityTimeRemaining);
             Tr.debug(this, tc, "Refresh threshold (ms): " + thresholdInMillis);
         }
@@ -589,8 +589,7 @@ public class LTPAToken2 implements Token, Serializable {
         // Pass expirationInMilliseconds (the original absolute deadline) so the cloned token
         // does not get a new expiry computed from now.  A fresh WSTOKEN_CREATION_TIME is
         // stamped by setCreationTime() inside the constructor, resetting the inactivity window.
-        return new LTPAToken2(expirationInMinutes, refreshThresholdInMinutes, inactivityTimeoutInMinutes,
-                              expirationInMilliseconds, sharedKey, privateKey, publicKey, ud);
+        return new LTPAToken2(expirationInMinutes, refreshThresholdInMinutes, inactivityTimeoutInMinutes, expirationInMilliseconds, sharedKey, privateKey, publicKey, ud);
     }
 
     /**
@@ -718,6 +717,10 @@ public class LTPAToken2 implements Token, Serializable {
 
     @Override
     public boolean shouldRefreshToken() {
+        // Re-evaluate on every call so that callers who update WSTOKEN_CREATION_TIME
+        // (e.g. by backdating in tests, or by the framework after a request) see the
+        // correct answer without having to call isValid() first.
+        //checkRefreshNeeded(System.currentTimeMillis());
         return triggerRefresh;
     }
 

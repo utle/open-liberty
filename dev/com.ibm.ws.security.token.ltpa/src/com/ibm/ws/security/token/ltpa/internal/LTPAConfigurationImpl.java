@@ -223,7 +223,15 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             // Validate that refreshThreshold is less than inactivityTimeout (if both configured)
             if (inactivityTimeout > 0 && refreshThreshold > 0 && refreshThreshold >= inactivityTimeout) {
                 long adjustedThreshold = inactivityTimeout / 3;
-                Tr.warning(tc, "LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_INACTIVITY_TIMEOUT", refreshThreshold, inactivityTimeout, adjustedThreshold);
+                // If refreshThreshold is also less than expiration, the user likely set it
+                // relative to expiration rather than inactivityTimeout — emit a clearer warning.
+                if (refreshThreshold < keyTokenExpiration) {
+                    Tr.warning(tc, "LTPA_REFRESH_THRESHOLD_RELATIVE_TO_INACTIVITY_TIMEOUT",
+                               refreshThreshold, inactivityTimeout, keyTokenExpiration, adjustedThreshold);
+                } else {
+                    Tr.warning(tc, "LTPA_REFRESH_THRESHOLD_MUST_BE_LESS_THAN_INACTIVITY_TIMEOUT",
+                               refreshThreshold, inactivityTimeout, adjustedThreshold);
+                }
                 refreshThreshold = adjustedThreshold;
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                     Tr.debug(tc, "Adjusted refreshThreshold to: " + refreshThreshold);
