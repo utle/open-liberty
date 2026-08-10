@@ -166,7 +166,51 @@ public class LTPAInactivityTimeoutFATTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Test 2 — token idle past inactivityTimeout returns 401
+    // Test 2 — no Set-Cookie when refreshThreshold is not configured, even after partial idle
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * When {@code refreshThreshold} is not set, the server must never return a new
+     * Set-Cookie header during a valid session — regardless of how much of the
+     * inactivity window has been consumed.
+     *
+     * Configuration (serverTokenInactivity.xml): expiration=10m, inactivityTimeout=1m, refreshThreshold=not set
+     *
+     * Wait 30s — half the 60s inactivity window — then make an SSO request.
+     * The token is still valid (30s < 60s deadline), but because there is no
+     * {@code refreshThreshold} configured, proactive refresh must NOT fire and
+     * the response must contain no Set-Cookie header.
+     */
+    @Test
+    public void testNoNewCookieWhenRefreshThresholdNotConfiguredAfterPartialIdle() throws Exception {
+        String testName = "testNoNewCookieWhenRefreshThresholdNotConfiguredAfterPartialIdle";
+        String url = getServletUrl();
+
+        // Authenticate and get initial cookie
+        HttpURLConnection conn1 = makeAuthenticatedRequest(url, null, "user1", "user1pwd");
+        assertEquals("Initial authentication must succeed", 200, conn1.getResponseCode());
+        String cookie = extractLTPACookie(conn1);
+        assertNotNull("LTPA cookie must be set after authentication", cookie);
+        conn1.disconnect();
+        Log.info(thisClass, testName, "Initial cookie: " + LTPATestUtils.maskCookie(cookie));
+
+        // Wait 30s — halfway through the 60s inactivity window, token is still valid
+        long halfWindowMs = 30_000;
+        Log.info(thisClass, testName, "Waiting " + halfWindowMs + "ms (half of 60s inactivity window)...");
+        Thread.sleep(halfWindowMs);
+
+        // SSO request — token valid, but refreshThreshold not configured → no new cookie
+        HttpURLConnection conn2 = makeRequestWithCookie(url, cookie);
+        assertEquals("SSO request at half-idle must succeed (token still valid)", 200, conn2.getResponseCode());
+        String newCookie = extractLTPACookie(conn2);
+        assertNull("No Set-Cookie expected — refreshThreshold is not configured, so proactive refresh must not fire",
+                   newCookie);
+        conn2.disconnect();
+        Log.info(thisClass, testName, "Correct: no new cookie returned after partial idle with no refreshThreshold");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Test 3 — token idle past inactivityTimeout returns 401
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
@@ -203,7 +247,7 @@ public class LTPAInactivityTimeoutFATTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Test 3 — re-authentication after inactivity expiry issues a new token
+    // Test 4 — re-authentication after inactivity expiry issues a new token
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
@@ -242,7 +286,7 @@ public class LTPAInactivityTimeoutFATTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Test 4 — inactivity window resets on each successful request
+    // Test 5 — inactivity window resets on each successful request
     // ─────────────────────────────────────────────────────────────────────────
 
     /**

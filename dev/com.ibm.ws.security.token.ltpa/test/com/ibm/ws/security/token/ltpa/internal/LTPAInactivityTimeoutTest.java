@@ -428,6 +428,140 @@ public class LTPAInactivityTimeoutTest {
                     returnedToken.shouldRefreshToken());
     }
 
+    // ── Secondary-key path ────────────────────────────────────────────────────
+
+    /**
+     * When a token can only be validated by a secondary (validation) key, the same
+     * beta-guarded clone path must be taken as for the primary key.
+     *
+     * Setup: load the real key into a second {@link LTPAKeyInfoManager} as a
+     * "validation key", then build a factory whose primary shared key has a
+     * single flipped byte so primary decryption always fails.  The validation-key
+     * loop must succeed and, because the token is past the refresh threshold,
+     * return a clone rather than the original.
+     *
+     * Config: expiration=120min, inactivity=10min, threshold=5min.
+     * Backdate by 6min → remaining = 4min < 5min threshold → clone returned.
+     */
+    @Test
+    public void testValidateTokenBytesSecondaryKeyPathReturnsCloneWhenRefreshNeeded() throws Exception {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
+
+        // Factory A: mints the token with the real primary keys
+        tokenFactory = createInitializedTokenFactory(120, 10, 5);
+        Token originalToken = tokenFactory.createToken(createBasicTokenData());
+        long originalExpiration = originalToken.getExpiration();
+
+        // Backdate creationTime by 6 minutes so remaining = 4min < 5min threshold
+        backdateCreationTime(originalToken, 6 * 60 * 1000L);
+        byte[] backdatedBytes = originalToken.getBytes();
+
+        // Build a LTPAValidationKeysInfo using reflection — the constructor is
+        // package-private and cannot be called from a different-package test directly.
+        // Key bytes must match exactly what createTokenFactoryMap() puts in the factory:
+        //   sharedKey  = encodedSharedKey.getBytes()  (base64-string bytes used as AES key)
+        //   privateKey = ltpaPrivateKey.getEncoded()
+        //   publicKey  = ltpaPublicKey.getEncoded()
+        java.lang.reflect.Constructor<LTPAValidationKeysInfo> ctor =
+            LTPAValidationKeysInfo.class.getDeclaredConstructor(
+                String.class, byte[].class, byte[].class, byte[].class,
+                java.time.OffsetDateTime.class);
+        ctor.setAccessible(true);
+        LTPAValidationKeysInfo validationKeyInfo =
+            ctor.newInstance("testValidationKey",
+                             encodedSharedKey.getBytes(),  // same bytes as the factory's sharedKey
+                             ltpaPrivateKey.getEncoded(),
+                             ltpaPublicKey.getEncoded(),
+                             null);
+
+        java.util.concurrent.CopyOnWriteArrayList<LTPAValidationKeysInfo> validationKeys =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+        validationKeys.add(validationKeyInfo);
+
+        // Primary shared key with one flipped byte → primary decryption always fails;
+        // the validation-key loop then takes over with the correct key.
+        byte[] realSharedKey = encodedSharedKey.getBytes();
+        byte[] wrongSharedKey = realSharedKey.clone();
+        wrongSharedKey[0] ^= 0xFF;
+
+        Map<String, Object> factoryBMap = new HashMap<>();
+        factoryBMap.put("expiration",                  120L);
+        factoryBMap.put("primary_ltpa_shared_key",     wrongSharedKey);
+        factoryBMap.put("primary_ltpa_public_key",     ltpaPublicKey);
+        factoryBMap.put("primary_ltpa_private_key",    ltpaPrivateKey);
+        factoryBMap.put("expirationDifferenceAllowed", 0L);
+        factoryBMap.put("inactivityTimeout",           10L);
+        factoryBMap.put("refreshThreshold",            5L);
+        factoryBMap.put(LTPAConstants.VALIDATION_KEYS, validationKeys);
+
+        LTPAToken2Factory factoryB = new LTPAToken2Factory();
+        factoryB.initialize(factoryBMap);
+
+        // Wait briefly so the clone's creationTime is measurably newer
+        Thread.sleep(50);
+
+        Token returnedToken = factoryB.validateTokenBytes(backdatedBytes);
+
+        assertNotNull("validateTokenBytes() must return a token via secondary key", returnedToken);
+
+        // Bytes must differ — clone was issued via the secondary-key path
+        assertFalse("Secondary-key path must return a clone (bytes differ)",
+                    Arrays.equals(backdatedBytes, returnedToken.getBytes()));
+
+        // Absolute expiration must be preserved by the clone
+        assertEquals("Clone from secondary-key path must preserve absolute expiration",
+                     originalExpiration, returnedToken.getExpiration());
+
+        // Clone must carry a fresh (newer) creationTime
+        long originalCreationTime = Long.parseLong(
+            originalToken.getAttributes(AttributeNameConstants.WSTOKEN_CREATION_TIME)
+                         [originalToken.getAttributes(AttributeNameConstants.WSTOKEN_CREATION_TIME).length - 1]);
+        String[] cloneCreation = returnedToken.getAttributes(AttributeNameConstants.WSTOKEN_CREATION_TIME);
+        assertNotNull("Clone must have a creationTime attribute", cloneCreation);
+        long cloneCreationTime = Long.parseLong(cloneCreation[cloneCreation.length - 1]);
+        assertTrue("Clone creationTime must be newer than the backdated original",
+                   cloneCreationTime > originalCreationTime);
+    }
+
+    // ── Exact-boundary refresh trigger ───────────────────────────────────────
+
+    /**
+     * {@code checkRefreshNeeded} uses {@code <=}: refresh fires when
+     * {@code inactivityTimeRemaining <= refreshThreshold}.
+     * This test verifies the boundary case where remaining == threshold exactly.
+     *
+     * Config: inactivity=10min, threshold=5min.
+     * Backdate creationTime exactly 5min → remaining = 10min − 5min = 5min = threshold
+     * → condition is satisfied → validateTokenBytes() returns a clone.
+     */
+    @Test
+    public void testValidateTokenBytesReturnsCloneAtExactRefreshBoundary() throws Exception {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
+
+        // inactivity=10min, threshold=5min
+        tokenFactory = createInitializedTokenFactory(120, 10, 5);
+        Token originalToken = tokenFactory.createToken(createBasicTokenData());
+        long originalExpiration = originalToken.getExpiration();
+
+        // Backdate exactly 5 minutes → remaining = 5min = threshold → boundary fires
+        backdateCreationTime(originalToken, 5 * 60 * 1000L);
+        byte[] backdatedBytes = originalToken.getBytes();
+
+        Thread.sleep(50); // ensure clone's creationTime is measurably newer
+
+        Token returnedToken = tokenFactory.validateTokenBytes(backdatedBytes);
+
+        assertNotNull("validateTokenBytes() must return a token at the exact boundary", returnedToken);
+
+        // Bytes must differ — clone was issued at the exact boundary
+        assertFalse("At remaining == threshold a clone must be returned (bytes differ)",
+                    Arrays.equals(backdatedBytes, returnedToken.getBytes()));
+
+        // Absolute expiration must be preserved
+        assertEquals("Boundary clone must preserve absolute expiration",
+                     originalExpiration, returnedToken.getExpiration());
+    }
+
     // ── Helper methods ────────────────────────────────────────────────────────
 
     /**
