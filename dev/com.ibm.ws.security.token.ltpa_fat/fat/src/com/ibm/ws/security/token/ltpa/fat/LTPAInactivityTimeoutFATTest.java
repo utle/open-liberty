@@ -69,9 +69,16 @@ public class LTPAInactivityTimeoutFATTest {
     private static final Class<?> thisClass = LTPAInactivityTimeoutFATTest.class;
     private static LibertyServer server;
 
-    // Config: inactivityTimeout=1m — wait 70s to go past the 1-minute idle window
+    // serverTokenInactivity.xml: inactivityTimeout=1m (60s idle deadline)
+    // Wait 70s to go 10s past the 60s idle deadline — gives a comfortable margin.
     private static final long INACTIVITY_WAIT_MS = 70_000;
-    // Small wait to confirm token is still valid (well within 1-minute window)
+
+    // serverTokenRefresh.xml: inactivityTimeout=2m, refreshThreshold=1m (threshold crossed at ~60s idle)
+    // Wait 70s so that inactivity remaining = 120s − 70s = 50s ≤ 60s threshold → clone is returned.
+    // Reuse the same value as INACTIVITY_WAIT_MS; a separate constant avoids confusion.
+    private static final long REFRESH_THRESHOLD_WAIT_MS = 70_000;
+
+    // Small delay — well within any 1-minute or 2-minute inactivity window
     private static final long FRESH_REQUEST_DELAY_MS = 2_000;
 
     @Rule
@@ -239,14 +246,17 @@ public class LTPAInactivityTimeoutFATTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * The inactivity deadline resets on each token use (each clone stamps a fresh
-     * creationTime).  By making two requests separated by less than
-     * {@code inactivityTimeout} each, the total elapsed time can exceed
-     * {@code inactivityTimeout} while the token remains valid.
+     * The inactivity deadline resets on each token use because each clone stamps a
+     * fresh {@code creationTime}.  By making two requests that are each within the
+     * inactivity window, the total elapsed time can exceed {@code inactivityTimeout}
+     * while the token stays valid — because every successful clone resets the clock.
      *
-     * Config: inactivityTimeout=1m, refreshThreshold=1m (both equal — refresh
-     * fires immediately on first SSO validation, resetting the window).
-     * We switch to serverTokenRefresh.xml for this test which has both configured.
+     * Config (serverTokenRefresh.xml): expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
+     *   - Refresh fires when inactivity remaining ≤ 60s, i.e. after ~60s of idle.
+     *   - After 70s idle: remaining = 120s − 70s = 50s ≤ 60s → clone returned, window reset.
+     *   - After another 70s idle from the reset point: remaining = 50s ≤ 60s → another clone.
+     *   - Total wall time ≈ 140s > 120s inactivityTimeout, yet token stays valid because
+     *     each clone resets the inactivity clock.
      */
     @Test
     public void testInactivityWindowResetsOnTokenRefresh() throws Exception {
@@ -270,10 +280,9 @@ public class LTPAInactivityTimeoutFATTest {
         conn1.disconnect();
         Log.info(thisClass, testName, "Initial cookie: " + LTPATestUtils.maskCookie(cookie));
 
-        // Wait past refresh threshold (>1m remaining of 2m inactivity window = fires at ~61s)
-        long waitMs = 65_000;
-        Log.info(thisClass, testName, "Waiting " + waitMs + "ms to cross refresh threshold...");
-        Thread.sleep(waitMs);
+        // Wait 70s so inactivity remaining = 120s − 70s = 50s ≤ 60s threshold → clone returned.
+        Log.info(thisClass, testName, "Waiting " + REFRESH_THRESHOLD_WAIT_MS + "ms to cross refresh threshold...");
+        Thread.sleep(REFRESH_THRESHOLD_WAIT_MS);
 
         // First SSO request — should trigger clone, resetting creationTime
         HttpURLConnection conn2 = makeRequestWithCookie(url, cookie);
@@ -288,16 +297,18 @@ public class LTPAInactivityTimeoutFATTest {
             Log.info(thisClass, testName, "No clone yet — token still within window");
         }
 
-        // Wait another interval — if clone occurred, the window has reset, token must still be valid
-        Log.info(thisClass, testName, "Waiting another " + waitMs + "ms...");
-        Thread.sleep(waitMs);
+        // Wait another 70s from the reset point.
+        // If the clone occurred: new inactivity deadline = now + 120s → remaining after 70s = 50s → still valid (or another clone).
+        // If no clone occurred: total idle = 140s > 120s inactivityTimeout → would be rejected (401).
+        Log.info(thisClass, testName, "Waiting another " + REFRESH_THRESHOLD_WAIT_MS + "ms from the reset point...");
+        Thread.sleep(REFRESH_THRESHOLD_WAIT_MS);
 
         HttpURLConnection conn3 = makeRequestWithCookie(url, cookie);
         int responseCode = conn3.getResponseCode();
         conn3.disconnect();
 
-        // With window reset, token should still be valid (200) or be refreshed again
-        // Without reset, idle total would be ~130s > 120s inactivityTimeout → 401
+        // Expected: 200 (window was reset by clone) or another clone triggered.
+        // If the window was NOT reset: total idle ≈ 140s > 120s inactivityTimeout → 401.
         Log.info(thisClass, testName, "Response after second wait: " + responseCode);
         assertEquals("Token should still be valid after two waits if window was reset", 200, responseCode);
     }
