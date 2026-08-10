@@ -99,9 +99,6 @@ public class LTPAInactivityTimeoutFATTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        // This feature is beta-only — skip when not running beta
-        org.junit.Assume.assumeTrue(Boolean.getBoolean("com.ibm.ws.beta.edition"));
-
         server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.refresh");
         server.copyFileToLibertyInstallRoot("lib/features", "internalFeatureForFat/ltpafattestlibertyinternals-1.0.mf");
         server.addInstalledAppForValidation(APP_NAME);
@@ -109,6 +106,9 @@ public class LTPAInactivityTimeoutFATTest {
 
     @Before
     public void setUp() throws Exception {
+        // Enable beta edition in the server JVM so ProductInfo.getBetaEdition() returns true.
+        // This activates inactivityTimeout / refreshThreshold in LTPAToken2 and LTPAConfigurationImpl.
+        server.setJvmOptions(java.util.Arrays.asList("-Dcom.ibm.ws.beta.edition=true"));
         server.setServerConfigurationFile("serverTokenInactivity.xml");
         server.startServer(true);
         server.waitForStringInLog("CWWKZ0001I.*" + APP_NAME);

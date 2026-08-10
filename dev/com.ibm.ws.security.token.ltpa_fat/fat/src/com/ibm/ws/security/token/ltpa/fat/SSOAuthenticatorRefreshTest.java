@@ -104,20 +104,16 @@ public class SSOAuthenticatorRefreshTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        // Skip tests if not running beta edition
-        org.junit.Assume.assumeTrue(Boolean.getBoolean("com.ibm.ws.beta.edition"));
-        
         server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.refresh");
-        try {
-            server.copyFileToLibertyInstallRoot("lib/features", "internalFeatureForFat/ltpafattestlibertyinternals-1.0.mf");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        server.copyFileToLibertyInstallRoot("lib/features", "internalFeatureForFat/ltpafattestlibertyinternals-1.0.mf");
         server.addInstalledAppForValidation(APP_NAME);
     }
 
     @Before
     public void setUp() throws Exception {
+        // Enable beta edition in the server JVM so ProductInfo.getBetaEdition() returns true.
+        // This activates inactivityTimeout / refreshThreshold in LTPAToken2 and LTPAConfigurationImpl.
+        server.setJvmOptions(java.util.Arrays.asList("-Dcom.ibm.ws.beta.edition=true"));
         server.setServerConfigurationFile("serverTokenRefresh.xml");
         server.startServer(true);
         server.waitForStringInLog("CWWKZ0001I.*" + APP_NAME);

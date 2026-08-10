@@ -495,8 +495,8 @@ public class LTPAToken2 implements Token, Serializable {
         long thresholdInMillis = getRefreshThreshold();
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
-            Tr.debug(this, tc, "Current time: " + new Date(currentTime));
             Tr.debug(this, tc, "Creation time: " + new Date(creationTime));
+            Tr.debug(this, tc, "Current time: " + new Date(currentTime));
             Tr.debug(this, tc, "Inactivity timeout: " + new Date(inactivityTimeout));
             Tr.debug(this, tc, "Inactivity time remaining (ms): " + inactivityTimeRemaining);
             Tr.debug(this, tc, "Refresh threshold (ms): " + thresholdInMillis);
