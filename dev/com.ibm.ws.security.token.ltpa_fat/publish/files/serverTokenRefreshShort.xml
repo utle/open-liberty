@@ -56,11 +56,13 @@
     <httpSession securityIntegrationEnabled="false"/>
 
     <!-- LTPA configuration for short expiration testing
-         - expiration: 2 minutes - absolute token lifetime
-         - inactivityTimeout: 2 minutes - token expires if idle longer than this
-         - refreshThreshold: 1 minute - proactively refresh when <= 1m inactivity time remaining
+         - expiration:        3 minutes  absolute token lifetime (hard cap)
+         - inactivityTimeout: 2 minutes  token expires if idle longer than this (< expiration)
+         - refreshThreshold:  1 minute   proactively refresh when <=1m inactivity time remaining
+         NOTE: inactivityTimeout must be strictly less than expiration so the sliding
+               window is active. Setting them equal would silently disable sliding behaviour.
     -->
-    <ltpa expiration="2m"
+    <ltpa expiration="3m"
           inactivityTimeout="2m"
           refreshThreshold="1m"
           keysFileName="${server.config.dir}/resources/security/ltpa.keys"

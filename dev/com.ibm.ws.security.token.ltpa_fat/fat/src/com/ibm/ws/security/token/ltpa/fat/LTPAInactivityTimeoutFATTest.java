@@ -46,10 +46,13 @@ import componenttest.topology.impl.LibertyServerFactory;
 /**
  * FAT tests for the LTPA inactivity timeout feature.
  *
- * Uses {@code serverTokenInactivity.xml}:
+ * Default config ({@code serverTokenInactivity.xml}):
  *   expiration=10m, inactivityTimeout=1m, refreshThreshold=not set
  *
- * This isolates the hard-expiry-on-idle path from the proactive-refresh path:
+ * Refresh config ({@code serverTokenRefresh.xml}, used by testInactivityWindowResetsOnTokenRefresh):
+ *   expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
+ *
+ * The inactivity-only config isolates the hard-expiry-on-idle path:
  * - A token used within 1 minute remains valid.
  * - A token idle for more than 1 minute returns 401 even though absolute expiry
  *   (10 minutes) has not been reached.
@@ -250,11 +253,12 @@ public class LTPAInactivityTimeoutFATTest {
         String testName = "testInactivityWindowResetsOnTokenRefresh";
 
         // Switch to a config that has both inactivityTimeout AND refreshThreshold
-        // so the token gets proactively cloned (resetting creationTime) on each request
+        // so the token gets proactively cloned (resetting creationTime) on each request.
+        // serverTokenRefresh.xml: expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
         server.setMarkToEndOfLog();
         server.setServerConfigurationFile("serverTokenRefresh.xml");
         server.waitForConfigUpdateInLogUsingMark(null);
-        Log.info(thisClass, testName, "Switched to serverTokenRefresh.xml (inactivityTimeout=2m, refreshThreshold=1m)");
+        Log.info(thisClass, testName, "Switched to serverTokenRefresh.xml (expiration=4m, inactivityTimeout=2m, refreshThreshold=1m)");
 
         String url = getServletUrl();
 

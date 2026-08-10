@@ -68,14 +68,19 @@ public class SSOAuthenticatorRefreshTest {
     private static final Class<?> thisClass = SSOAuthenticatorRefreshTest.class;
     private static LibertyServer server;
 
-    // Timing constants for token refresh tests
-    // Configuration: expiration=2m, refreshThreshold=1m, inactivityTimeout=4m
-    private static final long REFRESH_THRESHOLD_WAIT_MS = 70000; // 70 seconds - wait past 1m threshold
-    private static final long SHORT_EXPIRATION_WAIT_MS = 35000; // 35 seconds - for short expiration tests
-    private static final long FULL_EXPIRATION_WAIT_MS = 130000; // 130 seconds - wait past 2m expiration
-    private static final long CONFIG_UPDATE_WAIT_MS = 2000; // 2 seconds - wait for config update
-    private static final long RAPID_REQUEST_DELAY_MS = 500; // 500ms - delay between rapid requests
-    private static final long FRESH_TOKEN_DELAY_MS = 1000; // 1 second - delay for fresh token
+    // Timing constants for token refresh tests.
+    // serverTokenRefresh.xml:      expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
+    // serverTokenRefreshShort.xml: expiration=3m, inactivityTimeout=2m, refreshThreshold=1m
+    //
+    // Refresh fires when inactivity time remaining <= refreshThreshold (1m).
+    // With a 2m inactivity window, refresh fires after ~60s idle → wait 70s to be safe.
+    // Full expiry (absolute): 4m for normal config → wait 250s to be past absolute hard cap.
+    private static final long REFRESH_THRESHOLD_WAIT_MS = 70000;   // 70s  — past the 1m refresh threshold
+    private static final long SHORT_EXPIRATION_WAIT_MS = 70000;    // 70s  — same threshold for short-expiration config
+    private static final long FULL_EXPIRATION_WAIT_MS = 250000;    // 250s — past the 4m absolute expiration
+    private static final long CONFIG_UPDATE_WAIT_MS = 2000;        // 2s   — wait for config update
+    private static final long RAPID_REQUEST_DELAY_MS = 500;        // 500ms — delay between rapid requests
+    private static final long FRESH_TOKEN_DELAY_MS = 1000;         // 1s   — delay for fresh token
 
     @Rule
     public final TestWatcher logger = new TestWatcher() {
