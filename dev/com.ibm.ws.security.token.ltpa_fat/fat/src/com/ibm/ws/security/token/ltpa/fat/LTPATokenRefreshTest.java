@@ -49,10 +49,10 @@ import componenttest.topology.impl.LibertyServerFactory;
  * Test LTPA token refresh functionality.
  *
  * This test verifies that:
- * 1. LTPA tokens are refreshed when they approach expiration
- * 2. New cookies are set in the response when tokens are refreshed
- * 3. Tokens are NOT refreshed when they are still valid
- * 4. The refresh threshold configuration is respected
+ * 1. LTPA tokens are proactively refreshed when inactivity time remaining falls at or below the refresh threshold
+ * 2. A new Set-Cookie header is returned in the response when a token is refreshed
+ * 3. Tokens are NOT refreshed when inactivity time remaining is still above the refresh threshold
+ * 4. The refreshThreshold configuration is measured against the inactivity window, not absolute expiration
  */
 @RunWith(FATRunner.class)
 @Mode(TestMode.FULL)
@@ -65,14 +65,16 @@ public class LTPATokenRefreshTest {
     private static LibertyServer server;
 
     // Timing constants for token refresh tests.
+    //
     // serverTokenRefresh.xml:      expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
     // serverTokenRefreshShort.xml: expiration=3m, inactivityTimeout=2m, refreshThreshold=1m
     //
-    // Refresh fires when inactivity time remaining <= refreshThreshold (1m).
-    // With a 2m inactivity window, that happens after ~60s of idle → wait 70s to be safe.
-    private static final long REFRESH_THRESHOLD_WAIT_MS = 70000;   // 70s — past the 1m refresh threshold
-    private static final long SHORT_EXPIRATION_WAIT_MS = 70000;    // 70s — same threshold for short-expiration config
-    private static final long REQUEST_INTERVAL_MS = 5000;          // 5s  — interval between requests
+    // Refresh fires when (inactivity deadline - now) <= refreshThreshold (1m).
+    // With a 2m inactivity window, the threshold is crossed after ~60s of idle.
+    // Wait 70s to give a comfortable 10s margin above the 60s trigger point.
+    private static final long REFRESH_THRESHOLD_WAIT_MS = 70000;   // 70s — 10s past the 60s refresh trigger
+    private static final long SHORT_EXPIRATION_WAIT_MS  = 70000;   // 70s — same trigger point for short-expiration config
+    private static final long REQUEST_INTERVAL_MS       = 5000;    //  5s — interval between sequential requests
 
     @Rule
     public final TestWatcher logger = new TestWatcher() {
@@ -127,18 +129,22 @@ public class LTPATokenRefreshTest {
     }
 
     /**
-     * Test that LTPA token is refreshed when it approaches the refresh threshold.
+     * Test that an LTPA token is refreshed when it approaches the inactivity refresh threshold.
      *
      * Configuration (serverTokenRefresh.xml):
-     * - expiration:        4 minutes (240 seconds) — hard cap
-     * - inactivityTimeout: 2 minutes (120 seconds) — idle window
-     * - refreshThreshold:  1 minute  (60 seconds)  — refresh when <=1m inactivity remains
+     * - expiration:        4 minutes (240s) — absolute hard cap; token always dies here
+     * - inactivityTimeout: 2 minutes (120s) — idle window; token expires if no request within this window
+     * - refreshThreshold:  1 minute   (60s) — proactively clone the token when <=60s of inactivity remains
+     *
+     * Timeline:
+     *   t=0s   first request → fresh token, creationTime stamped, inactivity deadline = t+120s
+     *   t=70s  second request → inactivity remaining = 50s ≤ 60s threshold → clone returned
+     *   t=240s absolute expiration → token is dead regardless of activity
      *
      * Expected behavior:
-     * 1. Initial request creates a new LTPA token
-     * 2. Wait 70s — token now has <1m of inactivity window remaining → refresh fires
-     * 3. Second request should trigger token refresh
-     * 4. New LTPA cookie should be set in response
+     * 1. Initial request creates a new LTPA token and sets an LtpaToken2 cookie
+     * 2. After 70s idle the inactivity window has <1m left — the server returns a refreshed cookie
+     * 3. The refreshed cookie value differs from the original (new creationTime, same absolute expiry)
      */
     @Test
     public void testTokenRefreshWhenApproachingThreshold() throws Exception {
@@ -156,9 +162,10 @@ public class LTPATokenRefreshTest {
         assertNotNull("Initial LTPA cookie should be set", initialCookie);
         Log.info(thisClass, testName, "Initial LTPA cookie: " + maskCookie(initialCookie));
 
-        // Step 2: Wait for token to approach refresh threshold.
-        // inactivityTimeout=2m, refreshThreshold=1m → refresh fires after ~60s idle → wait 70s.
-        Log.info(thisClass, testName, "Waiting " + REFRESH_THRESHOLD_WAIT_MS + "ms for token to approach refresh threshold...");
+        // Step 2: Wait for token to cross the refresh threshold.
+        // inactivityTimeout=2m, refreshThreshold=1m → refresh fires when <=60s inactivity remains.
+        // After 70s of idle: remaining = 120s - 70s = 50s ≤ 60s threshold → clone is returned.
+        Log.info(thisClass, testName, "Waiting " + REFRESH_THRESHOLD_WAIT_MS + "ms for inactivity window to cross refresh threshold...");
         Thread.sleep(REFRESH_THRESHOLD_WAIT_MS);
 
         // Step 3: Make second request - should trigger refresh
@@ -182,17 +189,21 @@ public class LTPATokenRefreshTest {
     }
 
     /**
-     * Test that LTPA token is NOT refreshed when it's still far from the refresh threshold.
+     * Test that an LTPA token is NOT refreshed when it is well above the refresh threshold.
      *
      * Configuration (serverTokenRefresh.xml):
-     * - expiration:        4 minutes  — hard cap
-     * - inactivityTimeout: 2 minutes  — idle window
-     * - refreshThreshold:  1 minute   — refresh when <=1m inactivity remains
+     * - expiration:        4 minutes (240s) — absolute hard cap
+     * - inactivityTimeout: 2 minutes (120s) — idle window
+     * - refreshThreshold:  1 minute   (60s) — refresh only when <=60s of inactivity remains
+     *
+     * Timeline:
+     *   t=0s  first request  → fresh token, inactivity deadline = t+120s
+     *   t~0s  second request → inactivity remaining ≈ 120s >> 60s threshold → no clone
      *
      * Expected behavior:
-     * 1. Initial request creates a new LTPA token
-     * 2. Immediate second request must NOT trigger refresh — token has ~2m inactivity remaining, threshold is 1m
-     * 3. No new LTPA cookie should be set in response
+     * 1. Initial request creates a new LTPA token and sets an LtpaToken2 cookie
+     * 2. Immediate follow-up request: inactivity remaining ≈ 120s, well above the 60s threshold — no refresh
+     * 3. No new LtpaToken2 Set-Cookie header should appear in the second response
      */
     @Test
     public void testTokenNotRefreshedWhenStillValid() throws Exception {
@@ -231,14 +242,20 @@ public class LTPATokenRefreshTest {
     }
 
     /**
-     * Test token refresh with short expiration time.
+     * Test token refresh when using a shorter absolute expiration.
      *
      * Configuration (serverTokenRefreshShort.xml):
-     * - expiration:        3 minutes  — hard cap
-     * - inactivityTimeout: 2 minutes  — idle window (< expiration, so sliding window is active)
-     * - refreshThreshold:  1 minute   — refresh when <=1m inactivity remains
+     * - expiration:        3 minutes (180s) — absolute hard cap
+     * - inactivityTimeout: 2 minutes (120s) — idle window; strictly less than expiration so the sliding window is active
+     * - refreshThreshold:  1 minute   (60s) — proactively clone when <=60s of inactivity remains
      *
-     * Expected behavior: token refreshes after ~60s of idle (same threshold as main config).
+     * Timeline:
+     *   t=0s   first request → fresh token, inactivity deadline = t+120s, absolute deadline = t+180s
+     *   t=70s  second request → inactivity remaining = 50s ≤ 60s threshold → clone returned
+     *   t=180s absolute expiration
+     *
+     * Expected behavior: same refresh trigger point as the main config (60s crossed after 70s idle).
+     * The shorter absolute expiration validates that the inactivity window, not the expiration, drives refresh.
      */
     @Test
     public void testTokenRefreshWithShortExpiration() throws Exception {
@@ -262,8 +279,9 @@ public class LTPATokenRefreshTest {
         assertNotNull("Initial LTPA cookie should be set", initialCookie);
         Log.info(thisClass, testName, "Initial LTPA cookie: " + maskCookie(initialCookie));
 
-        // Wait for token to approach threshold (2m expiration, 1m threshold = 1m window)
-        Log.info(thisClass, testName, "Waiting " + SHORT_EXPIRATION_WAIT_MS + "ms for token to approach refresh threshold...");
+        // Wait 70s for inactivity window to cross the refresh threshold.
+        // inactivityTimeout=2m, refreshThreshold=1m → after 70s idle: remaining = 50s ≤ 60s threshold → clone returned.
+        Log.info(thisClass, testName, "Waiting " + SHORT_EXPIRATION_WAIT_MS + "ms for inactivity window to cross refresh threshold...");
         Thread.sleep(SHORT_EXPIRATION_WAIT_MS);
 
         // Make second request - should trigger refresh
@@ -286,7 +304,14 @@ public class LTPATokenRefreshTest {
     }
 
     /**
-     * Test multiple sequential requests to verify consistent token refresh behavior.
+     * Test multiple sequential requests to verify consistent token handling.
+     *
+     * Configuration (serverTokenRefresh.xml):
+     * - expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
+     *
+     * Requests are spaced 5s apart — well within the 120s inactivity window — so no refresh
+     * is expected during this sequence.  The test confirms that a valid cookie is maintained
+     * across all requests regardless of whether the server chooses to refresh.
      */
     @Test
     public void testMultipleRequestsWithTokenRefresh() throws Exception {
@@ -321,7 +346,7 @@ public class LTPATokenRefreshTest {
 
             conn.disconnect();
 
-            // Wait between requests
+            // Wait 5s between requests (well within 120s inactivity window — no refresh expected)
             if (i < 3) {
                 Thread.sleep(REQUEST_INTERVAL_MS);
             }
