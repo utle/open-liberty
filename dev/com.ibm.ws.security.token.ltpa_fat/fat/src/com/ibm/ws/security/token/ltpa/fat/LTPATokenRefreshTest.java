@@ -37,7 +37,6 @@ import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
 import com.ibm.websphere.simplicity.log.Log;
-import com.ibm.ws.kernel.boot.cmdline.Utils;
 
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.custom.junit.runner.Mode;
@@ -94,8 +93,7 @@ public class LTPATokenRefreshTest {
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         // Skip tests if not running beta edition
-        org.junit.Assume.assumeTrue(Utils.getInstallDir().toPath().resolve("lib/versions/openliberty.properties").toFile().exists() &&
-                                     Boolean.getBoolean("com.ibm.ws.beta.edition"));
+        org.junit.Assume.assumeTrue(Boolean.getBoolean("com.ibm.ws.beta.edition"));
         
         server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.refresh");
         server.copyFileToLibertyInstallRoot("lib/features", "internalFeatureForFat/ltpafattestlibertyinternals-1.0.mf");
