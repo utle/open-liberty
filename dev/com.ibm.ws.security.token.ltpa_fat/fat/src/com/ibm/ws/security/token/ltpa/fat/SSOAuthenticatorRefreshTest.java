@@ -48,15 +48,15 @@ import componenttest.topology.impl.LibertyServer;
 import componenttest.topology.impl.LibertyServerFactory;
 
 /**
- * Comprehensive FAT tests for SSOAuthenticator LTPA token refresh functionality.
+ * FAT tests for SSOAuthenticator LTPA token refresh functionality.
  *
  * These tests verify the complete SSO authentication flow with token refresh:
  * 1. Initial authentication and LTPA cookie creation
- * 2. SSO authentication using existing LTPA cookie
- * 3. Token refresh detection and new cookie generation
- * 4. Cookie attributes (HttpOnly, Secure, Path, etc.)
- * 5. Multiple concurrent sessions
- * 6. Token expiration and renewal
+ * 2. SSO authentication using an existing LTPA cookie (no credentials)
+ * 3. Token refresh detection — server returns a new Set-Cookie when inactivity remaining ≤ threshold
+ * 4. Cookie attributes (HttpOnly, Secure, Path) are preserved across a refresh
+ * 5. Per-user token isolation — different users always hold different cookies
+ * 6. Absolute expiration — a fully-expired token (past hard cap) requires re-authentication
  */
 @RunWith(FATRunner.class)
 @Mode(TestMode.FULL)
@@ -69,18 +69,20 @@ public class SSOAuthenticatorRefreshTest {
     private static LibertyServer server;
 
     // Timing constants for token refresh tests.
-    // serverTokenRefresh.xml:      expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
-    // serverTokenRefreshShort.xml: expiration=3m, inactivityTimeout=2m, refreshThreshold=1m
     //
-    // Refresh fires when inactivity time remaining <= refreshThreshold (1m).
-    // With a 2m inactivity window, refresh fires after ~60s idle → wait 70s to be safe.
-    // Full expiry (absolute): 4m for normal config → wait 250s to be past absolute hard cap.
-    private static final long REFRESH_THRESHOLD_WAIT_MS = 70000;   // 70s  — past the 1m refresh threshold
-    private static final long SHORT_EXPIRATION_WAIT_MS = 70000;    // 70s  — same threshold for short-expiration config
-    private static final long FULL_EXPIRATION_WAIT_MS = 250000;    // 250s — past the 4m absolute expiration
-    private static final long CONFIG_UPDATE_WAIT_MS = 2000;        // 2s   — wait for config update
-    private static final long RAPID_REQUEST_DELAY_MS = 500;        // 500ms — delay between rapid requests
-    private static final long FRESH_TOKEN_DELAY_MS = 1000;         // 1s   — delay for fresh token
+    // serverTokenRefresh.xml:      expiration=4m (240s), inactivityTimeout=2m (120s), refreshThreshold=1m (60s)
+    // serverTokenRefreshShort.xml: expiration=3m (180s), inactivityTimeout=2m (120s), refreshThreshold=1m (60s)
+    //
+    // Refresh fires when (inactivity deadline − now) ≤ 60s, i.e. after ~60s of idle.
+    // Wait 70s: remaining = 120s − 70s = 50s ≤ 60s threshold → clone returned (10s margin).
+    private static final long REFRESH_THRESHOLD_WAIT_MS = 70000;   // 70s  — 10s past the 60s refresh trigger
+    private static final long SHORT_EXPIRATION_WAIT_MS  = 70000;   // 70s  — same trigger point for short-expiration config
+    // Full absolute expiry: serverTokenRefreshShort.xml has expiration=3m (180s).
+    // Wait 250s to be comfortably past the 180s hard cap.
+    private static final long FULL_EXPIRATION_WAIT_MS   = 250000;  // 250s — past the 3m absolute expiration (short config)
+    private static final long CONFIG_UPDATE_WAIT_MS     = 2000;    //   2s — wait for config update to propagate
+    private static final long RAPID_REQUEST_DELAY_MS    = 500;     // 500ms — delay between rapid successive requests
+    private static final long FRESH_TOKEN_DELAY_MS      = 1000;    //   1s — delay between fresh-token requests
 
     @Rule
     public final TestWatcher logger = new TestWatcher() {
@@ -108,7 +110,6 @@ public class SSOAuthenticatorRefreshTest {
                                      Boolean.getBoolean("com.ibm.ws.beta.edition"));
         
         server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat.refresh");
-        //server = LibertyServerFactory.getLibertyServer("com.ibm.ws.security.token.ltpa.fat");
         try {
             server.copyFileToLibertyInstallRoot("lib/features", "internalFeatureForFat/ltpafattestlibertyinternals-1.0.mf");
         } catch (Exception e) {
@@ -143,14 +144,16 @@ public class SSOAuthenticatorRefreshTest {
     }
 
     /**
-     * Test SSO authentication flow with token refresh.
+     * Test the complete SSO authentication flow with token refresh.
+     *
+     * Configuration (serverTokenRefresh.xml): expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
      *
      * Scenario:
-     * 1. User authenticates with credentials -> receives LTPA cookie
-     * 2. User makes request with LTPA cookie (SSO) -> authenticated without credentials
-     * 3. Wait for token to approach refresh threshold
-     * 4. User makes another SSO request -> token refreshed, new cookie returned
-     * 5. Verify new cookie works for subsequent SSO requests
+     * 1. Authenticate with credentials → receive initial LtpaToken2 cookie
+     * 2. Immediate SSO request → token still fresh (≈120s inactivity remaining >> 60s threshold) → no new cookie
+     * 3. Wait 70s idle → inactivity remaining = 50s ≤ 60s threshold → next request returns a clone
+     * 4. SSO request triggers clone → refreshed cookie returned in Set-Cookie
+     * 5. Verify the refreshed cookie also works for subsequent SSO requests
      */
     @Test
     public void testSSOAuthenticationWithTokenRefresh() throws Exception {
@@ -180,18 +183,20 @@ public class SSOAuthenticatorRefreshTest {
         }
         conn2.disconnect();
 
-        // Step 3: Wait for token to approach refresh threshold
-        Log.info(thisClass, testName, "Step 3: Waiting " + REFRESH_THRESHOLD_WAIT_MS + "ms for token to approach refresh threshold");
+        // Step 3: Wait for inactivity window to cross the refresh threshold.
+        // After 70s idle: remaining = 120s − 70s = 50s ≤ 60s threshold → clone returned.
+        Log.info(thisClass, testName, "Step 3: Waiting " + REFRESH_THRESHOLD_WAIT_MS + "ms to cross refresh threshold");
         Thread.sleep(REFRESH_THRESHOLD_WAIT_MS);
 
-        // Step 4: SSO request should trigger token refresh
-        Log.info(thisClass, testName, "Step 4: Making SSO request that should trigger refresh");
-        HttpURLConnection conn3 = makeRequestWithCookie(servletUrl, cookie1);
+        // Step 4: SSO request should trigger clone — use most current cookie
+        Log.info(thisClass, testName, "Step 4: Making SSO request that should trigger clone");
+        String currentCookie = (cookie2 != null) ? cookie2 : cookie1;
+        HttpURLConnection conn3 = makeRequestWithCookie(servletUrl, currentCookie);
         assertEquals("SSO request should succeed", 200, conn3.getResponseCode());
 
         String cookie3 = extractLTPACookie(conn3);
         if (cookie3 != null) {
-            assertFalse("Token should be refreshed (different cookie)", cookie1.equals(cookie3));
+            assertFalse("Token should be refreshed (different cookie)", currentCookie.equals(cookie3));
             Log.info(thisClass, testName, "Token successfully refreshed: " + maskCookie(cookie3));
 
             // Step 5: Verify new cookie works for SSO
@@ -243,7 +248,13 @@ public class SSOAuthenticatorRefreshTest {
     }
 
     /**
-     * Test token refresh with different users to ensure proper isolation.
+     * Test that token refresh preserves per-user isolation.
+     *
+     * Configuration (serverTokenRefresh.xml): expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
+     *
+     * Two users authenticate independently.  After 70s idle both tokens cross the refresh
+     * threshold.  The refreshed cookies must remain distinct — one user's clone must never
+     * equal another user's clone.
      */
     @Test
     public void testTokenRefreshWithMultipleUsers() throws Exception {
@@ -280,8 +291,8 @@ public class SSOAuthenticatorRefreshTest {
         assertEquals("User2 SSO should succeed", 200, conn4.getResponseCode());
         conn4.disconnect();
 
-        // Wait for refresh threshold
-        Log.info(thisClass, testName, "Waiting for tokens to approach refresh threshold");
+        // Wait 70s so both tokens cross the refresh threshold (remaining = 50s ≤ 60s).
+        Log.info(thisClass, testName, "Waiting " + REFRESH_THRESHOLD_WAIT_MS + "ms to cross refresh threshold");
         Thread.sleep(REFRESH_THRESHOLD_WAIT_MS);
 
         // Both users should get refreshed tokens
@@ -352,7 +363,13 @@ public class SSOAuthenticatorRefreshTest {
     }
 
     /**
-     * Test rapid successive requests with token refresh.
+     * Test rapid successive requests after the refresh threshold has been crossed.
+     *
+     * Configuration (serverTokenRefresh.xml): expiration=4m, inactivityTimeout=2m, refreshThreshold=1m
+     *
+     * After 70s idle the threshold is crossed.  Five rapid requests are made 500ms apart.
+     * Each request that returns a new cookie updates the active cookie for the next request.
+     * The test confirms: all 5 requests succeed (200) and at least the initial cookie is held.
      */
     @Test
     public void testRapidRequestsWithTokenRefresh() throws Exception {
@@ -370,37 +387,35 @@ public class SSOAuthenticatorRefreshTest {
         // Wait for refresh threshold
         Thread.sleep(REFRESH_THRESHOLD_WAIT_MS);
 
-        // Make rapid successive requests
+        // Make 5 rapid requests 500ms apart; update the active cookie whenever a clone is returned.
         List<String> cookies = new ArrayList<>();
         cookies.add(cookie);
-        int requests = 1;
         for (int i = 1; i <= 5; i++) {
-            requests = i;
             Log.info(thisClass, testName, "Rapid request #" + i);
             HttpURLConnection rapidConn = makeRequestWithCookie(servletUrl, cookie);
             assertEquals("Rapid request #" + i + " should succeed", 200, rapidConn.getResponseCode());
 
             String newCookie = extractLTPACookie(rapidConn);
             if (newCookie != null) {
-                Log.info(thisClass, testName, "Received new cookie in request #" + i);
-                cookie = newCookie; // Use new cookie for next request
+                Log.info(thisClass, testName, "Request #" + i + " returned a cloned cookie");
+                cookie = newCookie;
                 cookies.add(newCookie);
-
             }
 
             rapidConn.disconnect();
-            Thread.sleep(RAPID_REQUEST_DELAY_MS); // Small delay between requests
+            Thread.sleep(RAPID_REQUEST_DELAY_MS);
         }
-        Log.info(thisClass, testName, "Number of requests: " + requests);
-        Log.info(thisClass, testName, "Number of unique cookies: " + cookies.size());
-
-        Log.info(thisClass, testName, "Completed " + requests + " requests with " + cookies.size() + " cookie updates");
-        assertTrue("Should have made multiple requests", requests >= 5);
-        assertTrue("Should have at least one cookie", cookies.size() >= 1);
+        Log.info(thisClass, testName, "Completed 5 requests; cookie updates (clones): " + (cookies.size() - 1));
+        assertTrue("Should have at least the initial cookie", cookies.size() >= 1);
     }
 
     /**
-     * Test token refresh behavior across server configuration updates.
+     * Test that token refresh works correctly after a server configuration update.
+     *
+     * Authenticates under serverTokenRefresh.xml (expiration=4m), then switches to
+     * serverTokenRefreshShort.xml (expiration=3m, same inactivityTimeout and refreshThreshold).
+     * The old cookie must still be accepted after the config switch, and the next request
+     * after 70s idle must trigger a clone under the new configuration.
      */
     @Test
     public void testTokenRefreshAfterConfigUpdate() throws Exception {
@@ -446,7 +461,13 @@ public class SSOAuthenticatorRefreshTest {
     }
 
     /**
-     * Test that expired tokens are not refreshed but require re-authentication.
+     * Test that a token past its absolute expiration deadline is rejected and requires re-authentication.
+     *
+     * Configuration (serverTokenRefreshShort.xml): expiration=3m (180s), inactivityTimeout=2m, refreshThreshold=1m
+     *
+     * Wait 250s — well past the 180s hard cap.  The server must reject the stale cookie
+     * (401/302/403); subsequent re-authentication with credentials must succeed and
+     * return a new cookie that differs from the expired one.
      */
     @Test
     public void testExpiredTokenRequiresReauthentication() throws Exception {
@@ -467,8 +488,8 @@ public class SSOAuthenticatorRefreshTest {
         assertNotNull("Should receive cookie", cookie);
         conn1.disconnect();
 
-        // Wait for token to fully expire (beyond max lifetime)
-        Log.info(thisClass, testName, "Waiting " + FULL_EXPIRATION_WAIT_MS + "ms for token to expire completely");
+        // Wait 250s — past the 180s absolute expiration (serverTokenRefreshShort.xml: expiration=3m).
+        Log.info(thisClass, testName, "Waiting " + FULL_EXPIRATION_WAIT_MS + "ms for token to pass absolute expiration (3m=180s)");
         Thread.sleep(FULL_EXPIRATION_WAIT_MS);
 
         Log.info(thisClass, testName, "making a request with cookie ");
@@ -573,7 +594,6 @@ public class SSOAuthenticatorRefreshTest {
             // Get response code first - this triggers the actual HTTP request
             int responseCode = conn.getResponseCode();
 
-            Log.info(thisClass, "consumeResponse", "response code: " + responseCode);
             // Use error stream for error responses, input stream for success
             if (responseCode >= 400) {
                 is = conn.getErrorStream();
