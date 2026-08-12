@@ -75,6 +75,7 @@ class LTPAKeyCreateTask implements Runnable {
         tokenFactoryMap.put(LTPAConstants.EXPIRATION, config.getTokenExpiration());
         tokenFactoryMap.put(LTPAConstants.REFRESH_THRESHOLD, config.getRefreshThreshold());
         tokenFactoryMap.put(LTPAConstants.INACTIVITY_TIMEOUT, config.getInactivityTimeout());
+        tokenFactoryMap.put(LTPAConstants.DYNAMIC_EXPIRATION_VALIDATION, config.isDynamicExpirationValidation());
         tokenFactoryMap.put(LTPAConstants.PRIMARY_SECRET_KEY, primarySharedKey);
         tokenFactoryMap.put(LTPAConstants.PRIMARY_PUBLIC_KEY, primaryPublicKey);
         tokenFactoryMap.put(LTPAConstants.PRIMARY_PRIVATE_KEY, primaryPrivateKey);

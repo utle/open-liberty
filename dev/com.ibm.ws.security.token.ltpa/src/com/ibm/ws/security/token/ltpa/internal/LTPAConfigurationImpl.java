@@ -93,6 +93,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     private long keyTokenExpiration;
     private long refreshThreshold;
     private long inactivityTimeout;
+    private volatile boolean dynamicExpirationValidation;
     private long monitorInterval;
     private LTPAFileMonitor ltpaFileMonitor;
     private ServiceRegistration<FileMonitor> ltpaFileMonitorRegistration;
@@ -206,20 +207,23 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         primaryKeyImportFile = (String) props.get(CFG_KEY_IMPORT_FILE);
         primaryKeyPassword = resolvePrimaryKeyPassword(props);
         keyTokenExpiration = (Long) props.get(CFG_KEY_TOKEN_EXPIRATION);
-        
+
         // Beta guard: refreshThreshold and inactivityTimeout are only available in beta edition
         if (ProductInfo.getBetaEdition()) {
             Long refreshThresholdValue = (Long) props.get(CFG_KEY_TOKEN_REFRESH_THRESHOLD);
             refreshThreshold = (refreshThresholdValue != null) ? refreshThresholdValue : 0L;
-            
+
             Long inactivityTimeoutValue = (Long) props.get(CFG_KEY_INACTIVITY_TIMEOUT);
             inactivityTimeout = (inactivityTimeoutValue != null) ? inactivityTimeoutValue : 0L;
-            
+
+            Boolean dynamicExpirationValidationValue = (Boolean) props.get(CFG_KEY_DYNAMIC_EXPIRATION_VALIDATION);
+
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "refreshThreshold: " + refreshThreshold + " minutes");
                 Tr.debug(tc, "inactivityTimeout: " + inactivityTimeout + " minutes");
+                Tr.debug(tc, "dynamicExpirationValidation: " + dynamicExpirationValidation);
             }
-            
+
             // Validate that refreshThreshold is less than inactivityTimeout (if both configured)
             if (inactivityTimeout > 0 && refreshThreshold > 0 && refreshThreshold >= inactivityTimeout) {
                 long adjustedThreshold = inactivityTimeout / 3;
@@ -245,7 +249,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
                 Tr.debug(tc, "LTPA token refresh is only available in beta edition. Setting refreshThreshold=0 and inactivityTimeout=0");
             }
         }
-        
+
         monitorInterval = (Long) props.get(CFG_KEY_MONITOR_INTERVAL);
         authFilterRef = (String) props.get(KEY_AUTH_FILTER_REF);
         // expirationDifferenceAllowed is set to 3 seconds (3000ms) by default.
@@ -861,6 +865,12 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     @Override
     public long getInactivityTimeout() {
         return inactivityTimeout;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isDynamicExpirationValidation() {
+        return dynamicExpirationValidation;
     }
 
     /** {@inheritDoc} */

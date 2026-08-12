@@ -42,6 +42,8 @@ public interface LTPAConfiguration {
 
     public static final String CFG_KEY_INACTIVITY_TIMEOUT = "inactivityTimeout";
 
+    public static final String CFG_KEY_DYNAMIC_EXPIRATION_VALIDATION = "dynamicExpirationValidation";
+
     /**
      * The token keys file's monitor interval.
      */
@@ -148,6 +150,25 @@ public interface LTPAConfiguration {
      * @ibm-api
      */
     long getInactivityTimeout();
+
+    /**
+     * Returns whether dynamic expiration validation is enabled.
+     * <p>
+     * When {@code true}:
+     * <ul>
+     *   <li>On token creation: the expiration stored in the token is set to
+     *       {@code creationTime + inactivityTimeout} (not the configured {@code expiration}).</li>
+     *   <li>On token validation: the stored expiration field is ignored; the effective
+     *       expiration is recalculated as {@code creationTime + expiration} from the
+     *       server configuration.</li>
+     * </ul>
+     * <p>
+     * This is a beta feature and is only available when running in beta mode.
+     *
+     * @return {@code true} if dynamic expiration validation is enabled, {@code false} otherwise
+     * @ibm-api
+     */
+    boolean isDynamicExpirationValidation();
 
     /**
      * @return authFiler reference

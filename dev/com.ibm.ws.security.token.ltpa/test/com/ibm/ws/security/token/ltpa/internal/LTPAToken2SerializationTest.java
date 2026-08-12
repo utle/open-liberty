@@ -174,7 +174,7 @@ public class LTPAToken2SerializationTest {
         long inactivityTimeout = 60; // 1 hour
         long refreshThreshold = 30; // 30 minutes
         long expirationInMinutes = 120; // 2 hours
-        object = new LTPAToken2(test, sharedKey, ltpaPrivateKey, ltpaPublicKey, expDiffAllowed, expirationInMinutes, inactivityTimeout, refreshThreshold);
+        object = new LTPAToken2(test, sharedKey, ltpaPrivateKey, ltpaPublicKey, expDiffAllowed, expirationInMinutes, inactivityTimeout, refreshThreshold, false);
 
         /*
          * Set expiration via reflection so we don't need to update this test constantly for the token verification to pass. If the test fails validation, there may be something

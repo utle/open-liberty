@@ -32,6 +32,11 @@ public class LTPAConstants {
      * Used to identify the LTPA token inactivity timeout.
      */
     protected static final String INACTIVITY_TIMEOUT = "inactivityTimeout";
+
+    /**
+     * Used to identify whether dynamic expiration validation is enabled.
+     */
+    protected static final String DYNAMIC_EXPIRATION_VALIDATION = "dynamicExpirationValidation";
     
     /**
      * Used to identify the primary LTPA shared key.
