@@ -636,6 +636,71 @@ public class LTPAConfigurationImplTest {
     }
 
     @Test
+    public void modified_inactivityTimeoutChanged_keysReloaded() throws Exception {
+        setupExecutorServiceExpectations(2);
+        setupLocationServiceExpectations(2);
+
+        LTPAConfigurationImplTestDouble ltpaConfig = createActivatedLTPAConfigurationImpl();
+
+        props.put(LTPAConfiguration.CFG_KEY_INACTIVITY_TIMEOUT, 90L); // was 60L in setUp
+        ltpaConfig.modified(props);
+        assertTrue("The old file monitor must be unset.", ltpaConfig.wasUnsetFileMonitorRegistrationCalled);
+        assertTrue("Expected CWWKS4107A message was not logged", outputMgr.checkForStandardOut("CWWKS4107A:.*"));
+    }
+
+    @Test
+    public void modified_dynamicExpirationValidationChanged_keysReloaded() throws Exception {
+        setupExecutorServiceExpectations(2);
+        setupLocationServiceExpectations(2);
+
+        LTPAConfigurationImplTestDouble ltpaConfig = createActivatedLTPAConfigurationImpl();
+
+        props.put(LTPAConfiguration.CFG_KEY_DYNAMIC_EXPIRATION_VALIDATION, true); // was false (default)
+        ltpaConfig.modified(props);
+        assertTrue("The old file monitor must be unset.", ltpaConfig.wasUnsetFileMonitorRegistrationCalled);
+        assertTrue("Expected CWWKS4107A message was not logged", outputMgr.checkForStandardOut("CWWKS4107A:.*"));
+    }
+
+    @Test
+    public void loadConfig_inactivityTimeoutGreaterThanExpiration_emitsWarning() {
+        setupExecutorServiceExpectations(1);
+        setupLocationServiceExpectations(1);
+
+        // inactivityTimeout (180m) >= expiration (120m) — should emit CWWKS4125W
+        props.put(LTPAConfiguration.CFG_KEY_INACTIVITY_TIMEOUT, 180L);
+        createActivatedLTPAConfigurationImpl();
+
+        assertTrue("Expected CWWKS4125W warning was not logged",
+                   outputMgr.checkForStandardOut("CWWKS4125W:.*"));
+    }
+
+    @Test
+    public void loadConfig_inactivityTimeoutEqualToExpiration_emitsWarning() {
+        setupExecutorServiceExpectations(1);
+        setupLocationServiceExpectations(1);
+
+        // inactivityTimeout (120m) == expiration (120m) — should emit CWWKS4125W
+        props.put(LTPAConfiguration.CFG_KEY_INACTIVITY_TIMEOUT, 120L);
+        createActivatedLTPAConfigurationImpl();
+
+        assertTrue("Expected CWWKS4125W warning was not logged",
+                   outputMgr.checkForStandardOut("CWWKS4125W:.*"));
+    }
+
+    @Test
+    public void loadConfig_inactivityTimeoutLessThanExpiration_noWarning() {
+        setupExecutorServiceExpectations(1);
+        setupLocationServiceExpectations(1);
+
+        // inactivityTimeout (30m) < expiration (120m) — should NOT emit CWWKS4125W
+        props.put(LTPAConfiguration.CFG_KEY_INACTIVITY_TIMEOUT, 30L);
+        createActivatedLTPAConfigurationImpl();
+
+        assertTrue("Unexpected CWWKS4125W warning was logged",
+                   !outputMgr.checkForStandardOut("CWWKS4125W:.*"));
+    }
+
+    @Test
     public void maskKeysPasswords_replacesPasswordWithMask() {
         setupExecutorServiceExpectations(1);
         setupLocationServiceExpectations(1);

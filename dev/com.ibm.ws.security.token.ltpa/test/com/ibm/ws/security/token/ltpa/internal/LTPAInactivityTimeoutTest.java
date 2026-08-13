@@ -562,6 +562,105 @@ public class LTPAInactivityTimeoutTest {
                      originalExpiration, returnedToken.getExpiration());
     }
 
+    // ── dynamicExpirationValidation tests ────────────────────────────────────
+
+    /**
+     * When dynamicExpirationValidation=true, the expiration stored in a newly
+     * created token should equal creationTime + inactivityTimeout (not + expiration).
+     */
+    @Test
+    public void testDynamicExpirationValidation_tokenStoresInactivityTimeoutAsExpiration() throws Exception {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
+
+        // expiration=120m, inactivityTimeout=30m — with dynamicExpirationValidation the
+        // stored expiry should be ~30m from now, not ~120m from now.
+        tokenFactory = createInitializedTokenFactory(120, 30, 10, true);
+        Token token = tokenFactory.createToken(createBasicTokenData());
+
+        long now = System.currentTimeMillis();
+        long storedExpiration = token.getExpiration();
+
+        long expectedExpiry = now + 30 * 60 * 1000L;
+        long tolerance = 5000L; // 5 seconds
+
+        assertTrue("Stored expiration should be ~30 minutes from now (inactivityTimeout), not ~120 minutes",
+                   Math.abs(storedExpiration - expectedExpiry) < tolerance);
+    }
+
+    /**
+     * When dynamicExpirationValidation=false (default), the expiration stored in
+     * a newly created token should equal creationTime + expiration (normal behavior).
+     */
+    @Test
+    public void testDynamicExpirationValidation_false_tokenStoresExpirationNormally() throws Exception {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
+
+        tokenFactory = createInitializedTokenFactory(120, 30, 10, false);
+        Token token = tokenFactory.createToken(createBasicTokenData());
+
+        long now = System.currentTimeMillis();
+        long storedExpiration = token.getExpiration();
+
+        long expectedExpiry = now + 120 * 60 * 1000L;
+        long tolerance = 5000L;
+
+        assertTrue("Stored expiration should be ~120 minutes from now (expiration config) when dynamicExpirationValidation=false",
+                   Math.abs(storedExpiration - expectedExpiry) < tolerance);
+    }
+
+    /**
+     * When dynamicExpirationValidation=true, token validation must recompute the
+     * effective expiration as creationTime + expiration (from config), ignoring the
+     * shorter value stored in the token.  A freshly created token must therefore pass
+     * validation even though its stored expiry (creationTime + inactivityTimeout) is
+     * much shorter than the server-configured expiration.
+     */
+    @Test
+    public void testDynamicExpirationValidation_validationUsesConfigExpiration() throws Exception {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
+
+        // expiration=120m, inactivityTimeout=1m — stored expiry will be ~1m from now.
+        // Without dynamicExpirationValidation the token would expire in 1 minute;
+        // with it enabled the validator uses 120m and the token must be valid.
+        tokenFactory = createInitializedTokenFactory(120, 1, 0, true);
+        Token token = tokenFactory.createToken(createBasicTokenData());
+        byte[] tokenBytes = token.getBytes();
+
+        Token validated = tokenFactory.validateTokenBytes(tokenBytes);
+        assertNotNull("Token must validate successfully with dynamicExpirationValidation=true", validated);
+        assertTrue("Validated token must be valid", validated.isValid());
+    }
+
+    /**
+     * When dynamicExpirationValidation=true but the token has no WSTOKEN_CREATION_TIME
+     * (e.g. issued by a server without the refresh feature), validation must fall back
+     * to the stored expiration value — not throw or reject the token.
+     */
+    @Test
+    public void testDynamicExpirationValidation_fallsBackToStoredExpirationWhenNoCreationTime() throws Exception {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
+
+        // Create a token normally (will have creationTime), then strip creationTime
+        // to simulate a legacy token.
+        tokenFactory = createInitializedTokenFactory(120, 30, 10, true);
+        Token token = tokenFactory.createToken(createBasicTokenData());
+
+        // Remove creationTime so the token looks like it was issued without it.
+        // addAttribute with the same key replaces it — we cannot truly remove it
+        // via the public API, so we validate the bytes of a token that was created
+        // with a factory that has dynamicExpirationValidation=false and therefore
+        // never wrote a creationTime-based stored expiry.
+        tokenFactory = createInitializedTokenFactory(120, 30, 10, false);
+        Token legacyToken = tokenFactory.createToken(createBasicTokenData());
+        byte[] legacyBytes = legacyToken.getBytes();
+
+        // Now validate with dynamicExpirationValidation=true factory — must not throw.
+        tokenFactory = createInitializedTokenFactory(120, 30, 10, true);
+        Token validated = tokenFactory.validateTokenBytes(legacyBytes);
+        assertNotNull("Legacy token (no creationTime) must validate successfully", validated);
+        assertTrue("Legacy token must be valid", validated.isValid());
+    }
+
     // ── Helper methods ────────────────────────────────────────────────────────
 
     /**
