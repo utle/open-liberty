@@ -224,6 +224,12 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
                 Tr.debug(tc, "dynamicExpirationValidation: " + dynamicExpirationValidation);
             }
 
+            // Validate that inactivityTimeout is less than expiration (if configured)
+            if (inactivityTimeout > 0 && inactivityTimeout >= keyTokenExpiration) {
+                Tr.warning(tc, "LTPA_INACTIVITY_TIMEOUT_GREATER_THAN_OR_EQUAL_TO_EXPIRATION",
+                           inactivityTimeout, keyTokenExpiration);
+            }
+
             // Validate that refreshThreshold is less than inactivityTimeout (if both configured)
             if (inactivityTimeout > 0 && refreshThreshold > 0 && refreshThreshold >= inactivityTimeout) {
                 long adjustedThreshold = inactivityTimeout / 3;
@@ -240,12 +246,6 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
                 if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                     Tr.debug(tc, "Adjusted refreshThreshold to: " + refreshThreshold);
                 }
-            }
-
-            // Validate that inactivityTimeout is less than expiration (if configured)
-            if (inactivityTimeout > 0 && inactivityTimeout >= keyTokenExpiration) {
-                Tr.warning(tc, "LTPA_INACTIVITY_TIMEOUT_GREATER_THAN_OR_EQUAL_TO_EXPIRATION",
-                           inactivityTimeout, keyTokenExpiration);
             }
         } else {
             // In non-beta mode, set to default values that disable refresh functionality
