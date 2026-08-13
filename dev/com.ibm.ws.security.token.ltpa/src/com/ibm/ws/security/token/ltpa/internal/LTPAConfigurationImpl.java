@@ -210,7 +210,7 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
 
         // Beta guard: refreshThreshold and inactivityTimeout are only available in beta edition
         if (ProductInfo.getBetaEdition()) {
-            Long refreshThresholdValue = (Long) props.get(CFG_KEY_TOKEN_REFRESH_THRESHOLD);
+            Long refreshThresholdValue = (Long) props.get(CFG_KEY_REFRESH_THRESHOLD);
             refreshThreshold = (refreshThresholdValue != null) ? refreshThresholdValue : 0L;
 
             Long inactivityTimeoutValue = (Long) props.get(CFG_KEY_INACTIVITY_TIMEOUT);

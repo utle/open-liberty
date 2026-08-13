@@ -38,7 +38,7 @@ public interface LTPAConfiguration {
      */
     public static final String CFG_KEY_TOKEN_EXPIRATION = "expiration";
 
-    public static final String CFG_KEY_TOKEN_REFRESH_THRESHOLD = "refreshThreshold";
+    public static final String CFG_KEY_REFRESH_THRESHOLD = "refreshThreshold";
 
     public static final String CFG_KEY_INACTIVITY_TIMEOUT = "inactivityTimeout";
 

@@ -104,7 +104,7 @@ public class LTPAKeyCreateTaskTest {
         props.put(LTPAConfiguration.CFG_KEY_UPDATE_TRIGGER, "polled");
         props.put(LTPAConfigurationImpl.KEY_EXP_DIFF_ALLOWED, 0L);
         props.put(LTPAConfiguration.CFG_KEY_INACTIVITY_TIMEOUT, 60L);
-        props.put(LTPAConfiguration.CFG_KEY_TOKEN_REFRESH_THRESHOLD, 30L);
+        props.put(LTPAConfiguration.CFG_KEY_REFRESH_THRESHOLD, 30L);
     }
 
     private void setupLocationServiceExpecatations() {
