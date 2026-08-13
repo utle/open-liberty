@@ -41,6 +41,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
 
+import com.ibm.ws.kernel.productinfo.ProductInfo;
 import com.ibm.ws.security.filemonitor.LTPAFileMonitor;
 import com.ibm.ws.security.token.ltpa.LTPAConfiguration;
 import com.ibm.ws.security.token.ltpa.LTPAKeyInfoManager;
@@ -96,6 +97,9 @@ public class LTPAConfigurationImplTest {
 
     private Map<String, Object> props;
 
+    /** Saved beta property value so tests that mutate it can restore it cleanly. */
+    private String savedBetaProperty;
+
     private static String PATH_TO_DIR;
     static {
         try {
@@ -113,6 +117,7 @@ public class LTPAConfigurationImplTest {
 
     @Before
     public void setUp() {
+        savedBetaProperty = System.getProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY);
         props = createProps(PATH_TO_FILE, PWD, 120L, 0L, DEFAULT_MONITOR_DIR_VALUE, DEFAULT_UPDATE_TRIGGER,
                             0L, 240L, 30L, DEFAULT_VALIDATION_KEY_ELEMENT, DEFAULT_VALIDATION_FILENAME, DEFAULT_VALIDATION_PASSWORD, DEFAULT_VALIDATION_VALID_UNTIL_DATE);
 
@@ -226,6 +231,12 @@ public class LTPAConfigurationImplTest {
 
     @After
     public void tearDown() {
+        // Restore beta edition system property to whatever it was before the test.
+        if (savedBetaProperty == null) {
+            System.clearProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY);
+        } else {
+            System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, savedBetaProperty);
+        }
         ltpaConfig.deactivate(cc);
         ltpaConfig.unsetExecutorService(executorServiceRef);
         ltpaConfig.unsetLocationService(locateServiceRef);
@@ -663,6 +674,7 @@ public class LTPAConfigurationImplTest {
 
     @Test
     public void loadConfig_inactivityTimeoutGreaterThanExpiration_emitsWarning() {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
         setupExecutorServiceExpectations(1);
         setupLocationServiceExpectations(1);
 
@@ -676,6 +688,7 @@ public class LTPAConfigurationImplTest {
 
     @Test
     public void loadConfig_inactivityTimeoutEqualToExpiration_emitsWarning() {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
         setupExecutorServiceExpectations(1);
         setupLocationServiceExpectations(1);
 
@@ -689,6 +702,7 @@ public class LTPAConfigurationImplTest {
 
     @Test
     public void loadConfig_inactivityTimeoutLessThanExpiration_noWarning() {
+        System.setProperty(ProductInfo.BETA_EDITION_JVM_PROPERTY, "true");
         setupExecutorServiceExpectations(1);
         setupLocationServiceExpectations(1);
 

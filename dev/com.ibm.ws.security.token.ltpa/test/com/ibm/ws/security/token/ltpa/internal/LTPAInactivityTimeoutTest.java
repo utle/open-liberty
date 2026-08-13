@@ -686,13 +686,23 @@ public class LTPAInactivityTimeoutTest {
     // Helper methods
 
     private LTPAToken2Factory createInitializedTokenFactory(long expiration, long inactivityTimeout, long refreshThreshold) {
-        Map<String, Object> tokenFactoryMap = createTokenFactoryMap(expiration, inactivityTimeout, refreshThreshold);
+        return createInitializedTokenFactory(expiration, inactivityTimeout, refreshThreshold, false);
+    }
+
+    private LTPAToken2Factory createInitializedTokenFactory(long expiration, long inactivityTimeout, long refreshThreshold,
+                                                             boolean dynamicExpirationValidation) {
+        Map<String, Object> tokenFactoryMap = createTokenFactoryMap(expiration, inactivityTimeout, refreshThreshold, dynamicExpirationValidation);
         LTPAToken2Factory factory = new LTPAToken2Factory();
         factory.initialize(tokenFactoryMap);
         return factory;
     }
 
     private Map<String, Object> createTokenFactoryMap(long expiration, long inactivityTimeout, long refreshThreshold) {
+        return createTokenFactoryMap(expiration, inactivityTimeout, refreshThreshold, false);
+    }
+
+    private Map<String, Object> createTokenFactoryMap(long expiration, long inactivityTimeout, long refreshThreshold,
+                                                       boolean dynamicExpirationValidation) {
         Map<String, Object> tokenFactoryMap = new HashMap<String, Object>();
         tokenFactoryMap.put("expiration", expiration);
         tokenFactoryMap.put("primary_ltpa_shared_key", encodedSharedKey.getBytes());
@@ -701,6 +711,7 @@ public class LTPAInactivityTimeoutTest {
         tokenFactoryMap.put("expirationDifferenceAllowed", 0L);
         tokenFactoryMap.put("inactivityTimeout", inactivityTimeout);
         tokenFactoryMap.put("refreshThreshold", refreshThreshold);
+        tokenFactoryMap.put("dynamicExpirationValidation", dynamicExpirationValidation);
         // Provide an empty list so initialize() does not NPE on validationKeys.size()
         // when debug trace is enabled.
         tokenFactoryMap.put(LTPAConstants.VALIDATION_KEYS, new java.util.concurrent.CopyOnWriteArrayList<LTPAValidationKeysInfo>());

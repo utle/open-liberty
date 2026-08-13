@@ -199,14 +199,23 @@ public class LTPAToken2 implements Token, Serializable {
 
     /**
      * An LTPA2 token constructor (Used for the clone).
-     * Accepts the original token's absolute expiration in milliseconds so that
-     * the cloned token preserves the same deadline rather than computing a new one from now.
+     *
+     * <p>When {@code dynamicExpirationValidation} is {@code false}, pass the original
+     * token's absolute expiration as {@code originalExpirationInMillis} so the cloned
+     * token preserves the same hard deadline.
+     *
+     * <p>When {@code dynamicExpirationValidation} is {@code true}, pass {@code 0L} as
+     * the sentinel so the cloned token recomputes its stored expiration from the
+     * <em>new</em> {@code creationTime + inactivityTimeout}.  This is correct because
+     * under dynamic-expiration mode the stored field carries the inactivity deadline
+     * (not the absolute one), and that deadline must be anchored to the fresh creation
+     * time, not the original token's creation time.
      *
      * @param expirationInMinutes           Expiration limit of the LTPA2 token in minutes (config value, kept for future clones)
      * @param refreshThresholdInMinutes     The LTPA token expiration time remaining threshold
      * @param inactivityTimeoutInMinutes    The LTPA token inactivity timeout in minutes
      * @param dynamicExpirationValidation   Whether dynamic expiration validation is enabled
-     * @param originalExpirationInMillis    The absolute expiration of the original token in milliseconds
+     * @param originalExpirationInMillis    Absolute expiration in ms to preserve (pass {@code 0L} when dynamicExpirationValidation=true)
      * @param sharedKey                     The LTPA shared key
      * @param privateKey                    The LTPA private key
      * @param publicKey                     The LTPA public key
@@ -230,7 +239,17 @@ public class LTPAToken2 implements Token, Serializable {
         this.inactivityTimeoutInMinutes = inactivityTimeoutInMinutes;
         this.dynamicExpirationValidation = dynamicExpirationValidation;
         setCreationTime();
-        setExpirationFromMilliseconds(originalExpirationInMillis);
+        // When dynamicExpirationValidation=true the clone() method passes 0L as a sentinel.
+        // We must recompute the stored expiration from the new creationTime (just set above)
+        // plus the inactivity window — exactly as the creation constructor does.
+        // When dynamicExpirationValidation=false we preserve the original absolute deadline.
+        if (dynamicExpirationValidation && inactivityTimeoutInMinutes > 0) {
+            setExpiration(inactivityTimeoutInMinutes);
+        } else if (originalExpirationInMillis > 0) {
+            setExpirationFromMilliseconds(originalExpirationInMillis);
+        } else {
+            setExpiration(expirationInMinutes);
+        }
         this.cipher = CryptoUtils.AES_CBC_CIPHER;
         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
             Tr.exit(this, tc, "call by the clone() method,  userData: " + this.userData);
@@ -493,8 +512,15 @@ public class LTPAToken2 implements Token, Serializable {
      */
     private long getInactivityTimeout(long creationTime) {
         long timeout = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
-        if (timeout > expirationInMilliseconds) {
-            timeout = expirationInMilliseconds;
+        // Cap at the true absolute deadline so inactivity can never extend beyond it.
+        // When dynamicExpirationValidation=true the stored expirationInMilliseconds is
+        // creationTime + inactivityTimeout (a short value), NOT the hard expiration.
+        // In that case we must compute the real ceiling from creationTime + expirationInMinutes.
+        long absoluteDeadline = dynamicExpirationValidation
+                ? creationTime + (expirationInMinutes * MILLIS_PER_MINUTE)
+                : expirationInMilliseconds;
+        if (timeout > absoluteDeadline) {
+            timeout = absoluteDeadline;
         }
         return timeout;
     }
@@ -614,8 +640,14 @@ public class LTPAToken2 implements Token, Serializable {
 
     /**
      * Make a deep copy of the LTPA2 token when necessary.
-     * For token refresh, this preserves the absolute expiration from the original token
-     * but removes the creation time so a new one will be set in the refreshed token.
+     *
+     * <p>When {@code dynamicExpirationValidation=false} the clone preserves the original
+     * absolute expiration deadline unchanged.
+     *
+     * <p>When {@code dynamicExpirationValidation=true} the stored expiration field
+     * in the original token is {@code originalCreationTime + inactivityTimeout} — a
+     * stale value that must <em>not</em> be inherited.  We pass {@code 0L} as the
+     * sentinel so the clone constructor recomputes it from the new creation time.
      *
      * @return Object A new copy of the LTPA2 token
      */
@@ -632,11 +664,14 @@ public class LTPAToken2 implements Token, Serializable {
         ud.removeAttributes("expire");
         ud.removeAttributes(AttributeNameConstants.WSTOKEN_CREATION_TIME);
 
-        // Pass expirationInMilliseconds (the original absolute deadline) so the cloned token
-        // does not get a new expiry computed from now.  A fresh WSTOKEN_CREATION_TIME is
-        // stamped by setCreationTime() inside the constructor, resetting the inactivity window.
+        // dynamicExpirationValidation=false: pass the original absolute deadline so the
+        //   clone does not recompute expiration from now.
+        // dynamicExpirationValidation=true:  pass 0L as sentinel; the clone constructor
+        //   will call setExpiration(inactivityTimeoutInMinutes) anchored to the new
+        //   creationTime that setCreationTime() stamps inside the constructor.
+        long expiryForClone = dynamicExpirationValidation ? 0L : expirationInMilliseconds;
         return new LTPAToken2(expirationInMinutes, refreshThresholdInMinutes, inactivityTimeoutInMinutes,
-                              dynamicExpirationValidation, expirationInMilliseconds,
+                              dynamicExpirationValidation, expiryForClone,
                               sharedKey, privateKey, publicKey, ud);
     }
 
