@@ -173,6 +173,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         String oldKeyImportFile = primaryKeyImportFile;
         Long oldKeyTokenExpiration = keyTokenExpiration;
         Long oldRefreshThreshold = refreshThreshold;
+        Long oldInactivityTimeout = inactivityTimeout;
+        boolean oldDynamicExpirationValidation = dynamicExpirationValidation;
         Long oldMonitorInterval = monitorInterval;
         Long oldExpirationDifferenceAllowed = expirationDifferenceAllowed;
         boolean oldMonitorValidationKeysDir = monitorValidationKeysDir;
@@ -187,7 +189,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
         try {
             loadConfig(props);
 
-            if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldRefreshThreshold, oldExpirationDifferenceAllowed,
+            if (isKeysConfigChanged(oldKeyImportFile, oldKeyTokenExpiration, oldRefreshThreshold, oldInactivityTimeout,
+                                    oldDynamicExpirationValidation, oldExpirationDifferenceAllowed,
                                     oldMonitorValidationKeysDir, oldUpdateTrigger, oldValidationKeys)) {
                 unsetFileMonitorRegistration();
                 Tr.audit(tc, "LTPA_KEYS_TO_LOAD", primaryKeyImportFile);
@@ -683,24 +686,30 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
     }
 
     /**
-     * The keys config is changed if the file, expiration, refreshThreshold, expirationDifferenceAllowed,
-     * monitorValidationKeysDir, updateTrigger or validationKeys configured were modified.
+     * The keys config is changed if the file, expiration, refreshThreshold, inactivityTimeout,
+     * dynamicExpirationValidation, expirationDifferenceAllowed, monitorValidationKeysDir,
+     * updateTrigger or validationKeys configured were modified.
      * Changing the password by itself must not be considered a config change that should trigger a keys reload.
      *
      * @param oldKeyImportFile
      * @param oldKeyTokenExpiration
      * @param oldRefreshThreshold
+     * @param oldInactivityTimeout
+     * @param oldDynamicExpirationValidation
      * @param oldExpirationDifferenceAllowed
      * @param oldMonitorValidationKeysDir
      * @param oldUpdateTrigger
      * @param oldValidationKeys
      */
     private boolean isKeysConfigChanged(String oldKeyImportFile, Long oldKeyTokenExpiration, Long oldRefreshThreshold,
+                                        Long oldInactivityTimeout, boolean oldDynamicExpirationValidation,
                                         Long oldExpirationDifferenceAllowed, boolean oldMonitorValidationKeysDir,
                                         String oldUpdateTrigger, @Sensitive List<Properties> oldValidationKeys) {
         return ((oldKeyImportFile.equals(primaryKeyImportFile) == false)
                 || (oldKeyTokenExpiration != keyTokenExpiration)
                 || (oldRefreshThreshold != refreshThreshold)
+                || (oldInactivityTimeout != inactivityTimeout)
+                || (oldDynamicExpirationValidation != dynamicExpirationValidation)
                 || (oldExpirationDifferenceAllowed != expirationDifferenceAllowed)
                 || (oldMonitorValidationKeysDir != monitorValidationKeysDir)
                 || (oldUpdateTrigger != updateTrigger)
