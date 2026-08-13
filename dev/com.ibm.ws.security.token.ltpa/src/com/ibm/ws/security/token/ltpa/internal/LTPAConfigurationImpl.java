@@ -334,6 +334,8 @@ public class LTPAConfigurationImpl implements LTPAConfiguration, FileBasedAction
             sj.add("primaryKeyImportFile: " + primaryKeyImportFile);
             sj.add("keyTokenExpiration: " + keyTokenExpiration);
             sj.add("refreshThreshold: " + refreshThreshold);
+            sj.add("inactivityTimeout: " + inactivityTimeout);
+            sj.add("dynamicExpirationValidation: " + dynamicExpirationValidation);
             sj.add("monitorInterval: " + monitorInterval);
             sj.add("authFilterRef: " + authFilterRef);
             sj.add("monitorValidationKeysDir: " + monitorValidationKeysDir);
