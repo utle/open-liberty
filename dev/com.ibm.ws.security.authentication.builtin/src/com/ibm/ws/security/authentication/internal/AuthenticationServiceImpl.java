@@ -514,35 +514,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             long creationTime = (Long) creationTimeObj;
 
-            // Compute the absolute expiration.
+            // Compute the effective expiration.
             // With dynamicExpirationValidation=true the stored expiration is
             // creationTime + inactivityTimeout, not the absolute deadline.
             // Recompute from creationTime + configured expiration, matching LTPAToken2.validateExpiration.
-            final long absoluteExpiration;
+            final long effectiveExpiration;
             if (dynamicExpirationValidation) {
-                absoluteExpiration = creationTime + (ltpaConfig.getTokenExpiration() * MILLIS_PER_MINUTE);
+                effectiveExpiration = creationTime + (ltpaConfig.getTokenExpiration() * MILLIS_PER_MINUTE);
             } else {
-                absoluteExpiration = wsCredential.getExpiration();
+                effectiveExpiration = wsCredential.getExpiration();
             }
 
             // Check if token has exceeded absolute expiration
-            if (currentTime >= absoluteExpiration) {
+            if (currentTime >= effectiveExpiration) {
                 if (isDebugEnabled()) {
-                    Tr.debug(tc, "Token is expired: current=" + currentTime + ", absoluteExpiration=" + absoluteExpiration);
+                    Tr.debug(tc, "Token is expired: current=" + currentTime + ", absoluteExpiration=" + effectiveExpiration);
                 }
                 return true;
             }
 
             // Compute the inactivity expiration and cap it at the absolute deadline.
             long inactivityExpiration = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
-            if (inactivityExpiration > absoluteExpiration) {
-                inactivityExpiration = absoluteExpiration;
-            }
+//            if (inactivityExpiration > effectiveExpiration) {
+//                inactivityExpiration = effectiveExpiration;
+//            }
 
             if (isDebugEnabled()) {
                 Tr.debug(tc, "Inactivity timeout check: creationTime=" + creationTime +
                              ", inactivityExpiration=" + inactivityExpiration +
-                             ", absoluteExpiration=" + absoluteExpiration +
+                             ", absoluteExpiration=" + effectiveExpiration +
                              ", currentTime=" + currentTime);
             }
 
