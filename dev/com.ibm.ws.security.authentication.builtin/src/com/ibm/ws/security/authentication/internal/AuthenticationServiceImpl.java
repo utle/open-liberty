@@ -445,6 +445,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * Checks if the LTPA token in the cached Subject needs to be refreshed based on
      * refreshThreshold and inactivityTimeout settings.
      *
+     * <p>When {@code dynamicExpirationValidation} is enabled the expiration stored in the
+     * token (and therefore in {@code WSCredential}) is {@code creationTime + inactivityTimeout},
+     * not the absolute configured expiration. This method accounts for that: the absolute
+     * deadline is recomputed as {@code creationTime + configuredExpiration} when
+     * {@code dynamicExpirationValidation=true}, mirroring the logic in
+     * {@link com.ibm.ws.security.token.ltpa.internal.LTPAToken2#validateExpiration}.
+     *
      * @param subject The Subject retrieved from auth cache
      * @return true if token needs refresh, false otherwise
      */
@@ -454,14 +461,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return false;
         }
 
-        if (subject == null) {
-            return false;
-        }
-
         // Early-exit: if inactivity timeout is not configured the feature is inactive;
         // avoid the ltpaConfigurationRef.getService() call on every request.
-        LTPAConfiguration ltpaConfigEarlyCheck = ltpaConfigurationRef.getService();
-        if (ltpaConfigEarlyCheck == null || ltpaConfigEarlyCheck.getInactivityTimeout() <= 0) {
+        LTPAConfiguration ltpaConfig = ltpaConfigurationRef.getService();
+        if (ltpaConfig == null || ltpaConfig.getInactivityTimeout() <= 0) {
             return false;
         }
 
@@ -480,67 +483,90 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 return false;
             }
 
-            // Get expiration time from WSCredential
-            long expiration = wsCredential.getExpiration();
             long currentTime = System.currentTimeMillis();
+            long inactivityTimeoutInMinutes = ltpaConfig.getInactivityTimeout();
+            long refreshThresholdInMinutes = ltpaConfig.getRefreshThreshold();
+            boolean dynamicExpirationValidation = ltpaConfig.isDynamicExpirationValidation();
 
-            // Check if token is expired (absolute expiration)
-            if (currentTime >= expiration) {
-                if (isDebugEnabled()) {
-                    Tr.debug(tc, "Token is expired: current=" + currentTime + ", expiration=" + expiration);
-                }
-                return true;
-            }
-
-            // ltpaConfigEarlyCheck already confirmed non-null with inactivityTimeout > 0 above
-            long refreshThresholdInMinutes = ltpaConfigEarlyCheck.getRefreshThreshold();
-            long inactivityTimeoutInMinutes = ltpaConfigEarlyCheck.getInactivityTimeout();
             if (isDebugEnabled()) {
                 Tr.debug(tc, "ltpaConfig inactivityTimeout=" + inactivityTimeoutInMinutes +
-                             ", refreshThreshold=" + refreshThresholdInMinutes);
+                             ", refreshThreshold=" + refreshThresholdInMinutes +
+                             ", dynamicExpirationValidation=" + dynamicExpirationValidation);
             }
 
             // Get creation time from WSCredential
             Object creationTimeObj = wsCredential.get(AttributeNameConstants.WSTOKEN_CREATION_TIME);
-            if (creationTimeObj instanceof Long) {
-                long creationTime = (Long) creationTimeObj;
-                long inactivityExpiration = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
-
-                // Cap inactivity expiration at absolute expiration
-                if (inactivityExpiration > expiration) {
-                    inactivityExpiration = expiration;
-                }
-
-                if (isDebugEnabled()) {
-                    Tr.debug(tc, "Inactivity timeout check: creationTime=" + creationTime +
-                                 ", inactivityExpiration=" + inactivityExpiration +
-                                 ", currentTime=" + currentTime);
-                }
-
-                // Check if token has exceeded inactivity timeout
-                if (currentTime >= inactivityExpiration) {
+            if (!(creationTimeObj instanceof Long)) {
+                // No creationTime — fall back to the stored expiration for the absolute-expiry check only.
+                long storedExpiration = wsCredential.getExpiration();
+                if (currentTime >= storedExpiration) {
                     if (isDebugEnabled()) {
-                        Tr.debug(tc, "Token exceeded inactivity timeout");
+                        Tr.debug(tc, "Token is expired (no creationTime): current=" + currentTime +
+                                     ", storedExpiration=" + storedExpiration);
                     }
                     return true;
                 }
-
-                // Check if within refresh threshold of inactivity expiration
-                if (refreshThresholdInMinutes > 0) {
-                    long refreshThresholdInMillis = refreshThresholdInMinutes * MILLIS_PER_MINUTE;
-                    long timeRemainingUntilInactivity = inactivityExpiration - currentTime;
-
-                    if (timeRemainingUntilInactivity <= refreshThresholdInMillis) {
-                        if (isDebugEnabled()) {
-                            Tr.debug(tc, "Token needs refresh: time until inactivity expiration (" +
-                                         timeRemainingUntilInactivity + "ms) <= threshold (" +
-                                         refreshThresholdInMillis + "ms)");
-                        }
-                        return true;
-                    }
+                if (isDebugEnabled()) {
+                    Tr.debug(tc, "Creation time not found in WSCredential, skipping inactivity timeout check");
                 }
-            } else if (isDebugEnabled()) {
-                Tr.debug(tc, "Creation time not found in WSCredential, skipping inactivity timeout check");
+                return false;
+            }
+
+            long creationTime = (Long) creationTimeObj;
+
+            // Compute the absolute expiration.
+            // With dynamicExpirationValidation=true the stored expiration is
+            // creationTime + inactivityTimeout, not the absolute deadline.
+            // Recompute from creationTime + configured expiration, matching LTPAToken2.validateExpiration.
+            final long absoluteExpiration;
+            if (dynamicExpirationValidation) {
+                absoluteExpiration = creationTime + (ltpaConfig.getTokenExpiration() * MILLIS_PER_MINUTE);
+            } else {
+                absoluteExpiration = wsCredential.getExpiration();
+            }
+
+            // Check if token has exceeded absolute expiration
+            if (currentTime >= absoluteExpiration) {
+                if (isDebugEnabled()) {
+                    Tr.debug(tc, "Token is expired: current=" + currentTime + ", absoluteExpiration=" + absoluteExpiration);
+                }
+                return true;
+            }
+
+            // Compute the inactivity expiration and cap it at the absolute deadline.
+            long inactivityExpiration = creationTime + (inactivityTimeoutInMinutes * MILLIS_PER_MINUTE);
+            if (inactivityExpiration > absoluteExpiration) {
+                inactivityExpiration = absoluteExpiration;
+            }
+
+            if (isDebugEnabled()) {
+                Tr.debug(tc, "Inactivity timeout check: creationTime=" + creationTime +
+                             ", inactivityExpiration=" + inactivityExpiration +
+                             ", absoluteExpiration=" + absoluteExpiration +
+                             ", currentTime=" + currentTime);
+            }
+
+            // Check if token has exceeded inactivity timeout
+            if (currentTime >= inactivityExpiration) {
+                if (isDebugEnabled()) {
+                    Tr.debug(tc, "Token exceeded inactivity timeout");
+                }
+                return true;
+            }
+
+            // Check if within refresh threshold of inactivity expiration
+            if (refreshThresholdInMinutes > 0) {
+                long refreshThresholdInMillis = refreshThresholdInMinutes * MILLIS_PER_MINUTE;
+                long timeRemainingUntilInactivity = inactivityExpiration - currentTime;
+
+                if (timeRemainingUntilInactivity <= refreshThresholdInMillis) {
+                    if (isDebugEnabled()) {
+                        Tr.debug(tc, "Token needs refresh: time until inactivity expiration (" +
+                                     timeRemainingUntilInactivity + "ms) <= threshold (" +
+                                     refreshThresholdInMillis + "ms)");
+                    }
+                    return true;
+                }
             }
 
             return false;
@@ -806,8 +832,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             // Derive the new cache key from the authenticated subject's SSO token
-            com.ibm.wsspi.security.token.SingleSignonToken newSsoToken =
-                SSOTokenHelper.getSSOToken(authenticatedSubject);
+            com.ibm.wsspi.security.token.SingleSignonToken newSsoToken = SSOTokenHelper.getSSOToken(authenticatedSubject);
             if (newSsoToken == null) {
                 return;
             }
