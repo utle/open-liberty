@@ -60,7 +60,7 @@ Service-Component: \
     ltpaConfiguration=com.ibm.ws.security.token.ltpa.LTPAConfiguration; \
     defaultDelegationProvider=com.ibm.ws.security.delegation.DefaultDelegationProvider; \
     credentialsService=com.ibm.ws.security.credentials.CredentialsService; \
-    optional:='delegationProvider,defaultDelegationProvider,credentialsService'; \
+    optional:='delegationProvider,defaultDelegationProvider,credentialsService,ltpaConfiguration'; \
     greedy:='delegationProvider,defaultDelegationProvider'; \
     dynamic:='delegationProvider,defaultDelegationProvider'; \
     properties:="service.vendor=IBM", \
