@@ -18,8 +18,10 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.ref.WeakReference;
 import java.net.Socket;
 import java.security.AccessController;
+import java.security.KeyStore;
 import java.security.PrivilegedAction;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
@@ -34,14 +36,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.lang.ref.WeakReference;
-import java.security.KeyStore;
-import javax.net.ssl.TrustManagerFactory;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -78,8 +78,7 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
     private static final String INDENT = "           ";
 
     /** Registry of live instances keyed by canonical truststore file path, for in-place refresh. */
-    private static final ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>> REGISTRY =
-        new ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>>();
+    private static final ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>> REGISTRY = new ConcurrentHashMap<String, CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>>();
 
     private volatile TrustManager[] tm;
     private final String tsCfgAlias;
@@ -186,10 +185,10 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
      * when the backing truststore file changes. Called immediately after construction
      * by {@link com.ibm.ws.ssl.provider.AbstractJSSEProvider}.
      */
-    void register() {
-        if (tsFile == null) return;
-        REGISTRY.computeIfAbsent(tsFile, k -> new CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>())
-                .add(new WeakReference<WSX509TrustManager>(this));
+    public void register() {
+        if (tsFile == null)
+            return;
+        REGISTRY.computeIfAbsent(tsFile, k -> new CopyOnWriteArrayList<WeakReference<WSX509TrustManager>>()).add(new WeakReference<WSX509TrustManager>(this));
     }
 
     /**
@@ -241,7 +240,8 @@ public final class WSX509TrustManager extends X509ExtendedTrustManager {
                 return;
             }
             String trustMgr = config != null ? config.getProperty(com.ibm.websphere.ssl.Constants.SSLPROP_TRUST_MANAGER) : null;
-            if (trustMgr == null) trustMgr = com.ibm.ws.ssl.JSSEProviderFactory.getTrustManagerFactoryAlgorithm();
+            if (trustMgr == null)
+                trustMgr = com.ibm.ws.ssl.JSSEProviderFactory.getTrustManagerFactoryAlgorithm();
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustMgr);
             tmf.init(trustStore);
             this.tm = tmf.getTrustManagers();
