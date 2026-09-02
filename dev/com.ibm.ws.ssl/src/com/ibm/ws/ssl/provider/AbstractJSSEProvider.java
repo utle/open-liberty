@@ -47,7 +47,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import com.ibm.ws.kernel.productinfo.ProductInfo;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
@@ -217,8 +216,8 @@ public abstract class AbstractJSSEProvider implements JSSEProvider {
     public String[] getCiphersForSecurityLevel(boolean isClient, String securityLevel) {
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled())
-            Tr.debug(tc, "getCiphersForSecurityLevel: Security Level is no longer in use and will be ignored. Will be defaulting to the effective JDK cipher list.", new Object[] { Boolean.valueOf(isClient), securityLevel });
-        
+            Tr.debug(tc, "getCiphersForSecurityLevel: Security Level is no longer in use and will be ignored. Will be defaulting to the effective JDK cipher list.",
+                     new Object[] { Boolean.valueOf(isClient), securityLevel });
 
         String[] supportedCiphers = null;
 
@@ -229,7 +228,7 @@ public abstract class AbstractJSSEProvider implements JSSEProvider {
             SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             supportedCiphers = factory.getSupportedCipherSuites();
         }
-    return Constants.adjustSupportedCiphers(supportedCiphers, null);
+        return Constants.adjustSupportedCiphers(supportedCiphers, null);
     }
 
     /*
@@ -318,7 +317,7 @@ public abstract class AbstractJSSEProvider implements JSSEProvider {
      * @return
      * @throws Exception
      */
-    private void getWSTrustmanager(List<TrustManager> tmHolder, Map<String, Object> connectionInfo, SSLConfig sslConfig) throws Exception {
+    public void getWSTrustmanager(List<TrustManager> tmHolder, Map<String, Object> connectionInfo, SSLConfig sslConfig) throws Exception {
 
         if (TraceComponent.isAnyTracingEnabled() && tc.isEntryEnabled())
             Tr.entry(tc, "getWSTrustmanager", new Object[] { tmHolder, connectionInfo, sslConfig });
