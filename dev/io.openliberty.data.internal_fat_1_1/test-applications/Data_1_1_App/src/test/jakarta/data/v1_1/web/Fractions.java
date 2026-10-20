@@ -39,20 +39,21 @@ import jakarta.data.page.Page;
 import jakarta.data.page.PageRequest;
 import jakarta.data.repository.By;
 import jakarta.data.repository.Delete;
+import jakarta.data.repository.Fetching;
 import jakarta.data.repository.Find;
 import jakarta.data.repository.First;
 import jakarta.data.repository.Insert;
 import jakarta.data.repository.Is;
-import jakarta.data.repository.JakartaQuery; // TODO replace with Persistence 4.0 anno once available
-import jakarta.data.repository.NativeQuery; // TODO replace with Persistence 4.0 anno once available
 import jakarta.data.repository.OrderBy;
 import jakarta.data.repository.Param;
 import jakarta.data.repository.Query;
-import jakarta.data.repository.QueryOptions; // TODO replace with Persistence 4.0 anno once available
 import jakarta.data.repository.Repository;
 import jakarta.data.repository.Select;
 import jakarta.data.restrict.Restriction;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.query.JakartaQuery;
+import jakarta.persistence.query.NativeQuery;
+import jakarta.persistence.query.QueryOptions;
 
 /**
  * Repository for the Fraction entity
@@ -152,6 +153,22 @@ public interface Fractions {
      Order<Fraction> order,
      PageRequest pageReq);
 
+    @Find
+    @SuppressWarnings("unchecked")
+    Page<Fraction> fetchOffsetPage //
+    (@By(_Fraction.DENOMINATOR) @Is(AtMost.class) int maxDenominator,
+     Restriction<Fraction> filter,
+     PageRequest pageReq,
+     Sort<Fraction>... sorts);
+
+    Page<Fraction> findPageByDenominatorInAndNumeratorBetweenOrderByNumerator //
+    (List<Integer> denominators,
+     int minNumerator,
+     int maxNumerator,
+     Sort<Fraction> sort,
+     Restriction<Fraction> filter,
+     PageRequest pageReq);
+
     @First
     @NativeQuery("""
                     SELECT *
@@ -216,6 +233,15 @@ public interface Fractions {
     @Find
     @QueryOptions(entityGraph = "EagerlyLoadRoundedValues")
     Optional<Fraction> of(int numerator, int denominator);
+
+    @NativeQuery("""
+                    SELECT *
+                      FROM Fraction
+                     WHERE POWER(2, numerator) < POWER(denominator, ?)
+                     ORDER BY denominator ASC, numerator ASC
+                    """)
+    Page<Fraction> pageOfNumSquaredLessThanDenomPowerOf(int denominatorExponent,
+                                                        PageRequest PageReq);
 
     @Query("SELECT numerator, denominator - numerator" +
            " ORDER BY denominator - numerator DESC, numerator ASC")
@@ -342,6 +368,14 @@ public interface Fractions {
     (@By(_Fraction.NUMERATOR) In<Integer> numerators,
      @Is int denominator,
      Sort<Fraction> sort);
+
+    @Find
+    @Fetching(_Fraction.DECIMAL) // unnecessary, but intentionally included
+    Optional<Fraction> withoutRoundedValues(int numerator, int denominator);
+
+    @Find
+    @Fetching(_Fraction.ROUNDED)
+    Optional<Fraction> withRoundedValues(int numerator, int denominator);
 
     @JakartaQuery("WHERE name = :name")
     @QueryOptions(lockMode = LockModeType.PESSIMISTIC_WRITE,

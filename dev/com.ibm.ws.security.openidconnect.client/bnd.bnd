@@ -1,5 +1,5 @@
 #*******************************************************************************
-# Copyright (c) 2019, 2025 IBM Corporation and others.
+# Copyright (c) 2019, 2026 IBM Corporation and others.
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Eclipse Public License 2.0
 # which accompanies this distribution, and is available at
@@ -55,7 +55,8 @@ Service-Component: \
   com.ibm.ws.security.openidconnect.client; \
     implementation:=com.ibm.ws.security.openidconnect.client.internal.OidcClientImpl; \
     provide:='com.ibm.ws.webcontainer.security.openidconnect.OidcClient,\
-              com.ibm.ws.webcontainer.security.UnprotectedResourceService'; \
+              com.ibm.ws.webcontainer.security.UnprotectedResourceService,\
+              com.ibm.ws.security.openidconnect.client.internal.OidcClientImpl'; \
     immediate:=true; \
     activate:=activate; \
     modified:=modify; \
@@ -85,7 +86,8 @@ Include-Resource: \
 
 -dsannotations=com.ibm.ws.security.openidconnect.client.internal.OidcClientWebappConfigImpl,\
     com.ibm.ws.security.openidconnect.client.internal.OidcClientConfigImpl,\
-    com.ibm.ws.security.openidconnect.client.web.OidcBackchannelLogoutServlet
+    com.ibm.ws.security.openidconnect.client.web.OidcBackchannelLogoutServlet,\
+    com.ibm.ws.security.openidconnect.client.internal.OAuthProtectedResourceMetadataResolver
 
 -buildpath: \
 	com.ibm.websphere.appserver.spi.logging;version=latest,\
@@ -151,6 +153,7 @@ Include-Resource: \
 	com.ibm.ws.container.service;version=latest,\
 	com.ibm.ws.threading;version=latest,\
 	com.ibm.ws.injection.core;version=latest,\
-	org.bitbucket.b_c.jose4j
+	org.bitbucket.b_c.jose4j,\
+	io.openliberty.io.netty;version=latest
 	
 instrument.classesExcludes: com/ibm/ws/security/openidconnect/client/internal/resources/OidcClientMessages*.class

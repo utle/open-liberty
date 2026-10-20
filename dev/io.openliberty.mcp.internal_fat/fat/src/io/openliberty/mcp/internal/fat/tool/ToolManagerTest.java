@@ -15,8 +15,10 @@ import static java.util.function.Function.identity;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.skyscreamer.jsonassert.JSONCompareMode.STRICT;
 
 import java.io.StringReader;
@@ -139,6 +141,33 @@ public class ToolManagerTest extends FATServletClient {
 
             // Check that it's now gone from the tool list
             assertThat(getTools(), not(hasKey(DYNAMIC_REPEATER)));
+
+            // Calling the tool after removal must return an error — removal is immediate
+            String removedRequest = """
+                            {
+                              "jsonrpc": "2.0",
+                              "id": 2,
+                              "method": "tools/call",
+                              "params": {
+                                "name": "dynamicRepeater",
+                                "arguments": {
+                                  "inputString": "hello"
+                                }
+                              }
+                            }
+                            """;
+            String expectedRemovedResponse = """
+                            {
+                              "jsonrpc": "2.0",
+                              "id": 2,
+                              "error": {
+                                "code": -32602,
+                                "data": ["Method dynamicRepeater not found"],
+                                "message": "Invalid params"
+                              }
+                            }
+                            """;
+            JSONAssert.assertEquals(expectedRemovedResponse, client.callMCP(removedRequest), STRICT);
         } finally {
             // Ensure we remove the tool if the test fails to not interfere with other tests
             toolEditorClient.removeDynamicRepeaterTool();
@@ -158,10 +187,19 @@ public class ToolManagerTest extends FATServletClient {
         var tools = getTools();
 
         // Covers: name, title, description, arguments (several types, required/not, default)
-        //         annotations, generated schema
+        //         annotations, generated schema, metadata
         JsonObject toolWithArgs = tools.get("tool-with-args");
         JSONAssert.assertEquals("""
                         {
+                            "_meta": {
+                                "hasArgs": true,
+                                "hasStructuredOutput": false,
+                                "argCount": 3,
+                                "foo": {
+                                    "foo": ["bar", "baz"],
+                                    "qux": 7
+                                }
+                            },
                             "name": "tool-with-args",
                             "title": "Tool With Args",
                             "description": "Test tool with arguments",
@@ -553,6 +591,105 @@ public class ToolManagerTest extends FATServletClient {
     }
 
     /**
+     * Test that a synchronous tool registered via the ToolManager API returns HTTP 403
+     * when it throws {@link io.openliberty.mcp.tools.ToolCallUnauthorizedException}.
+     * <p>
+     * Tool defined in {@link ToolManagerStartupTestBean#createSyncUnauthorizedTool}
+     *
+     * @throws Exception on error
+     */
+    @Test
+    public void testCallSyncToolThrowsToolCallUnauthorizedException() throws Exception {
+        String request = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 10,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "sync-unauthorized-tool",
+                            "arguments": {
+                              "message": "not allowed"
+                            }
+                          }
+                        }
+                        """;
+
+        McpClient.McpDetailedAuthResponse response = client.callMCPAuthorisationErrorDetailed(request);
+
+        assertEquals(403, response.statusCode());
+        assertTrue("Content-Type must be text/plain", response.contentType().contains("text/plain"));
+        assertTrue("Response body must contain the exception message", response.body().contains("not allowed"));
+        assertFalse("Response must not be a JSON-RPC envelope", response.body().contains("jsonrpc"));
+    }
+
+    /**
+     * Test that an asynchronous tool registered via the ToolManager API returns HTTP 403
+     * when it throws {@link io.openliberty.mcp.tools.ToolCallUnauthorizedException}.
+     * <p>
+     * Tool defined in {@link ToolManagerStartupTestBean#createAsyncUnauthorizedTool}
+     *
+     * @throws Exception on error
+     */
+    @Test
+    public void testCallAsyncToolThrowsToolCallUnauthorizedException() throws Exception {
+        String request = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 11,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "async-unauthorized-tool",
+                            "arguments": {
+                              "message": "not allowed"
+                            }
+                          }
+                        }
+                        """;
+
+        McpClient.McpDetailedAuthResponse response = client.callMCPAuthorisationErrorDetailed(request);
+
+        assertEquals(403, response.statusCode());
+        assertTrue("Content-Type must be text/plain", response.contentType().contains("text/plain"));
+        assertTrue("Response body must contain the exception message", response.body().contains("not allowed"));
+        assertFalse("Response must not be a JSON-RPC envelope", response.body().contains("jsonrpc"));
+    }
+
+    /**
+     * A dynamically registered tool with a non-required
+     * argument that has no default value (null) must succeed when called without supplying
+     * that argument
+     * <p>
+     * Tool defined in {@link ToolManagerStartupTestBean#createNullDefaultValueTool}
+     *
+     * @throws Exception on error
+     */
+    @Test
+    public void testCallToolWithNullDefaultArgOmitted() throws Exception {
+        String request = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 20,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "tool-with-null-default",
+                            "arguments": {}
+                          }
+                        }
+                        """;
+        String expected = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 20,
+                          "result": {
+                            "content": [{"type": "text", "text": "null"}],
+                            "isError": false
+                          }
+                        }
+                        """;
+        JSONAssert.assertEquals(expected, client.callMCP(request), STRICT);
+    }
+
+    /**
      * Calls tools/list and returns all the tools from the server as a map.
      *
      * @return a map from tool name to the JSON descriptor for the tool
@@ -569,5 +706,84 @@ public class ToolManagerTest extends FATServletClient {
                        .stream()
                        .map(JsonObject.class::cast)
                        .collect(Collectors.toMap(o -> o.getString("name"), identity()));
+    }
+
+    // ========== Negative Tests ==========
+
+    /**
+     * Verifies that {@code tools/list} does not expose a tool that was removed at
+     * startup via {@link io.openliberty.mcp.tools.ToolManager#removeTool}.
+     * Removal must take effect before the first client request.
+     */
+    @Test
+    public void testRemovedToolAbsentFromToolsList() throws Exception {
+        assertThat("methodToolToBeRemoved must not appear in tools/list after removal",
+                   getTools(), not(hasKey("methodToolToBeRemoved")));
+    }
+
+    /**
+     * Verifies that calling a tool that has never been registered returns a
+     * JSON-RPC {@code Invalid params} error with code {@code -32602}.
+     */
+    @Test
+    public void testCallNonExistentToolReturnsError() throws Exception {
+        String request = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 50,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "toolThatWasNeverRegistered",
+                            "arguments": {}
+                          }
+                        }
+                        """;
+
+        String expectedResponse = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 50,
+                          "error": {
+                            "code": -32602,
+                            "data": ["Method toolThatWasNeverRegistered not found"],
+                            "message": "Invalid params"
+                          }
+                        }
+                        """;
+        JSONAssert.assertEquals(expectedResponse, client.callMCP(request), STRICT);
+    }
+
+    /**
+     * Verifies that calling a tool removed at startup via
+     * {@link io.openliberty.mcp.tools.ToolManager#removeTool} returns a
+     * JSON-RPC {@code Invalid params} error with code {@code -32602}.
+     * The tool must not be callable even though it was defined as a method on the bean.
+     */
+    @Test
+    public void testCallRemovedToolReturnsError() throws Exception {
+        String request = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 51,
+                          "method": "tools/call",
+                          "params": {
+                            "name": "methodToolToBeRemoved",
+                            "arguments": {}
+                          }
+                        }
+                        """;
+
+        String expectedResponse = """
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 51,
+                          "error": {
+                            "code": -32602,
+                            "data": ["Method methodToolToBeRemoved not found"],
+                            "message": "Invalid params"
+                          }
+                        }
+                        """;
+        JSONAssert.assertEquals(expectedResponse, client.callMCP(request), STRICT);
     }
 }

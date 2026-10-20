@@ -32,6 +32,7 @@ import org.eclipse.persistence.internal.expressions.FunctionExpression;
 import org.eclipse.persistence.internal.expressions.RelationExpression;
 import org.eclipse.persistence.internal.expressions.SQLSelectStatement;
 import org.eclipse.persistence.internal.helper.ClassConstants;
+import org.eclipse.persistence.internal.helper.ConversionManager;
 import org.eclipse.persistence.internal.helper.DatabaseField;
 import org.eclipse.persistence.internal.helper.DatabaseTable;
 import org.eclipse.persistence.internal.helper.Helper;
@@ -234,6 +235,23 @@ public class SQLServerPlatform extends DatabasePlatform {
         Map<String, Class<?>> classTypeMapping = super.buildJavaTypes();
         classTypeMapping.put("DATETIME2", java.sql.Timestamp.class);
         return classTypeMapping;
+    }
+
+    /**
+     * Return the JDBC type for the given database field to be passed to Statement.setNull.
+     * Use TIMESTAMP for offset temporal types when native driver support is unavailable.
+     */
+    @Override
+    public int getJDBCTypeForSetNull(DatabaseField field) {
+        Class<?> javaType = field == null ? null : ConversionManager.getObjectClass(field.getType());
+
+        if (field != null && field.getSqlType() == DatabaseField.NULL_SQL_TYPE
+                && Boolean.FALSE.equals(driverSupportsOffsetDateTime)
+                && (javaType == OffsetDateTime.class || javaType == OffsetTime.class)) {
+            return java.sql.Types.TIMESTAMP;
+        }
+
+        return super.getJDBCTypeForSetNull(field);
     }
 
     @Override
@@ -1046,6 +1064,38 @@ public class SQLServerPlatform extends DatabasePlatform {
 
     @Override
     public void printSQLSelectStatement(DatabaseCall call, ExpressionSQLPrinter printer, SQLSelectStatement statement) {
+        // SQL Server does not support NULLS FIRST / NULLS LAST syntax. Rewrite each such ORDER BY
+        // expression to the equivalent CASE workaround before printing:
+        //   col NULLS FIRST  →  (CASE WHEN col IS NULL THEN 0 ELSE 1 END), col
+        //   col NULLS LAST   →  (CASE WHEN col IS NULL THEN 1 ELSE 0 END), col
+        List<Expression> orderBy = statement.getOrderByExpressions();
+        for (int i = 0; i < orderBy.size(); i++) {
+            Expression expr = orderBy.get(i);
+            if (expr instanceof FunctionExpression funcExpr) {
+                int selector = funcExpr.getOperator().getSelector();
+                if (selector == ExpressionOperator.NullsFirst || selector == ExpressionOperator.NullsLast) {
+                    // The base may be wrapped in an ASC/DESC FunctionExpression
+                    // The CASE predicate must use the bare field (no ASC/DESC keyword), while
+                    // the second sort term keeps the original ASC/DESC wrapper.
+                    Expression sortExpr = funcExpr.getBaseExpression();   // may be ASC/DESC or bare field
+                    Expression fieldExpr = sortExpr;                       // field for the CASE predicate
+                    if (sortExpr instanceof FunctionExpression sortFuncExpr) {
+                        int sortSelector = sortFuncExpr.getOperator().getSelector();
+                        if (sortSelector == ExpressionOperator.Ascending || sortSelector == ExpressionOperator.Descending) {
+                            fieldExpr = sortFuncExpr.getBaseExpression();  // unwrap to bare field
+                        }
+                    }
+                    // NULLS FIRST: nulls sort before non-nulls (null → 0, non-null → 1)
+                    // NULLS LAST:  nulls sort after  non-nulls (null → 1, non-null → 0)
+                    String nullValue    = (selector == ExpressionOperator.NullsFirst) ? "0" : "1";
+                    String nonNullValue = (selector == ExpressionOperator.NullsFirst) ? "1" : "0";
+                    // Use bare fieldExpr in the CASE predicate; keep sortExpr (with ASC/DESC) as the second term
+                    String caseSql = "(CASE WHEN ? IS NULL THEN " + nullValue + " ELSE " + nonNullValue + " END), ?";
+                    orderBy.set(i, fieldExpr.sql(caseSql, Arrays.asList(sortExpr)));
+                }
+            }
+        }
+
         ReadQuery query = statement.getQuery();
         if (query == null || !isVersion11OrHigher || !shouldUseRownumFiltering()) {
             super.printSQLSelectStatement(call, printer, statement);
@@ -1062,7 +1112,6 @@ public class SQLServerPlatform extends DatabasePlatform {
         
         // OFFSET + FETCH NEXT requires ORDER BY, so add an ordering if there are none
         // this SQL will satisfy the query parser without actually changing the ordering of the rows
-        List<Expression> orderBy = statement.getOrderByExpressions();
         if (orderBy.isEmpty()) {
             orderBy.add(statement.getBuilder().literal("ROW_NUMBER() OVER (ORDER BY (SELECT null))"));
         }

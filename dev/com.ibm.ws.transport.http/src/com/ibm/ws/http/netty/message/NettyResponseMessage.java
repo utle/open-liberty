@@ -24,7 +24,6 @@ import com.ibm.ws.http.channel.internal.inbound.HttpInboundServiceContextImpl;
 import com.ibm.ws.http.dispatcher.internal.HttpDispatcher;
 import com.ibm.wsspi.genericbnf.HeaderField;
 import com.ibm.wsspi.genericbnf.HeaderKeys;
-import com.ibm.wsspi.http.HttpCookie;
 import com.ibm.wsspi.http.channel.HttpResponseMessage;
 import com.ibm.wsspi.http.channel.HttpServiceContext;
 import com.ibm.wsspi.http.channel.HttpTrailers;
@@ -33,7 +32,6 @@ import com.ibm.wsspi.http.channel.values.ConnectionValues;
 import com.ibm.wsspi.http.channel.values.ContentEncodingValues;
 import com.ibm.wsspi.http.channel.values.HttpHeaderKeys;
 import com.ibm.wsspi.http.channel.values.StatusCodes;
-import com.ibm.wsspi.http.channel.values.TransferEncodingValues;
 import com.ibm.wsspi.http.channel.values.VersionValues;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
@@ -47,9 +45,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http2.HttpConversionUtil;
+import io.openliberty.http.constants.HttpGenerics;
 import io.openliberty.http.netty.channel.utils.HeaderValidator;
 import io.openliberty.http.netty.channel.utils.HeaderValidator.FieldType;
-import io.openliberty.http.netty.cookie.CookieEncoder;
 
 /**
  *
@@ -60,26 +58,29 @@ public class NettyResponseMessage extends NettyBaseMessage implements HttpRespon
     private static final TraceComponent tc = Tr.register(NettyResponseMessage.class, HttpMessages.HTTP_TRACE_NAME, HttpMessages.HTTP_BUNDLE);
 
     HttpResponse nettyResponse;
-    HttpHeaders headers;
     HttpHeaders trailers;
     NettyTrailers nettyTrailerWrapper;
     HttpInboundServiceContext context;
     HttpChannelConfig config;
 
-    public NettyResponseMessage(HttpResponse response, HttpInboundServiceContext isc, HttpRequest request) {
+    public NettyResponseMessage(HttpResponse response, HttpInboundServiceContext isc, HttpRequest request, int streamId) {
         Objects.requireNonNull(isc);
         Objects.requireNonNull(response);
 
         this.context = isc;
         this.nettyResponse = response;
-        this.headers = nettyResponse.headers();
-        this.trailers = new DefaultHttpHeaders().clear();
-        this.nettyTrailerWrapper = new NettyTrailers(this.trailers);
+        this.trailers = new DefaultHttpHeaders();
+        this.nettyTrailerWrapper = new NettyTrailers(this.trailers, new Runnable() {
+            @Override
+            public void run() {
+                forceChunkedEncodingForTrailers();
+            }
+        });
 
-        if (request.headers().contains(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text())) {
-            String streamId = request.headers().get(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text());
-            nettyResponse.headers().set(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
-
+        // For a matching request, a matching header must be set for stream id in HTTP 2.0
+        if(streamId != -1) {
+            this.streamId = streamId;
+            nettyResponse.headers().setInt(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
         }
 
         if (isc instanceof HttpInboundServiceContextImpl) {
@@ -200,6 +201,20 @@ public class NettyResponseMessage extends NettyBaseMessage implements HttpRespon
     @Override
     public boolean isChunkedEncodingSet() {
         return HttpUtil.isTransferEncodingChunked(nettyResponse);
+    }
+
+    @Override
+    public void setContentLength(long length) {
+        if (isChunkedEncodingSet() || nettyTrailerWrapper.hasTrailersToSend()) {
+            forceChunkedEncodingForTrailers();
+            return;
+        }
+        super.setContentLength(length);
+    }
+
+    void forceChunkedEncodingForTrailers() {
+        HttpUtil.setTransferEncodingChunked(nettyResponse, true);
+        headers.remove(HttpHeaderKeys.HDR_CONTENT_LENGTH.getName());
     }
 
     @Override
@@ -343,28 +358,12 @@ public class NettyResponseMessage extends NettyBaseMessage implements HttpRespon
     }
 
     @Override
-    public void removeHeader(byte[] header) {
-        removeHeader(new String(header, StandardCharsets.UTF_8));
-    }
-
-    @Override
-    public void removeHeader(HeaderKeys header) {
-        removeHeader(header.getName());
-    }
-
-    @Override
-    public void removeHeader(String header) {
-        headers.remove(header);
-    }
-
-    @Override
-    public void removeAllHeaders() {
-        headers.clear();
-    }
-
-    @Override
-    public void setHeader(HeaderKeys header, String value) {
-        setHeader(header.getName(), value);
+    public void setHeader(String header, String value) {
+        // String name: always invalidate — avoids equalsIgnoreCase on every header write.
+        cachedContentLength = HttpGenerics.NOT_SET;
+        String normalizedName = HeaderValidator.process(header, FieldType.NAME, config);
+        String normalizedValue = HeaderValidator.process(value, FieldType.VALUE, config);
+        headers.set(normalizedName, normalizedValue);
     }
 
     @Override
@@ -372,16 +371,12 @@ public class NettyResponseMessage extends NettyBaseMessage implements HttpRespon
         Objects.requireNonNull(header);
         Objects.requireNonNull(value);
 
-        if (!headers.contains(header.getName())) {
-            headers.set(header.getName(), value);
+        String normalizedName = HeaderValidator.process(header.getName(), FieldType.NAME, config);
+        if (!headers.contains(normalizedName)) { 
+            String normalizedValue = HeaderValidator.process(value, FieldType.VALUE, config);
+            headers.set(normalizedName, normalizedValue);
         }
-
         return null;
-    }
-
-    @Override
-    public void setHeader(String header, String value) {
-        headers.set(header.trim(), value.trim());
     }
 
     @Override
@@ -391,7 +386,9 @@ public class NettyResponseMessage extends NettyBaseMessage implements HttpRespon
 
     @Override
     public StatusCodes getStatusCode() {
-        return StatusCodes.getByOrdinal(getStatusCodeAsInt());
+        int code = getStatusCodeAsInt();
+        StatusCodes val = StatusCodes.getByOrdinal(code);
+        return (val != null) ? val : StatusCodes.makeUndefinedValue(code);
     }
 
     @Override
@@ -420,24 +417,6 @@ public class NettyResponseMessage extends NettyBaseMessage implements HttpRespon
     @Override
     public HttpServiceContext getServiceContext() {
         return this.context;
-    }
-
-    protected void processCookie(HttpCookie cookie, HeaderKeys header) {
-        String result = null;
-        if (Objects.nonNull(cookie) && Objects.nonNull(header)) {
-            String userAgent = getServiceContext().getRequest().getHeader(HttpHeaderKeys.HDR_USER_AGENT).asString();
-            result = CookieEncoder.encodeCookie(cookie, header, config, userAgent);
-
-            if (Objects.nonNull(result)) {
-                if (config.doNotAllowDuplicateSetCookies() && header.equals(HttpHeaderKeys.HDR_SET_COOKIE)) {
-                    if (this.headers.contains(HttpHeaderKeys.HDR_SET_COOKIE.getName())) {
-                        headers.set(header.getName(), result);
-                    }
-                } else {
-                    headers.add(header.getName(), result);
-                }
-            }
-        }
     }
 
     @Override

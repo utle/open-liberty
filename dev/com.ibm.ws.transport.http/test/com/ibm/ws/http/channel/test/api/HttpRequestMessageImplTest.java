@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 IBM Corporation and others.
+ * Copyright (c) 2017, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
@@ -817,6 +817,24 @@ public class HttpRequestMessageImplTest {
             getRequest().setHeader("Host", "[ipv6]:443");
             assertEquals("http://[ipv6]:443/index.html", getRequest().getRequestURLAsString());
 
+            // Test parse authority RFC-3986-compliant
+
+            // '?' before '@' — Must terminate the authority.
+            try {
+                getRequest().setRequestURL("http://x?@localhost/probe/hello");
+                fail("Expected exception: '?' must terminate authority before '@'");
+            } catch (Exception e) {
+             // verify '?' terminates the authority before '@'
+            }
+
+            // '#' before '@' — Must terminate the authority.
+            try {
+                getRequest().setRequestURL("http://x#@localhost/probe/hello");
+                fail("Expected exception: '#' must terminate authority before '@'");
+            } catch (Exception e) {
+              // verify '#' terminates the authority before '@'
+            }
+
             // *****************************************************************
             // Test the query string APIs
             // *****************************************************************
@@ -1412,7 +1430,7 @@ public class HttpRequestMessageImplTest {
             buff1 = mgr.allocate(32);
             buff2 = mgr.allocate(32);
             buff1.put("GETAABBCCDDEEFFGGHHIIJJKKLLMMNNO".getBytes());
-            buff2.put("O / HTTP/0001.1\r\n\r\n".getBytes());
+            buff2.put("O / HTTP/1.1\r\n\r\n".getBytes());
             buff1.flip();
             buff2.flip();
             assertFalse(getRequest().parseMessage(buff1, true));
@@ -1727,6 +1745,137 @@ public class HttpRequestMessageImplTest {
                 }
             }
         }
+    }
+
+    /**
+     * Tests that MethodValues.isBodyAllowed() correctly reflects the RFC 9110 rule:
+     * TRACE must not have a body; all other standard methods allow one.
+     */
+    @Test
+    public void testMethodValuesBodyAllowed() {
+        assertFalse("TRACE must not allow a body per RFC 9110",
+                    MethodValues.TRACE.isBodyAllowed());
+
+        assertTrue("GET should allow a body",    MethodValues.GET.isBodyAllowed());
+        assertTrue("POST should allow a body",   MethodValues.POST.isBodyAllowed());
+        assertTrue("PUT should allow a body",    MethodValues.PUT.isBodyAllowed());
+        assertTrue("DELETE should allow a body", MethodValues.DELETE.isBodyAllowed());
+        assertTrue("HEAD should allow a body",   MethodValues.HEAD.isBodyAllowed());
+        assertTrue("OPTIONS should allow a body",MethodValues.OPTIONS.isBodyAllowed());
+    }
+
+    /**
+     * Tests that isBodyExpected() returns false for a TRACE request with no
+     * framing headers (no Content-Length, no Transfer-Encoding: chunked).
+     */
+    @Test
+    public void testTraceBodyNotExpectedWithoutFramingHeaders() {
+        getRequest().setMethod(MethodValues.TRACE);
+        assertFalse("TRACE with no body framing headers must not expect a body",
+                    getRequest().isBodyExpected());
+    }
+
+    /**
+     * Tests that isBodyExpected() returns true for a TRACE request that
+     * carries a Content-Length header (the smuggling trigger condition).
+     * The new logic in HttpInboundServiceContextImpl detects this and disables
+     * persistence; this test confirms the precondition that isBodyExpected()
+     * still reports true so that the smuggling guard fires.
+     */
+    @Test
+    public void testTraceBodyExpectedWhenContentLengthPresent() {
+        getRequest().setMethod(MethodValues.TRACE);
+        getRequest().setHeader("Content-Length", "50");
+        assertTrue("TRACE with Content-Length must report body as expected",
+                   getRequest().isBodyExpected());
+        assertFalse("TRACE must not allow a body per RFC 9110",
+                    getRequest().getMethodValue().isBodyAllowed());
+    }
+
+    /**
+     * Tests that isBodyExpected() returns true for a TRACE request that uses
+     * chunked transfer-encoding (alternate smuggling framing).
+     */
+    @Test
+    public void testTraceBodyExpectedWhenChunkedEncodingPresent() {
+        getRequest().setMethod(MethodValues.TRACE);
+        getRequest().setHeader("Transfer-Encoding", "chunked");
+        assertTrue("TRACE with Transfer-Encoding: chunked must report body as expected",
+                   getRequest().isBodyExpected());
+        assertFalse("TRACE method must not allow a body",
+                    getRequest().getMethodValue().isBodyAllowed());
+    }
+
+    /**
+     * Tests the guard condition from HttpInboundServiceContextImpl.parsingComplete():
+     * the combination !method.isBodyAllowed() &amp;&amp; isBodyExpected() is only true for
+     * TRACE (or another no-body method) when a framing header is present.
+     * For POST with Content-Length the guard must NOT trigger.
+     */
+    @Test
+    public void testSmugglingGuardConditionDoesNotFireForPost() {
+        getRequest().setMethod(MethodValues.POST);
+        getRequest().setHeader("Content-Length", "50");
+        // POST allows a body, so the guard must not be triggered
+        assertTrue("POST must allow a body", getRequest().getMethodValue().isBodyAllowed());
+        assertTrue("POST with Content-Length must expect a body", getRequest().isBodyExpected());
+        // Guard condition: !isBodyAllowed && isBodyExpected -> false for POST
+        assertFalse("Smuggling guard must not fire for a POST with Content-Length",
+                    !getRequest().getMethodValue().isBodyAllowed() && getRequest().isBodyExpected());
+    }
+
+    /**
+     * Tests the guard condition fires for a TRACE with Content-Length, exactly
+     * as evaluated inside HttpInboundServiceContextImpl.parsingComplete().
+     */
+    @Test
+    public void testSmugglingGuardConditionFiresForTraceWithBody() {
+        getRequest().setMethod(MethodValues.TRACE);
+        getRequest().setHeader("Content-Length", "110");
+        assertFalse("TRACE must not allow a body", getRequest().getMethodValue().isBodyAllowed());
+        assertTrue("TRACE with Content-Length must expect a body", getRequest().isBodyExpected());
+        // Guard condition: !isBodyAllowed && isBodyExpected -> true for TRACE + CL
+        assertTrue("Smuggling guard condition must fire for TRACE with Content-Length",
+                   !getRequest().getMethodValue().isBodyAllowed() && getRequest().isBodyExpected());
+    }
+    
+    /**
+     * Tests that RFC 3986 §3.2 authority terminators ('?', '#') are honoured
+     * before a '@' character, preventing a crafted request-target such as
+     * {@code http://x?@trusted/path} from smuggling "trusted" as the URL host.
+     */
+    @Test
+    public void testAuthorityTerminators() {
+        // '?' before '@' — authority must terminate at '?', not at '@'.
+        // A URL like "http://x?@localhost/probe/hello" would be split by an
+        // RFC-3986-compliant parser as: authority="x", query starts at '?'.
+        // The residual string after authority extraction is "?@localhost/probe/hello"
+        // which begins with '?' (empty path), so parseURI must throw.
+        try {
+            getRequest().setRequestURL("http://x?@localhost/probe/hello");
+            fail("Expected exception: '?' must terminate authority before '@'");
+        } catch (Exception e) {
+            // correct: authority terminated at '?', residual URI is invalid
+        }
+
+        // '#' before '@' — fragment delimiter must also terminate the authority.
+        try {
+            getRequest().setRequestURL("http://x#@localhost/probe/hello");
+            fail("Expected exception: '#' must terminate authority before '@'");
+        } catch (Exception e) {
+            // correct: authority terminated at '#', residual URI is invalid
+        }
+
+        // Regression guard: a well-formed URL whose query string follows the path
+        // must still be parsed correctly.
+        getRequest().setRequestURL("http://host/path?query=1");
+        assertEquals("host", getRequest().getURLHost());
+        assertEquals("/path", getRequest().getRequestURI());
+        assertEquals("query=1", getRequest().getQueryString());
+
+        // Regression guard: a legitimate userinfo@ in the authority must still work.
+        getRequest().setRequestURL("http://user@host/index.html");
+        assertEquals("host", getRequest().getURLHost());
     }
 
     /**
