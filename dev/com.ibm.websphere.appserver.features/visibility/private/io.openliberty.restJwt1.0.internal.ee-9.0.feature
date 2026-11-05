@@ -1,0 +1,11 @@
+-include= ~${workspace}/cnf/resources/bnd/feature.props
+symbolicName=io.openliberty.restJwt1.0.internal.ee-9.0
+singleton=true
+visibility=private
+-features=\
+  io.openliberty.servlet.api-5.0; ibm.tolerates:="6.0, 6.1, 6.2"
+-bundles=\
+  io.openliberty.security.rest.jwt.jakarta
+kind=ga
+edition=core
+WLP-Activation-Type: parallel
