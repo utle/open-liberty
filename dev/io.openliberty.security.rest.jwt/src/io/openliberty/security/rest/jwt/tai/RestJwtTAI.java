@@ -12,8 +12,14 @@
  *******************************************************************************/
 package io.openliberty.security.rest.jwt.tai;
 
+import java.io.File;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -22,6 +28,11 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.JsonWebKeySet;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.consumer.InvalidJwtSignatureException;
+import org.jose4j.jwx.JsonWebStructure;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -39,6 +50,7 @@ import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Sensitive;
 import com.ibm.websphere.security.WebTrustAssociationException;
 import com.ibm.websphere.security.WebTrustAssociationFailedException;
+import com.ibm.websphere.security.jwt.InvalidClaimException;
 import com.ibm.websphere.security.jwt.JwtConsumer;
 import com.ibm.websphere.security.jwt.JwtToken;
 import com.ibm.ws.ffdc.annotation.FFDCIgnore;
@@ -82,6 +94,14 @@ public class RestJwtTAI implements TrustAssociationInterceptor {
 
     public static final String KEY_JWT_CONSUMER_CONFIG = "jwtConsumerConfig";
     public static final String DEFAULT_JWT_CONSUMER_ID = "JMXConnectorRESTConsumer";
+
+    static final String MSG_STALE_KEY_NO_KID = "REST_JWT_STALE_KEY_NO_KID";
+    static final String MSG_KID_NOT_IN_KEY_FILE = "REST_JWT_KID_NOT_IN_KEY_FILE";
+
+    // The key file version and the messages that were logged for it, so that a message is logged once for each version
+    // of the key file and not for every failed request
+    private static String loggedKeyFileVersion;
+    private static final List<String> loggedMessages = new ArrayList<String>();
 
     public static final String PREFIX_REST_ENDPOINT = "/IBMJMXConnectorREST";
 
@@ -243,6 +263,10 @@ public class RestJwtTAI implements TrustAssociationInterceptor {
             if (tc.isDebugEnabled()) {
                 Tr.debug(tc, "Error validating JWT token: " + e.getMessage(), e);
             }
+            boolean signatureInvalid = hasCause(e, InvalidJwtSignatureException.class);
+            if (signatureInvalid || hasCause(e, InvalidClaimException.class)) {
+                reportKidProblem(token, signatureInvalid);
+            }
             return TAIResult.create(HttpServletResponse.SC_UNAUTHORIZED);
         }
 
@@ -271,6 +295,149 @@ public class RestJwtTAI implements TrustAssociationInterceptor {
 
         Subject subject = mappingHelper.createSubject();
         return TAIResult.create(HttpServletResponse.SC_OK, username, subject);
+    }
+
+    private static boolean hasCause(Throwable e, Class<? extends Throwable> type) {
+        for (Throwable t = e; t != null; t = (t.getCause() == t ? null : t.getCause())) {
+            if (type.isInstance(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Called after the jwtConsumer rejected the signature of a token (the signature check failed), or failed with a claim
+     * exception, which includes the case that it could not find a key for the token. The exceptions of the jwtConsumer do
+     * not say that the cause can be a kid that is missing or does not match, so this logs the root cause instead. The
+     * node agent sends a request about every few seconds, so a message is logged once for each version of the key file.
+     *
+     * @param signatureInvalid true if the jwtConsumer rejected the signature, false if it failed with a claim exception
+     */
+    @FFDCIgnore({ Exception.class })
+    protected void reportKidProblem(@Sensitive String token, boolean signatureInvalid) {
+        try {
+            File keyFile = getKeyFile(jwtConsumerConfigRef.getService(DEFAULT_JWT_CONSUMER_ID));
+            if (keyFile == null) {
+                return;
+            }
+            String version = keyFile.getPath() + ":" + keyFile.lastModified();
+            KidProblem problem = findKidProblem(token, keyFile, signatureInvalid);
+            if (problem == null) {
+                return;
+            }
+            synchronized (loggedMessages) {
+                if (!version.equals(loggedKeyFileVersion)) {
+                    loggedKeyFileVersion = version;
+                    loggedMessages.clear();
+                }
+                if (loggedMessages.contains(problem.messageKey)) {
+                    return;
+                }
+                loggedMessages.add(problem.messageKey);
+            }
+            Tr.error(tc, problem.messageKey, problem.args);
+        } catch (Exception e) {
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, "Unable to find out if a missing kid caused the failure: " + e.getMessage());
+            }
+        }
+    }
+
+    /** A message key and the arguments of the message that describe why a kid does not match a key in the key file */
+    static class KidProblem {
+        final String messageKey;
+        final Object[] args;
+
+        KidProblem(String messageKey, Object... args) {
+            this.messageKey = messageKey;
+            this.args = args;
+        }
+    }
+
+    /**
+     * @return the file that the jwkEndpointUrl of the jwtConsumer points to, or null if it is not set or is not a file
+     */
+    protected File getKeyFile(JwtConsumerConfig config) throws Exception {
+        if (config == null) {
+            return null;
+        }
+        String location = config.getJwkEndpointUrl();
+        if (location == null || location.trim().isEmpty()) {
+            return null;
+        }
+        location = location.trim();
+        if (location.startsWith("file:")) {
+            return new File(new URI(location).getPath());
+        }
+        return location.startsWith("http") ? null : new File(location);
+    }
+
+    /**
+     * Compares the kid of the token with the kids of the keys in the key file. Only a JSON Web Key set can have a kid, so
+     * a PEM public key file and a file that cannot be read give null.
+     * <ul>
+     * <li>The token has no kid, the jwtConsumer rejected the signature, and the signature is valid for a key in the file:
+     * the jwtConsumer used the single key that it cached earlier, which is out of date. REST_JWT_STALE_KEY_NO_KID.
+     * A claim failure, such as an expired token, is not a kid problem.</li>
+     * <li>The token has no kid and the signature is not valid for any key in the file: not a kid problem, null.</li>
+     * <li>The token has a kid and no key in the file has it: REST_JWT_KID_NOT_IN_KEY_FILE. This is also the case when the
+     * keys in the file have no kid.</li>
+     * <li>The token has a kid and a key in the file has it: null.</li>
+     * </ul>
+     */
+    @FFDCIgnore({ Exception.class })
+    protected KidProblem findKidProblem(@Sensitive String token, File keyFile, boolean signatureInvalid) {
+        try {
+            if (!keyFile.isFile()) {
+                return null;
+            }
+            String content = new String(Files.readAllBytes(keyFile.toPath()), StandardCharsets.UTF_8).trim();
+            if (!content.startsWith("{")) {
+                return null;
+            }
+            JsonWebStructure structure = JsonWebStructure.fromCompactSerialization(token);
+            if (!(structure instanceof JsonWebSignature)) {
+                return null;
+            }
+            JsonWebSignature jws = (JsonWebSignature) structure;
+            String tokenKid = jws.getKeyIdHeaderValue();
+            List<JsonWebKey> keys = new JsonWebKeySet(content).getJsonWebKeys();
+
+            if (tokenKid != null) {
+                List<String> keyKids = new ArrayList<String>();
+                for (JsonWebKey key : keys) {
+                    if (tokenKid.equals(key.getKeyId())) {
+                        return null;
+                    }
+                    keyKids.add(key.getKeyId() == null ? "(none)" : key.getKeyId());
+                }
+                return new KidProblem(MSG_KID_NOT_IN_KEY_FILE, keyFile.getPath(), tokenKid, keyKids);
+            }
+            if (signatureInvalid) {
+                for (JsonWebKey key : keys) {
+                    if (isSignedWith(jws, key)) {
+                        return new KidProblem(MSG_STALE_KEY_NO_KID, keyFile.getPath());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (tc.isDebugEnabled()) {
+                Tr.debug(tc, "Unable to compare the kid of the token with the keys in " + keyFile.getPath() + ": " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    @FFDCIgnore({ Exception.class })
+    private boolean isSignedWith(JsonWebSignature jws, JsonWebKey key) {
+        try {
+            jws.setKey(key.getKey());
+            return jws.verifySignature();
+        } catch (Exception e) {
+            // The key does not fit the algorithm of the token, so this key did not sign it
+            return false;
+        }
     }
 
     /**

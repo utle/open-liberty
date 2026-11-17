@@ -1,0 +1,32 @@
+###############################################################################
+# Copyright (c) 2026 IBM Corporation and others.
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Eclipse Public License 2.0
+# which accompanies this distribution, and is available at
+# http://www.eclipse.org/legal/epl-2.0/
+# 
+# SPDX-License-Identifier: EPL-2.0
+#
+# Contributors:
+#     IBM Corporation - initial API and implementation
+###############################################################################
+#CMVCPATHNAME io.openliberty.security.rest.jwt/resources/io/openliberty/security/rest/jwt/resources/RestJwtMessages.nlsprops
+#COMPONENTPREFIX CWWKS
+#COMPONENTNAMEFOR WebSphere Application Server REST JWT TAI
+#ISMESSAGEFILE TRUE
+#NLS_MESSAGEFORMAT_VAR
+#NLS_ENCODING=UNICODE
+# -------------------------------------------------------------------------------------------------
+# Message prefix block: CWWKS6075 - CWWKS6076
+
+# Do not translate "JSON Web Token", "JWT", "kid", "JSON Web Key", "JWK"
+# 0=JWK set file location
+REST_JWT_STALE_KEY_NO_KID=CWWKS6075E: The signature of the JSON Web Token (JWT) is not valid for the key that the JWT consumer cached, but it is valid for a key in the [{0}] JSON Web Key (JWK) set file. The JWT has no kid header, so the JWT consumer used the key that it cached earlier and did not read the file again.
+REST_JWT_STALE_KEY_NO_KID.explanation=A JWT that has no kid header cannot be matched to a key by its key ID. The JWT consumer uses the one key that it cached from the JWK set file and does not read the file again, so it does not find a key that replaced the cached key in the file. The signature check fails although the file contains the key that signed the JWT.
+REST_JWT_STALE_KEY_NO_KID.useraction=Configure the issuer of the JWT to add a kid header to every JWT. Add a kid value to each key in the JWK set file, and make the kid in the JWT header match the kid of the key that signed the JWT. Alternatively, restart the server or change the JWT consumer configuration to clear the cached key.
+
+# Do not translate "JSON Web Token", "JWT", "kid", "JSON Web Key", "JWK"
+# 0=JWK set file location, 1=kid header of the JWT, 2=kids of the keys in the file
+REST_JWT_KID_NOT_IN_KEY_FILE=CWWKS6076E: The JSON Web Token (JWT) consumer cannot find a key for the JWT in the [{0}] JSON Web Key (JWK) set file. The kid header of the JWT is [{1}], and the kid values of the keys in the file are [{2}].
+REST_JWT_KID_NOT_IN_KEY_FILE.explanation=The JWT consumer matches the kid header of a JWT to the kid of a key in the JWK set file. A JWT that has no kid header matches a key only if that key is the only key in the file. A key that has no kid never matches a JWT that has a kid header.
+REST_JWT_KID_NOT_IN_KEY_FILE.useraction=Add a kid value to each key in the JWK set file, and make the kid header of every JWT match the kid of the key that signed it. Verify that the file contains the key that signed the JWT.

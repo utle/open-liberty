@@ -31,7 +31,8 @@ Import-Package: \
    *
 
 Private-Package: \
-   io.openliberty.security.rest.jwt.tai.*
+   io.openliberty.security.rest.jwt.tai.*, \
+   io.openliberty.security.rest.jwt.resources
 
 Include-Resource: \
    OSGI-INF=resources/OSGI-INF
